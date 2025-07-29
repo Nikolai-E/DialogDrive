@@ -1,35 +1,10 @@
-import { createSignal } from 'solid-js';
-import solidLogo from '@/assets/solid.svg';
-import wxtLogo from '/wxt.svg';
-import './App.css';
-
-function App() {
-  const [count, setCount] = createSignal(0);
-
+export default function App() {
   return (
-    <>
-      <div>
-        <a href="https://wxt.dev" target="_blank">
-          <img src={wxtLogo} class="logo" alt="WXT logo" />
-        </a>
-        <a href="https://solidjs.com" target="_blank">
-          <img src={solidLogo} class="logo solid" alt="Solid logo" />
-        </a>
-      </div>
-      <h1>WXT + Solid</h1>
-      <div class="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count()}
-        </button>
-        <p>
-          Edit <code>popup/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p class="read-the-docs">
-        Click on the WXT and Solid logos to learn more
+    <div className="p-4 bg-gray-900 text-white rounded-lg shadow-lg min-w-[300px]">
+      <h1 className="text-xl font-bold mb-2">DialogDrive</h1>
+      <p className="text-sm opacity-80">
+        Tailwind CSS is working! 🎉
       </p>
-    </>
+    </div>
   );
 }
-
-export default App;
