@@ -20,6 +20,7 @@ interface Theme {
     error: string;
     accent: string;
     shadow: string;
+    shadowHover: string;
   };
   spacing: {
     xs: string;
@@ -61,17 +62,18 @@ const lightTheme: Theme = {
     secondary: '#6366F1', // Purple for secondary actions
     background: '#F8F9FA', // Very light grey, not pure white
     surface: '#FFFFFF', // White cards that stand out from background
-    surfaceHover: '#F5F5F5',
-    border: '#E0E0E0', // Subtle borders
-    borderHover: '#D1D5DB',
-    text: '#202020', // Nearly black, not pure black
-    textSecondary: '#545454', // Medium grey for secondary text
-    textMuted: '#9E9E9E', // Lighter grey for muted text
-    success: '#1E8E3E',
+    surfaceHover: '#F1F5F9',
+    border: '#E2E8F0', // Subtle borders
+    borderHover: '#CBD5E1',
+    text: '#1E293B', // Nearly black, not pure black
+    textSecondary: '#475569', // Medium grey for secondary text
+    textMuted: '#94A3B8', // Lighter grey for muted text
+    success: '#16A34A',
     warning: '#F59E0B',
-    error: '#D32F2F',
+    error: '#DC2626',
     accent: '#10A37F',
-    shadow: '0 1px 2px rgba(0, 0, 0, 0.07), 0 2px 6px rgba(0, 0, 0, 0.07)'
+    shadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    shadowHover: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)'
   },
   spacing: {
     xs: '4px',
@@ -85,7 +87,7 @@ const lightTheme: Theme = {
     md: '8px',
     lg: '12px',
     xl: '16px',
-    full: '50px'
+    full: '9999px'
   },
   typography: {
     fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "Inter", Roboto, sans-serif',
@@ -109,22 +111,23 @@ const darkTheme: Theme = {
   ...lightTheme,
   mode: 'dark',
   colors: {
-    primary: '#3B82F6', // Modern blue
-    primaryHover: '#60A5FA',
+    primary: '#2563EB', // Modern blue
+    primaryHover: '#3B82F6',
     secondary: '#A78BFA', // Desaturated purple
-    background: '#121212', // Standard Material dark
-    surface: '#1E1E1E', // Lighter surface for cards
-    surfaceHover: '#2C2C2C', // Elevation overlay effect
-    border: '#424242', // Subtle dark borders
-    borderHover: '#555555',
-    text: '#E5E5E5', // Light grey text
-    textSecondary: '#A1A1A1', // Medium grey for secondary
-    textMuted: '#8A8A8A', // Muted text
-    success: '#66BB6A',
-    warning: '#FDD663',
-    error: '#EF9A9A',
-    accent: '#3B82F6', // Use new primary blue
-    shadow: '0 2px 4px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.3)'
+    background: '#0F172A', // Standard Material dark
+    surface: '#1E293B', // Lighter surface for cards
+    surfaceHover: '#334155', // Elevation overlay effect
+    border: '#334155', // Subtle dark borders
+    borderHover: '#475569',
+    text: '#E2E8F0', // Light grey text
+    textSecondary: '#94A3B8', // Medium grey for secondary
+    textMuted: '#64748B', // Muted text
+    success: '#22C55E',
+    warning: '#F59E0B',
+    error: '#F87171',
+    accent: '#2563EB', // Use new primary blue
+    shadow: '0 1px 2px 0 rgba(0, 0, 0, 0.2)',
+    shadowHover: '0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4)'
   }
 };
 
@@ -827,10 +830,10 @@ const ICONS: Record<IconName, string> = {
   settings: 'M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.44,0.17-0.48,0.41L9.22,5.72C8.63,5.96,8.1,6.29,7.6,6.67L5.21,5.71C4.99,5.62,4.74,5.69,4.62,5.92L2.7,9.24 c-0.11,0.2-0.06,0.47,0.12,0.61L4.85,11c-0.05,0.32-0.07,0.63-0.07,0.94s0.02,0.62,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.38,2.91 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48-0.41l0.38-2.91c0.59-0.24,1.12-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32C19.37,13.35,19.32,13.08,19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z',
   edit: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
   delete: 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
-  pin: 'M16 9V4h1V2H7v2h1v5l-2 2v2h5.2v7h1.6v-7H18v-2l-2-2z',
-  unpin: 'M16 9V4h1V2H7v2h1v5l-2 2v2h5.2v7h1.6v-7H18v-2l-2-2z', // Same as pin for now, can be changed
+  pin: 'M17 4v8l-2 2v2h-5.2v6h-1.6v-6H3v-2l-2-2V4h16z', // Filled pin
+  unpin: 'M16 12V4h-1V2H9v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z', // Outline pin
   sun: 'M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.64 5.64c.39.39 1.02.39 1.41 0s.39-1.02 0-1.41L5.64 2.81c-.39-.39-1.02-.39-1.41 0s-.39 1.02 0 1.41L5.64 5.64zm12.72 12.72c.39.39 1.02.39 1.41 0s.39-1.02 0-1.41l-1.41-1.41c-.39-.39-1.02-.39-1.41 0s-.39 1.02 0 1.41l1.41 1.41zM4.22 18.36c-.39.39-.39 1.02 0 1.41s1.02.39 1.41 0l1.41-1.41c.39-.39.39-1.02 0-1.41s-1.02-.39-1.41 0l-1.41 1.41zM18.36 4.22c-.39.39-.39 1.02 0 1.41s1.02.39 1.41 0l1.41-1.41c.39-.39.39-1.02 0-1.41s-1.02-.39-1.41 0l-1.41 1.41z',
-  moon: 'M10 2c-1.82 0-3.53.5-5 1.35C7.99 5.08 10 8.3 10 12s-2.01 6.92-5 8.65C6.47 21.5 8.18 22 10 22c5.52 0 10-4.48 10-10S15.52 2 10 2z',
+  moon: 'M9.5 2.5C5.36 2.5 2 5.86 2 10c0 3.2 1.93 5.93 4.68 7.13c.29.08.62-.02.78-.26s.05-.58-.17-.78C5.38 14.64 4.5 12.45 4.5 10c0-2.76 2.24-5 5-5c2.45 0 4.64.88 6.13 2.72c.2.22.52.27.78.17s.34-.49.26-.78C15.43 4.43 12.7 2.5 9.5 2.5z',
   close: 'M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'
 };
 
@@ -896,14 +899,10 @@ const ThemeToggle: React.FC = () => {
 };
 
 // Button component following Apple/Material design principles
-interface ButtonProps {
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
-  onClick?: () => void;
   variant?: 'filled' | 'outlined' | 'text';
   size?: 'sm' | 'md' | 'lg';
-  disabled?: boolean;
-  type?: 'button' | 'submit';
-  style?: React.CSSProperties;
 }
 
 const Button: React.FC<ButtonProps> = ({ 
@@ -913,7 +912,8 @@ const Button: React.FC<ButtonProps> = ({
   size = 'md', 
   disabled = false,
   type = 'button',
-  style = {}
+  style = {},
+  ...props
 }) => {
   const { theme } = useTheme();
   
@@ -957,27 +957,36 @@ const Button: React.FC<ButtonProps> = ({
     ...style
   };
   
+  const [isHovered, setIsHovered] = useState(false);
+
+  const finalStyle = {
+    ...baseStyle,
+    ...(isHovered && !disabled ? variants[variant].hover : {})
+  };
+
   return (
     <button
       type={type}
       onClick={disabled ? undefined : onClick}
-      style={baseStyle}
+      style={finalStyle}
       onMouseEnter={(e) => {
-        if (!disabled) {
-          Object.assign(e.currentTarget.style, variants[variant].hover);
-        }
+        setIsHovered(true);
+        props.onMouseEnter?.(e);
       }}
       onMouseLeave={(e) => {
-        if (!disabled) {
-          e.currentTarget.style.backgroundColor = variants[variant].backgroundColor;
-        }
+        setIsHovered(false);
+        props.onMouseLeave?.(e);
       }}
       onFocus={(e) => {
         e.currentTarget.style.boxShadow = `0 0 0 2px ${theme.colors.primary}40`;
+        props.onFocus?.(e);
       }}
       onBlur={(e) => {
         e.currentTarget.style.boxShadow = 'none';
+        props.onBlur?.(e);
       }}
+      disabled={disabled}
+      {...props}
     >
       {children}
     </button>
@@ -1716,93 +1725,93 @@ const App: React.FC = () => {
                     </div>
                   ) : (
                     filteredAndSortedPrompts.map((prompt) => (
-                      <div 
+                      <div
                         key={prompt.id}
                         style={{
                           padding: theme.spacing.lg,
                           backgroundColor: theme.colors.surface,
                           borderRadius: theme.borderRadius.md,
                           border: `1px solid ${theme.colors.border}`,
-                          boxShadow: `0 1px 3px ${theme.colors.shadow}`,
+                          boxShadow: theme.colors.shadow,
                           transition: 'all 0.15s ease',
                           cursor: 'pointer',
-                          position: 'relative' as const
+                          position: 'relative' as const,
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = 'translateY(-1px)';
-                          e.currentTarget.style.boxShadow = `0 4px 12px ${theme.colors.shadow}`;
+                          e.currentTarget.style.boxShadow = theme.colors.shadowHover;
                           e.currentTarget.style.borderColor = theme.colors.borderHover;
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = `0 1px 3px ${theme.colors.shadow}`;
+                          e.currentTarget.style.boxShadow = theme.colors.shadow;
                           e.currentTarget.style.borderColor = theme.colors.border;
                         }}
+                        onClick={() => handlePaste(prompt)}
                       >
-                        {/* Pin indicator */}
-                        {prompt.isPinned && (
-                          <div style={{
-                            position: 'absolute',
-                            top: theme.spacing.sm,
-                            right: theme.spacing.sm,
-                            width: '6px',
-                            height: '6px',
-                            backgroundColor: theme.colors.warning,
-                            borderRadius: '50%'
-                          }} />
-                        )}
-                        
                         <div style={{ marginBottom: theme.spacing.md }}>
-                          <h3 style={{ 
-                            fontWeight: theme.typography.fontWeight.semibold, 
-                            color: theme.colors.text, 
-                            margin: `0 0 ${theme.spacing.xs} 0`, 
-                            fontSize: theme.typography.fontSize.base,
-                            lineHeight: '1.4'
-                          }}>
+                          <h3
+                            style={{
+                              fontWeight: theme.typography.fontWeight.semibold,
+                              color: theme.colors.text,
+                              margin: `0 0 ${theme.spacing.xs} 0`,
+                              fontSize: theme.typography.fontSize.base,
+                              lineHeight: '1.4',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: theme.spacing.sm,
+                            }}
+                          >
+                            {prompt.isPinned && <Icon name="pin" size={14} color={theme.colors.accent} />}
                             {prompt.title}
                           </h3>
-                          
-                          <p style={{
-                            color: theme.colors.textSecondary,
-                            fontSize: theme.typography.fontSize.sm,
-                            margin: 0,
-                            lineHeight: '1.4',
-                            overflow: 'hidden',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical'
-                          }}>
+
+                          <p
+                            style={{
+                              color: theme.colors.textSecondary,
+                              fontSize: theme.typography.fontSize.sm,
+                              margin: 0,
+                              lineHeight: '1.4',
+                              overflow: 'hidden',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                            }}
+                          >
                             {prompt.text}
                           </p>
                         </div>
-                        
+
                         <div style={{ display: 'flex', gap: theme.spacing.xs, alignItems: 'center', flexWrap: 'wrap' }}>
-                          <span style={{
-                            fontSize: theme.typography.fontSize.xs,
-                            backgroundColor: theme.colors.primary,
-                            color: 'white',
-                            padding: `2px ${theme.spacing.sm}`,
-                            borderRadius: theme.borderRadius.full,
-                            fontWeight: theme.typography.fontWeight.medium
-                          }}>
-                            {prompt.workspace}
-                          </span>
-                          
-                          {prompt.usageCount > 0 && (
-                            <span style={{
+                          <span
+                            style={{
                               fontSize: theme.typography.fontSize.xs,
-                              backgroundColor: theme.colors.success,
+                              backgroundColor: theme.colors.primary,
                               color: 'white',
                               padding: `2px ${theme.spacing.sm}`,
                               borderRadius: theme.borderRadius.full,
-                              fontWeight: theme.typography.fontWeight.medium
-                            }}>
+                              fontWeight: theme.typography.fontWeight.medium,
+                            }}
+                          >
+                            {prompt.workspace}
+                          </span>
+
+                          {prompt.usageCount > 0 && (
+                            <span
+                              style={{
+                                fontSize: theme.typography.fontSize.xs,
+                                backgroundColor: theme.colors.success,
+                                color: 'white',
+                                padding: `2px ${theme.spacing.sm}`,
+                                borderRadius: theme.borderRadius.full,
+                                fontWeight: theme.typography.fontWeight.medium,
+                              }}
+                            >
                               {prompt.usageCount}×
                             </span>
                           )}
-                          
-                          {prompt.tags.slice(0, 3).map(tag => (
+
+                          {prompt.tags.slice(0, 3).map((tag) => (
                             <span
                               key={tag}
                               style={{
@@ -1812,73 +1821,81 @@ const App: React.FC = () => {
                                 border: `1px solid ${theme.colors.border}`,
                                 padding: `1px ${theme.spacing.sm}`,
                                 borderRadius: theme.borderRadius.sm,
-                                fontWeight: theme.typography.fontWeight.normal
+                                fontWeight: theme.typography.fontWeight.normal,
                               }}
                             >
                               {tag}
                             </span>
                           ))}
-                          
+
                           {prompt.tags.length > 3 && (
-                            <span style={{ 
-                              fontSize: theme.typography.fontSize.xs, 
-                              color: theme.colors.textMuted,
-                              fontWeight: theme.typography.fontWeight.medium
-                            }}>
+                            <span
+                              style={{
+                                fontSize: theme.typography.fontSize.xs,
+                                color: theme.colors.textMuted,
+                                fontWeight: theme.typography.fontWeight.medium,
+                              }}
+                            >
                               +{prompt.tags.length - 3}
                             </span>
                           )}
                         </div>
-                        
+
                         {/* Action buttons */}
-                        <div style={{ 
-                          display: 'flex', 
-                          gap: theme.spacing.sm, 
-                          marginTop: theme.spacing.md,
-                          paddingTop: theme.spacing.md,
-                          borderTop: `1px solid ${theme.colors.border}`
-                        }}>
-                          <Button 
-                            onClick={() => handlePaste(prompt)}
-                            variant="filled"
-                            size="sm"
-                            style={{ flex: 1, justifyContent: 'center' }}
-                          >
-                            Use
-                          </Button>
-                          <Button 
-                            onClick={() => togglePin(prompt.id)}
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: theme.spacing.sm,
+                            right: theme.spacing.sm,
+                            display: 'flex',
+                            gap: theme.spacing.xs,
+                          }}
+                        >
+                          <Button
+                            onClick={(e) => { e.stopPropagation(); togglePin(prompt.id); }}
                             variant="text"
                             size="sm"
-                            style={{ 
-                              color: prompt.isPinned ? theme.colors.warning : theme.colors.textSecondary,
+                            style={{
+                              color: prompt.isPinned ? theme.colors.accent : theme.colors.textSecondary,
+                              backgroundColor: 'transparent',
                               minWidth: 'auto',
-                              padding: theme.spacing.sm
+                              padding: theme.spacing.xs,
                             }}
+                            title={prompt.isPinned ? 'Unpin' : 'Pin'}
                           >
-                            <Icon name="pin" size={16} />
+                            <Icon name={prompt.isPinned ? 'pin' : 'unpin'} size={16} />
                           </Button>
-                          <Button 
-                            onClick={() => editPrompt(prompt)}
+                          <Button
+                            onClick={(e) => { e.stopPropagation(); editPrompt(prompt); }}
                             variant="text"
                             size="sm"
-                            style={{ 
+                            style={{
+                              backgroundColor: 'transparent',
                               minWidth: 'auto',
-                              padding: theme.spacing.sm,
-                              color: theme.colors.textSecondary
+                              padding: theme.spacing.xs,
+                              color: theme.colors.textSecondary,
                             }}
+                            title="Edit"
                           >
                             <Icon name="edit" size={16} />
                           </Button>
-                          <Button 
-                            onClick={() => deletePrompt(prompt.id)}
+                          <Button
+                            onClick={(e) => { e.stopPropagation(); deletePrompt(prompt.id); }}
                             variant="text"
                             size="sm"
-                            style={{ 
+                            style={{
+                              backgroundColor: 'transparent',
                               minWidth: 'auto',
-                              padding: theme.spacing.sm,
-                              color: theme.colors.error
+                              padding: theme.spacing.xs,
+                              color: theme.colors.textSecondary,
                             }}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.color = theme.colors.error;
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.color = theme.colors.textSecondary;
+                            }}
+                            title="Delete"
                           >
                             <Icon name="delete" size={16} />
                           </Button>
@@ -1937,4 +1954,4 @@ export default function AppWithTheme() {
       <App />
     </ThemeProvider>
   );
-}  
+}
