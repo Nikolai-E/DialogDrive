@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-// Enhanced prompt interface with Phase 2A features
+// Enhanced prompt interface with user workspaces
 interface Prompt {
   id: string;
   title: string;
@@ -8,26 +8,26 @@ interface Prompt {
   created: string;
   includeTimestamp: boolean;
   includeVoiceTag: boolean;
-  category: string;
+  workspace: string;
   tags: string[];
   isPinned: boolean;
   usageCount: number;
   lastUsed?: string;
 }
 
-// Category configuration
-const CATEGORIES = [
-  'General',
-  'Code Review',
-  'Writing',
-  'Analysis',
-  'Creative',
-  'Business',
-  'Education',
-  'Research'
-] as const;
+// Workspace and tag management
+interface AppState {
+  workspaces: string[];
+  allTags: string[];
+}
 
-type Category = typeof CATEGORIES[number];
+// Suggested tags for autocomplete
+const SUGGESTED_TAGS = [
+  'summary', 'article', 'analysis', 'code', 'review', 'writing', 'creative',
+  'business', 'email', 'presentation', 'research', 'documentation', 'bug-fix',
+  'explanation', 'tutorial', 'brainstorm', 'meeting', 'strategy', 'marketing',
+  'technical', 'design', 'planning', 'urgent', 'draft', 'final', 'template'
+] as const;
 
 // Settings component
 const Settings: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -162,34 +162,52 @@ interface PromptFormProps {
   prompt?: Prompt | null;
   onSave: (prompt: Omit<Prompt, 'id' | 'created'>) => void;
   onCancel: () => void;
+  workspaces: string[];
+  allTags: string[];
+  onAddWorkspace: (workspace: string) => void;
 }
 
-const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel }) => {
+const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, workspaces, allTags, onAddWorkspace }) => {
   const [title, setTitle] = useState(prompt?.title || '');
   const [text, setText] = useState(prompt?.text || '');
   const [includeTimestamp, setIncludeTimestamp] = useState(prompt?.includeTimestamp || false);
   const [includeVoiceTag, setIncludeVoiceTag] = useState(prompt?.includeVoiceTag || false);
-  const [category, setCategory] = useState(prompt?.category || 'General');
+  const [workspace, setWorkspace] = useState(prompt?.workspace || 'General');
   const [tags, setTags] = useState<string[]>(prompt?.tags || []);
   const [tagInput, setTagInput] = useState('');
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false);
+  const [newWorkspace, setNewWorkspace] = useState('');
+  const [showNewWorkspace, setShowNewWorkspace] = useState(false);
+
+  // Get suggested tags based on input
+  const getSuggestedTags = () => {
+    if (!tagInput.trim()) return [];
+    
+    const input = tagInput.toLowerCase();
+    const existingTags = [...new Set([...allTags, ...SUGGESTED_TAGS])];
+    
+    return existingTags
+      .filter(tag => 
+        tag.toLowerCase().includes(input) && 
+        !tags.includes(tag)
+      )
+      .slice(0, 5);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted with:', { title, text, includeTimestamp, includeVoiceTag, category, tags });
     
     if (!title.trim() || !text.trim()) {
-      console.log('Validation failed:', { titleEmpty: !title.trim(), textEmpty: !text.trim() });
       alert('Please fill in both title and text fields.');
       return;
     }
     
-    console.log('Validation passed, calling onSave');
     onSave({
       title: title.trim(),
       text: text.trim(),
       includeTimestamp,
       includeVoiceTag,
-      category,
+      workspace,
       tags,
       isPinned: prompt?.isPinned || false,
       usageCount: prompt?.usageCount || 0,
@@ -197,11 +215,12 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel }) => 
     });
   };
 
-  const addTag = () => {
-    const newTag = tagInput.trim();
+  const addTag = (tag?: string) => {
+    const newTag = (tag || tagInput).trim();
     if (newTag && !tags.includes(newTag)) {
       setTags([...tags, newTag]);
       setTagInput('');
+      setShowTagSuggestions(false);
     }
   };
 
@@ -213,6 +232,17 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel }) => 
     if (e.key === 'Enter') {
       e.preventDefault();
       addTag();
+    } else if (e.key === 'Escape') {
+      setShowTagSuggestions(false);
+    }
+  };
+
+  const addNewWorkspace = () => {
+    if (newWorkspace.trim() && !workspaces.includes(newWorkspace.trim())) {
+      onAddWorkspace(newWorkspace.trim());
+      setWorkspace(newWorkspace.trim());
+      setNewWorkspace('');
+      setShowNewWorkspace(false);
     }
   };
 
@@ -239,32 +269,98 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel }) => 
         />
       </div>
 
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '3px' }}>
-            Category
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+          <label style={{ fontSize: '13px', fontWeight: '500' }}>
+            Workspace
           </label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value as Category)}
+          <button
+            type="button"
+            onClick={() => setShowNewWorkspace(!showNewWorkspace)}
             style={{
-              width: '100%',
-              padding: '6px',
-              backgroundColor: '#374151',
-              border: '1px solid #4b5563',
-              borderRadius: '4px',
+              padding: '2px 6px',
+              backgroundColor: '#2563eb',
               color: 'white',
-              fontSize: '13px'
+              border: 'none',
+              borderRadius: '3px',
+              cursor: 'pointer',
+              fontSize: '10px'
             }}
           >
-            {CATEGORIES.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+            + New
+          </button>
         </div>
+        
+        {showNewWorkspace ? (
+          <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
+            <input
+              type="text"
+              value={newWorkspace}
+              onChange={(e) => setNewWorkspace(e.target.value)}
+              placeholder="New workspace name..."
+              style={{
+                flex: 1,
+                padding: '4px',
+                backgroundColor: '#374151',
+                border: '1px solid #4b5563',
+                borderRadius: '3px',
+                color: 'white',
+                fontSize: '12px'
+              }}
+            />
+            <button
+              type="button"
+              onClick={addNewWorkspace}
+              style={{
+                padding: '4px 8px',
+                backgroundColor: '#059669',
+                color: 'white',
+                border: 'none',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                fontSize: '11px'
+              }}
+            >
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowNewWorkspace(false)}
+              style={{
+                padding: '4px 8px',
+                backgroundColor: '#6b7280',
+                color: 'white',
+                border: 'none',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                fontSize: '11px'
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : null}
+        
+        <select
+          value={workspace}
+          onChange={(e) => setWorkspace(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '6px',
+            backgroundColor: '#374151',
+            border: '1px solid #4b5563',
+            borderRadius: '4px',
+            color: 'white',
+            fontSize: '13px'
+          }}
+        >
+          {workspaces.map(ws => (
+            <option key={ws} value={ws}>{ws}</option>
+          ))}
+        </select>
       </div>
 
-      <div>
+      <div style={{ position: 'relative' }}>
         <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '3px' }}>
           Tags
         </label>
@@ -272,8 +368,13 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel }) => 
           <input
             type="text"
             value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
+            onChange={(e) => {
+              setTagInput(e.target.value);
+              setShowTagSuggestions(e.target.value.length > 0);
+            }}
             onKeyPress={handleTagKeyPress}
+            onFocus={() => setShowTagSuggestions(tagInput.length > 0)}
+            onBlur={() => setTimeout(() => setShowTagSuggestions(false), 150)}
             style={{
               flex: 1,
               padding: '6px',
@@ -287,7 +388,7 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel }) => 
           />
           <button
             type="button"
-            onClick={addTag}
+            onClick={() => addTag()}
             style={{
               padding: '6px 10px',
               backgroundColor: '#4b5563',
@@ -301,6 +402,45 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel }) => 
             Add
           </button>
         </div>
+        
+        {/* Tag Suggestions */}
+        {showTagSuggestions && getSuggestedTags().length > 0 && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            backgroundColor: '#374151',
+            border: '1px solid #4b5563',
+            borderRadius: '4px',
+            zIndex: 10,
+            maxHeight: '120px',
+            overflowY: 'auto'
+          }}>
+            {getSuggestedTags().map(suggestedTag => (
+              <button
+                key={suggestedTag}
+                type="button"
+                onClick={() => addTag(suggestedTag)}
+                style={{
+                  width: '100%',
+                  padding: '6px 8px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderBottom: '1px solid #4b5563',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  textAlign: 'left'
+                }}
+                onMouseDown={(e) => e.preventDefault()} // Prevent blur
+              >
+                {suggestedTag}
+              </button>
+            ))}
+          </div>
+        )}
+        
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', minHeight: '20px' }}>
           {tags.map(tag => (
             <span
@@ -426,12 +566,23 @@ const App: React.FC = () => {
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   
-  // Phase 2A: Search and filter state
+  // Phase 2A: Search and filter state with workspaces
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'created' | 'title' | 'usage' | 'lastUsed'>('created');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
+  
+  // Workspace and tag management
+  const [workspaces, setWorkspaces] = useState<string[]>(['General']);
+  const [allTags, setAllTags] = useState<string[]>([]);
+
+  // Add new workspace
+  const addWorkspace = (workspace: string) => {
+    if (workspace.trim() && !workspaces.includes(workspace.trim())) {
+      setWorkspaces(prev => [...prev, workspace.trim()]);
+    }
+  };
 
   // Load prompts on mount
   useEffect(() => {
@@ -452,9 +603,9 @@ const App: React.FC = () => {
       );
     }
 
-    // Apply category filter
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter(prompt => prompt.category === selectedCategory);
+    // Apply workspace filter
+    if (selectedWorkspace !== 'All') {
+      filtered = filtered.filter(prompt => prompt.workspace === selectedWorkspace);
     }
 
     // Apply pinned filter
@@ -488,7 +639,7 @@ const App: React.FC = () => {
     });
 
     return filtered;
-  }, [prompts, searchQuery, selectedCategory, showPinnedOnly, sortBy, sortOrder]);
+  }, [prompts, searchQuery, selectedWorkspace, showPinnedOnly, sortBy, sortOrder]);
 
   const loadPrompts = async () => {
     try {
@@ -522,7 +673,7 @@ const App: React.FC = () => {
             created: new Date().toISOString(),
             includeTimestamp: false,
             includeVoiceTag: false,
-            category: 'Research',
+            workspace: 'Research',
             tags: ['summary', 'article'],
             isPinned: false,
             usageCount: 0,
@@ -534,7 +685,7 @@ const App: React.FC = () => {
             created: new Date().toISOString(),
             includeTimestamp: true,
             includeVoiceTag: false,
-            category: 'Education',
+            workspace: 'Education',
             tags: ['simple', 'explanation'],
             isPinned: true,
             usageCount: 0,
@@ -546,7 +697,7 @@ const App: React.FC = () => {
             created: new Date().toISOString(),
             includeTimestamp: false,
             includeVoiceTag: true,
-            category: 'Code Review',
+            workspace: 'Development',
             tags: ['code', 'review', 'feedback'],
             isPinned: false,
             usageCount: 0,
@@ -578,6 +729,22 @@ const App: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // Update workspaces and tags when prompts change
+  useEffect(() => {
+    const uniqueWorkspaces = new Set(['General']); // Always include General
+    const uniqueTags = new Set<string>();
+    
+    prompts.forEach(prompt => {
+      if (prompt.workspace) {
+        uniqueWorkspaces.add(prompt.workspace);
+      }
+      prompt.tags.forEach(tag => uniqueTags.add(tag));
+    });
+    
+    setWorkspaces(Array.from(uniqueWorkspaces));
+    setAllTags(Array.from(uniqueTags));
+  }, [prompts]);
 
   const savePrompt = async (promptData: Omit<Prompt, 'id' | 'created'>) => {
     console.log('Attempting to save prompt:', promptData);
@@ -850,7 +1017,7 @@ const App: React.FC = () => {
           title: `${prompt.title} (Improved)`,
           text: response.improvedText,
           created: new Date().toISOString(),
-          category: prompt.category,
+          workspace: prompt.workspace,
           tags: [...prompt.tags, 'improved'],
           isPinned: false,
           usageCount: 0,
@@ -982,8 +1149,8 @@ const App: React.FC = () => {
               {/* Compact Filter Row */}
               <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
                 <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  value={selectedWorkspace}
+                  onChange={(e) => setSelectedWorkspace(e.target.value)}
                   style={{
                     padding: '2px 4px',
                     backgroundColor: '#374151',
@@ -995,8 +1162,8 @@ const App: React.FC = () => {
                   }}
                 >
                   <option value="All">All</option>
-                  {CATEGORIES.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                  {workspaces.map(workspace => (
+                    <option key={workspace} value={workspace}>{workspace}</option>
                   ))}
                 </select>
                 
@@ -1070,7 +1237,7 @@ const App: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingRight: '4px' }}>
                   {filteredAndSortedPrompts.length === 0 ? (
                     <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
-                      {searchQuery || selectedCategory !== 'All' || showPinnedOnly 
+                      {searchQuery || selectedWorkspace !== 'All' || showPinnedOnly 
                         ? 'No prompts match your filters.' 
                         : 'No prompts yet. Add your first prompt below!'}
                     </div>
@@ -1101,7 +1268,7 @@ const App: React.FC = () => {
                               padding: '1px 4px',
                               borderRadius: '6px'
                             }}>
-                              {prompt.category}
+                              {prompt.workspace}
                             </span>
                             {prompt.usageCount > 0 && (
                               <span style={{
@@ -1227,6 +1394,9 @@ const App: React.FC = () => {
                     setShowForm(false);
                     setEditingPrompt(null);
                   }}
+                  workspaces={workspaces}
+                  allTags={allTags}
+                  onAddWorkspace={addWorkspace}
                 />
               ) : (
                 <button
