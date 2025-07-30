@@ -18,6 +18,13 @@ export default defineConfig({
       'https://chat.openai.com/*',
       'https://claude.ai/*',
       'https://gemini.google.com/*'
-    ]
+    ],
+    icons: {
+      16: 'icon/DialogDriveIcon.png',
+      32: 'icon/DialogDriveIcon.png',
+      48: 'icon/DialogDriveIcon.png',
+      96: 'icon/DialogDriveIcon.png',
+      128: 'icon/DialogDriveIcon.png'
+    }
   },
 });

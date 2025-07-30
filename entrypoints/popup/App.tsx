@@ -54,26 +54,26 @@ interface Theme {
   };
 }
 
-const lightTheme: Theme = {
+const universalTheme: Theme = {
   mode: 'light',
   colors: {
-    primary: '#10A37F', // ChatGPT-style green
-    primaryHover: '#0D8A6B',
-    secondary: '#6366F1', // Purple for secondary actions
-    background: '#F8F9FA', // Very light grey, not pure white
-    surface: '#FFFFFF', // White cards that stand out from background
-    surfaceHover: '#F1F5F9',
-    border: '#E2E8F0', // Subtle borders
-    borderHover: '#CBD5E1',
-    text: '#0F172A', // Darker text for better contrast
-    textSecondary: '#334155', // Darker secondary text
-    textMuted: '#64748B', // Better muted text visibility
-    success: '#16A34A',
-    warning: '#F59E0B',
-    error: '#DC2626',
-    accent: '#10A37F',
-    shadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-    shadowHover: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)'
+    primary: '#72A9F2', // Bright blue from palette
+    primaryHover: '#5B94E8', // Slightly darker blue for hover
+    secondary: '#80BDF2', // Light blue from palette
+    background: '#FAFBFC', // Slightly off-white for warmth
+    surface: '#FFFFFF', // Pure white for cards to stand out
+    surfaceHover: '#F8FAFB', // Very light gray for hover states
+    border: '#E1E8ED', // Softer border color
+    borderHover: '#CBD5E1', // Medium gray for hover
+    text: '#1A202C', // Near black text
+    textSecondary: '#4A5568', // Medium gray for secondary text
+    textMuted: '#718096', // Lighter gray for muted content
+    success: '#4F7D3D', // Forest green from palette
+    warning: '#F2C48D', // Warm beige from palette
+    error: '#E53E3E', // Clean red for errors
+    accent: '#709722', // Olive green from palette
+    shadow: '0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.04)',
+    shadowHover: '0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
   },
   spacing: {
     xs: '4px',
@@ -83,7 +83,7 @@ const lightTheme: Theme = {
     xl: '24px'
   },
   borderRadius: {
-    sm: '6px', // Slightly more rounded for modern feel
+    sm: '6px',
     md: '8px',
     lg: '12px',
     xl: '16px',
@@ -107,36 +107,10 @@ const lightTheme: Theme = {
   }
 };
 
-const darkTheme: Theme = {
-  ...lightTheme,
-  mode: 'dark',
-  colors: {
-    primary: '#3B82F6', // Modern blue - more vibrant
-    primaryHover: '#2563EB',
-    secondary: '#8B5CF6', // Updated purple
-    background: '#0F1419', // Slightly warmer dark
-    surface: '#1F2937', // Better contrast for cards
-    surfaceHover: '#374151', // More pronounced hover
-    border: '#374151', // Better visible borders
-    borderHover: '#4B5563',
-    text: '#F9FAFB', // Higher contrast text
-    textSecondary: '#D1D5DB', // Better secondary text
-    textMuted: '#9CA3AF', // Improved muted text
-    success: '#10B981',
-    warning: '#F59E0B',
-    error: '#EF4444',
-    accent: '#3B82F6', // Consistent with primary
-    shadow: '0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2)',
-    shadowHover: '0 10px 25px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3)'
-  }
-};
-
 const ThemeContext = createContext<{
   theme: Theme;
-  toggleTheme: () => void;
 }>({
-  theme: darkTheme,
-  toggleTheme: () => {}
+  theme: universalTheme
 });
 
 const useTheme = () => useContext(ThemeContext);
@@ -313,7 +287,8 @@ const Settings: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             justifyContent: 'center',
             width: '32px',
             height: '32px',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.2s ease',
+            fontSize: '16px'
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.borderColor = theme.colors.borderHover;
@@ -877,45 +852,10 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
 
 // Theme Provider Component
 const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isDark, setIsDark] = useState(true); // Default to dark mode
-  
-  const theme = isDark ? darkTheme : lightTheme;
-  
-  const toggleTheme = () => {
-    setIsDark(!isDark);
-    // Save preference to storage
-    try {
-      if (typeof browser !== 'undefined' && browser.storage && browser.storage.local) {
-        browser.storage.local.set({ 'dialogdrive-theme': !isDark ? 'dark' : 'light' });
-      } else {
-        localStorage.setItem('dialogdrive-theme', !isDark ? 'dark' : 'light');
-      }
-    } catch (error) {
-      console.error('Failed to save theme preference:', error);
-    }
-  };
-
-  // Load theme preference on mount
-  useEffect(() => {
-    const loadTheme = async () => {
-      try {
-        let savedTheme = 'dark';
-        if (typeof browser !== 'undefined' && browser.storage && browser.storage.local) {
-          const result = await browser.storage.local.get('dialogdrive-theme');
-          savedTheme = result['dialogdrive-theme'] || 'dark';
-        } else {
-          savedTheme = localStorage.getItem('dialogdrive-theme') || 'dark';
-        }
-        setIsDark(savedTheme === 'dark');
-      } catch (error) {
-        console.error('Failed to load theme preference:', error);
-      }
-    };
-    loadTheme();
-  }, []);
+  const theme = universalTheme;
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme }}>
       <div style={{
         fontFamily: theme.typography.fontFamily,
         backgroundColor: theme.colors.background,
@@ -930,78 +870,54 @@ const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   );
 };
 
-// SVG Icon Component
-type IconName = 'settings' | 'edit' | 'delete' | 'pin' | 'unpin' | 'sun' | 'moon' | 'close';
-
-const ICONS: Record<IconName, string> = {
-  settings: 'M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.44,0.17-0.48,0.41L9.22,5.72C8.63,5.96,8.1,6.29,7.6,6.67L5.21,5.71C4.99,5.62,4.74,5.69,4.62,5.92L2.7,9.24 c-0.11,0.2-0.06,0.47,0.12,0.61L4.85,11c-0.05,0.32-0.07,0.63-0.07,0.94s0.02,0.62,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.38,2.91 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48-0.41l0.38-2.91c0.59-0.24,1.12-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32C19.37,13.35,19.32,13.08,19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z',
-  edit: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
-  delete: 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
-  pin: 'M9 2v6h4V2h2v6h4l-1 1v4h-4v9h-2v-9H8V9l-1-1h4V2h2z', // Filled pin for pinned items
-  unpin: 'M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z', // Outline pin for unpinned items
-  sun: 'M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.64 5.64c.39.39 1.02.39 1.41 0s.39-1.02 0-1.41L5.64 2.81c-.39-.39-1.02-.39-1.41 0s-.39 1.02 0 1.41L5.64 5.64zm12.72 12.72c.39.39 1.02.39 1.41 0s.39-1.02 0-1.41l-1.41-1.41c-.39-.39-1.02-.39-1.41 0s-.39 1.02 0 1.41l1.41 1.41zM4.22 18.36c-.39.39-.39 1.02 0 1.41s1.02.39 1.41 0l1.41-1.41c.39-.39.39-1.02 0-1.41s-1.02-.39-1.41 0l-1.41 1.41zM18.36 4.22c-.39.39-.39 1.02 0 1.41s1.02.39 1.41 0l1.41-1.41c.39-.39.39-1.02 0-1.41s-1.02-.39-1.41 0l-1.41 1.41z',
-  moon: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z',
-  close: 'M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'
-};
-
-interface IconProps {
-  name: IconName;
-  size?: number;
-  color?: string;
-  style?: React.CSSProperties;
-}
-
-const Icon: React.FC<IconProps> = ({ name, size = 16, color, style }) => {
+// Logo Component
+const Logo: React.FC<{ onClick?: () => void }> = ({ onClick }) => {
   const { theme } = useTheme();
-  const iconColor = color || theme.colors.textSecondary;
   
   return (
-    <svg 
-      viewBox="0 0 24 24" 
-      width={size} 
-      height={size} 
-      fill={iconColor}
-      style={{ display: 'inline-block', verticalAlign: 'middle', ...style }}
-    >
-      <path d={ICONS[name]} />
-    </svg>
-  );
-};
-
-// Theme Toggle Component
-const ThemeToggle: React.FC = () => {
-  const { theme, toggleTheme } = useTheme();
-  
-  return (
-    <button
-      onClick={toggleTheme}
-      style={{
-        padding: theme.spacing.sm,
-        backgroundColor: 'transparent',
-        border: 'none',
+    <div 
+      onClick={onClick}
+      style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: theme.spacing.sm,
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'opacity 0.15s ease',
         borderRadius: theme.borderRadius.sm,
-        color: theme.colors.textSecondary,
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '32px',
-        height: '32px',
-        transition: 'all 0.15s ease',
-        fontSize: theme.typography.fontSize.base
+        padding: `${theme.spacing.xs} 0`
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = theme.colors.surfaceHover;
-        e.currentTarget.style.color = theme.colors.text;
+        if (onClick) {
+          e.currentTarget.style.opacity = '0.8';
+        }
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'transparent';
-        e.currentTarget.style.color = theme.colors.textSecondary;
+        if (onClick) {
+          e.currentTarget.style.opacity = '1';
+        }
       }}
-      title={`Switch to ${theme.mode === 'dark' ? 'light' : 'dark'} mode`}
+      title={onClick ? "Click to reset filters and sorting" : undefined}
     >
-      <Icon name={theme.mode === 'dark' ? 'sun' : 'moon'} size={18} />
-    </button>
+      <img 
+        src="/icon/DialogDriveIcon.png" 
+        alt="DialogDrive Icon"
+        style={{
+          width: '24px',
+          height: '24px',
+          display: 'block',
+          objectFit: 'contain'
+        }}
+      />
+      <h1 style={{ 
+        fontSize: theme.typography.fontSize.lg, 
+        fontWeight: theme.typography.fontWeight.semibold, 
+        margin: 0,
+        color: theme.colors.text,
+        letterSpacing: '-0.01em' // Slight negative letter spacing for modern feel
+      }}>
+        DialogDrive
+      </h1>
+    </div>
   );
 };
 
@@ -1141,6 +1057,16 @@ const App: React.FC = () => {
     if (workspace.trim() && !workspaces.includes(workspace.trim())) {
       setWorkspaces(prev => [...prev, workspace.trim()]);
     }
+  };
+
+  // Reset all filters and sorting to default state
+  const resetToDefaults = () => {
+    setSearchQuery('');
+    setSelectedWorkspace('All');
+    setSortBy('created');
+    setSortOrder('desc');
+    setShowPinnedOnly(false);
+    addToast('🔄 View reset to defaults', 'info', 2000);
   };
 
   // Load prompts on mount
@@ -1655,6 +1581,11 @@ const App: React.FC = () => {
             opacity: 1;
           }
         }
+        
+        /* Show action buttons on hover */
+        div:hover .prompt-actions {
+          opacity: 1 !important;
+        }
       `}</style>
       <header 
         style={{ 
@@ -1667,20 +1598,9 @@ const App: React.FC = () => {
           minHeight: '44px' // Slightly smaller for better proportion
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
-          <h1 style={{ 
-            fontSize: theme.typography.fontSize.lg, 
-            fontWeight: theme.typography.fontWeight.semibold, 
-            margin: 0,
-            color: theme.colors.text,
-            letterSpacing: '-0.01em' // Slight negative letter spacing for modern feel
-          }}>
-            DialogDrive
-          </h1>
-        </div>
+        <Logo onClick={resetToDefaults} />
         
         <div style={{ display: 'flex', gap: theme.spacing.xs, alignItems: 'center' }}>
-          <ThemeToggle />
           <button
             onClick={() => setShowSettings(!showSettings)}
             style={{
@@ -1696,7 +1616,7 @@ const App: React.FC = () => {
               width: '32px',
               height: '32px',
               transition: 'all 0.15s ease',
-              fontSize: theme.typography.fontSize.base
+              fontSize: '16px'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = theme.colors.surfaceHover;
@@ -1708,7 +1628,7 @@ const App: React.FC = () => {
             }}
             title="Settings"
           >
-            <Icon name="settings" size={18} />
+            ⚙️
           </button>
         </div>
       </header>
@@ -1718,386 +1638,514 @@ const App: React.FC = () => {
         display: 'flex', 
         flexDirection: 'column', 
         overflow: 'hidden',
-        minHeight: '500px' // Ensure main content has minimum height
+        minHeight: '500px'
       }}>
         {showSettings ? (
           <Settings onClose={() => setShowSettings(false)} />
+        ) : showForm ? (
+          <div style={{ 
+            padding: theme.spacing.lg,
+            overflow: 'auto',
+            flex: 1
+          }}>
+            <PromptForm
+              prompt={editingPrompt}
+              onSave={savePrompt}
+              onCancel={() => {
+                setShowForm(false);
+                setEditingPrompt(null);
+              }}
+              workspaces={workspaces}
+              allTags={allTags}
+              onAddWorkspace={addWorkspace}
+            />
+          </div>
         ) : (
           <>
-            {/* Compact Search and Filter Controls */}
-            <div style={{ 
-              padding: theme.spacing.md, 
-              borderBottom: `1px solid ${theme.colors.border}`, 
-              backgroundColor: theme.colors.surface 
+            {/* Integrated Search and Controls */}
+            <div style={{
+              padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+              backgroundColor: theme.colors.background,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: theme.spacing.sm,
+              position: 'relative',
+              zIndex: 100
             }}>
-              {/* Search Bar */}
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search prompts..."
-                style={{
-                  width: '100%',
-                  padding: `${theme.spacing.sm} ${theme.spacing.md}`,
-                  backgroundColor: theme.colors.background,
-                  border: `1px solid ${theme.colors.border}`,
-                  borderRadius: theme.borderRadius.md,
-                  color: theme.colors.text,
-                  fontSize: theme.typography.fontSize.sm,
-                  marginBottom: theme.spacing.sm,
-                  outline: 'none',
-                  transition: 'border-color 0.2s ease'
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = theme.colors.primary;
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = theme.colors.border;
-                }}
-              />
-              
-              {/* Compact Filter Row */}
-              <div style={{ display: 'flex', gap: theme.spacing.sm, alignItems: 'center' }}>
+              {/* Search Input with integrated actions */}
+              <div style={{ 
+                display: 'flex', 
+                gap: theme.spacing.lg, // Golden ratio spacing - increased from sm to lg
+                alignItems: 'center',
+                position: 'relative',
+                zIndex: 101
+              }}>
+                <div style={{ 
+                  position: 'relative', 
+                  flex: 1,
+                  zIndex: 10
+                }}>
+                  <input
+                    type="text"
+                    placeholder="Search prompts..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+                      paddingLeft: '36px',
+                      backgroundColor: theme.colors.surface,
+                      border: `1px solid ${theme.colors.border}`,
+                      borderRadius: theme.borderRadius.md,
+                      color: theme.colors.text,
+                      fontSize: theme.typography.fontSize.sm,
+                      outline: 'none',
+                      transition: 'all 0.2s ease',
+                      position: 'relative',
+                      zIndex: 1,
+                      height: '36px', // Explicit height for consistency
+                      boxSizing: 'border-box'
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = theme.colors.primary;
+                      e.currentTarget.style.backgroundColor = theme.colors.background;
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = theme.colors.border;
+                      e.currentTarget.style.backgroundColor = theme.colors.surface;
+                    }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    left: theme.spacing.sm,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: theme.colors.textMuted,
+                    pointerEvents: 'none',
+                    fontSize: '14px',
+                    zIndex: 2
+                  }}>
+                    🔍
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setShowForm(true)}
+                  style={{
+                    padding: `${theme.spacing.xs} ${theme.spacing.sm}`, // Smaller padding for better proportion
+                    backgroundColor: theme.colors.primary,
+                    color: 'white',
+                    border: `1px solid ${theme.colors.primary}`,
+                    borderRadius: theme.borderRadius.sm, // Smaller border radius to match search
+                    cursor: 'pointer',
+                    fontSize: theme.typography.fontSize.xs, // Smaller font size
+                    fontWeight: theme.typography.fontWeight.medium,
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px', // Tight gap between + and New
+                    minWidth: '60px', // Reduced width
+                    height: '32px', // Smaller height for better proportion
+                    justifyContent: 'center',
+                    boxShadow: '0 1px 2px rgba(114, 169, 242, 0.15)',
+                    position: 'relative',
+                    zIndex: 200,
+                    flexShrink: 0,
+                    isolation: 'isolate'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = theme.colors.primaryHover;
+                    e.currentTarget.style.borderColor = theme.colors.primaryHover;
+                    e.currentTarget.style.transform = 'translateY(-0.5px)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(114, 169, 242, 0.2)';
+                    e.currentTarget.style.zIndex = '300';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = theme.colors.primary;
+                    e.currentTarget.style.borderColor = theme.colors.primary;
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 1px 2px rgba(114, 169, 242, 0.15)';
+                    e.currentTarget.style.zIndex = '200';
+                  }}
+                >
+                  + New
+                </button>
+              </div>
+
+              {/* Compact Filter Controls */}
+              <div style={{
+                display: 'flex',
+                gap: theme.spacing.xs,
+                alignItems: 'center',
+                flexWrap: 'wrap'
+              }}>
                 <select
                   value={selectedWorkspace}
                   onChange={(e) => setSelectedWorkspace(e.target.value)}
                   style={{
                     padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-                    backgroundColor: theme.colors.background,
+                    backgroundColor: theme.colors.surface,
                     border: `1px solid ${theme.colors.border}`,
                     borderRadius: theme.borderRadius.sm,
                     color: theme.colors.text,
                     fontSize: theme.typography.fontSize.xs,
-                    flex: '1',
-                    outline: 'none'
+                    outline: 'none',
+                    cursor: 'pointer',
+                    minWidth: '80px'
                   }}
                 >
-                  <option value="All">All Workspaces</option>
+                  <option value="All">All</option>
                   {workspaces.map(workspace => (
-                    <option key={workspace} value={workspace}>{workspace}</option>
+                    <option key={workspace} value={workspace}>
+                      {workspace}
+                    </option>
                   ))}
                 </select>
-                
+
                 <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
+                  value={`${sortBy}-${sortOrder}`}
+                  onChange={(e) => {
+                    const [sort, order] = e.target.value.split('-') as [typeof sortBy, typeof sortOrder];
+                    setSortBy(sort);
+                    setSortOrder(order);
+                  }}
                   style={{
                     padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-                    backgroundColor: theme.colors.background,
+                    backgroundColor: theme.colors.surface,
                     border: `1px solid ${theme.colors.border}`,
                     borderRadius: theme.borderRadius.sm,
                     color: theme.colors.text,
                     fontSize: theme.typography.fontSize.xs,
-                    flex: '1',
-                    outline: 'none'
-                  }}
-                >
-                  <option value="created">Date</option>
-                  <option value="title">Name</option>
-                  <option value="usage">Usage</option>
-                </select>
-                
-                <button
-                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                  style={{
-                    padding: '2px 4px',
-                    backgroundColor: theme.colors.surfaceHover,
-                    border: `1px solid ${theme.colors.border}`,
-                    borderRadius: theme.borderRadius.sm,
-                    color: theme.colors.text,
+                    outline: 'none',
                     cursor: 'pointer',
-                    fontSize: theme.typography.fontSize.xs,
-                    minWidth: '20px',
-                    fontWeight: theme.typography.fontWeight.medium
+                    minWidth: '90px'
                   }}
-                  title={`Sort ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
                 >
-                  {sortOrder === 'asc' ? '↑' : '↓'}
-                </button>
-                
+                  <option value="created-desc">Newest</option>
+                  <option value="created-asc">Oldest</option>
+                  <option value="title-asc">A-Z</option>
+                  <option value="title-desc">Z-A</option>
+                  <option value="usage-desc">Most Used</option>
+                  <option value="lastUsed-desc">Recent</option>
+                </select>
+
                 <button
                   onClick={() => setShowPinnedOnly(!showPinnedOnly)}
                   style={{
-                    padding: '2px 4px',
-                    backgroundColor: showPinnedOnly ? theme.colors.primary : theme.colors.surfaceHover,
+                    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+                    backgroundColor: showPinnedOnly ? theme.colors.primary : theme.colors.surface,
+                    color: showPinnedOnly ? 'white' : theme.colors.textSecondary,
                     border: `1px solid ${showPinnedOnly ? theme.colors.primary : theme.colors.border}`,
                     borderRadius: theme.borderRadius.sm,
-                    color: showPinnedOnly ? 'white' : theme.colors.text,
                     cursor: 'pointer',
                     fontSize: theme.typography.fontSize.xs,
-                    minWidth: '20px'
+                    fontWeight: theme.typography.fontWeight.medium,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.2s ease'
                   }}
-                  title="Show pinned only"
                 >
                   📌
+                  {showPinnedOnly ? 'Pinned' : 'All'}
                 </button>
+
+                {(searchQuery || selectedWorkspace !== 'All' || showPinnedOnly) && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSelectedWorkspace('All');
+                      setShowPinnedOnly(false);
+                    }}
+                    style={{
+                      padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+                      backgroundColor: 'transparent',
+                      color: theme.colors.textMuted,
+                      border: 'none',
+                      borderRadius: theme.borderRadius.sm,
+                      cursor: 'pointer',
+                      fontSize: theme.typography.fontSize.xs,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '2px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = theme.colors.text;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = theme.colors.textMuted;
+                    }}
+                    title="Clear all filters"
+                  >
+                    Clear
+                  </button>
+                )}
               </div>
             </div>
 
+            {/* Prompts List */}
             <div style={{ 
               flex: 1, 
-              overflowY: 'auto', 
-              padding: theme.spacing.md,
-              paddingRight: theme.spacing.xs, // Account for scrollbar
-              scrollbarWidth: 'thin'
+              overflow: 'auto',
+              backgroundColor: theme.colors.background
             }}>
               {isLoading ? (
                 <div style={{ 
-                  padding: theme.spacing.lg, 
-                  textAlign: 'center', 
-                  fontSize: theme.typography.fontSize.sm,
-                  color: theme.colors.textSecondary
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center', 
+                  height: '200px',
+                  color: theme.colors.textMuted,
+                  fontSize: theme.typography.fontSize.sm
                 }}>
                   Loading prompts...
                 </div>
+              ) : filteredAndSortedPrompts.length === 0 ? (
+                <div style={{ 
+                  padding: theme.spacing.xl,
+                  textAlign: 'center',
+                  color: theme.colors.textMuted,
+                  fontSize: theme.typography.fontSize.sm
+                }}>
+                  {searchQuery || selectedWorkspace !== 'All' || showPinnedOnly 
+                    ? 'No prompts match your filters' 
+                    : 'No prompts yet. Create your first one!'}
+                </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: theme.spacing.sm, paddingRight: theme.spacing.xs }}>
-                  {filteredAndSortedPrompts.length === 0 ? (
-                    <div style={{ 
-                      padding: theme.spacing.lg, 
-                      textAlign: 'center', 
-                      color: theme.colors.textMuted, 
-                      fontSize: theme.typography.fontSize.sm 
-                    }}>
-                      {searchQuery || selectedWorkspace !== 'All' || showPinnedOnly 
-                        ? 'No prompts match your filters.' 
-                        : 'No prompts yet. Add your first prompt below!'}
-                    </div>
-                  ) : (
-                    filteredAndSortedPrompts.map((prompt) => (
-                      <div
-                        key={prompt.id}
-                        style={{
-                          padding: theme.spacing.lg,
-                          backgroundColor: theme.colors.surface,
-                          borderRadius: theme.borderRadius.md,
-                          border: `1px solid ${theme.colors.border}`,
-                          boxShadow: theme.colors.shadow,
-                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                          cursor: 'pointer',
-                          position: 'relative' as const,
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow = theme.colors.shadowHover;
-                          e.currentTarget.style.borderColor = theme.colors.borderHover;
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = theme.colors.shadow;
-                          e.currentTarget.style.borderColor = theme.colors.border;
-                        }}
-                        onClick={() => handlePaste(prompt)}
-                      >
-                        <div style={{ marginBottom: theme.spacing.md }}>
-                          <h3
-                            style={{
-                              fontWeight: theme.typography.fontWeight.bold,
-                              color: theme.colors.text,
-                              margin: `0 0 ${theme.spacing.xs} 0`,
-                              fontSize: theme.typography.fontSize.base,
-                              lineHeight: '1.4',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: theme.spacing.sm,
-                            }}
-                          >
-                            {prompt.isPinned && <span style={{ color: theme.colors.accent, fontSize: '14px', marginRight: '2px' }}>📌</span>}
+                <div style={{ 
+                  padding: theme.spacing.md,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: theme.spacing.sm
+                }}>
+                  {filteredAndSortedPrompts.map((prompt) => (
+                    <div
+                      key={prompt.id}
+                      style={{
+                        padding: theme.spacing.lg,
+                        backgroundColor: theme.colors.surface,
+                        border: `1px solid ${theme.colors.border}`,
+                        borderRadius: theme.borderRadius.md,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        position: 'relative',
+                        boxShadow: theme.colors.shadow
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = theme.colors.surfaceHover;
+                        e.currentTarget.style.borderColor = theme.colors.borderHover;
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.boxShadow = theme.colors.shadowHover;
+                        // Show action buttons
+                        const actionsEl = e.currentTarget.querySelector('.prompt-actions') as HTMLElement;
+                        if (actionsEl) actionsEl.style.opacity = '1';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = theme.colors.surface;
+                        e.currentTarget.style.borderColor = theme.colors.border;
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = theme.colors.shadow;
+                        // Hide action buttons
+                        const actionsEl = e.currentTarget.querySelector('.prompt-actions') as HTMLElement;
+                        if (actionsEl) actionsEl.style.opacity = '0';
+                      }}
+                      onClick={() => handlePaste(prompt)}
+                    >
+                      {/* Header with title and actions */}
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'flex-start',
+                        marginBottom: theme.spacing.sm
+                      }}>
+                        <div style={{ flex: 1, marginRight: theme.spacing.md }}>
+                          <h3 style={{
+                            fontWeight: theme.typography.fontWeight.semibold,
+                            color: theme.colors.text,
+                            margin: 0,
+                            fontSize: theme.typography.fontSize.base,
+                            lineHeight: '1.4',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: theme.spacing.xs
+                          }}>
+                            {prompt.isPinned && (
+                              <span style={{ 
+                                fontSize: '14px' 
+                              }}>📌</span>
+                            )}
                             {prompt.title}
                           </h3>
-
-                          <p
-                            style={{
-                              color: theme.colors.textSecondary,
-                              fontSize: theme.typography.fontSize.sm,
-                              margin: 0,
-                              lineHeight: '1.5',
-                              overflow: 'hidden',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              fontWeight: theme.typography.fontWeight.normal,
-                            }}
-                          >
-                            {prompt.text}
-                          </p>
                         </div>
 
-                        <div style={{ display: 'flex', gap: theme.spacing.xs, alignItems: 'center', flexWrap: 'wrap' }}>
-                          <span
-                            style={{
-                              fontSize: theme.typography.fontSize.xs,
-                              backgroundColor: theme.colors.primary,
-                              color: 'white',
-                              padding: `2px ${theme.spacing.sm}`,
-                              borderRadius: theme.borderRadius.full,
-                              fontWeight: theme.typography.fontWeight.medium,
-                            }}
-                          >
-                            {prompt.workspace}
-                          </span>
-
-                          {prompt.usageCount > 0 && (
-                            <span
-                              style={{
-                                fontSize: theme.typography.fontSize.xs,
-                                backgroundColor: theme.colors.success,
-                                color: 'white',
-                                padding: `2px ${theme.spacing.sm}`,
-                                borderRadius: theme.borderRadius.full,
-                                fontWeight: theme.typography.fontWeight.medium,
-                              }}
-                            >
-                              {prompt.usageCount}×
-                            </span>
-                          )}
-
-                          {prompt.tags.slice(0, 3).map((tag) => (
-                            <span
-                              key={tag}
-                              style={{
-                                fontSize: theme.typography.fontSize.xs,
-                                backgroundColor: theme.colors.surfaceHover,
-                                color: theme.colors.textSecondary,
-                                border: `1px solid ${theme.colors.border}`,
-                                padding: `1px ${theme.spacing.sm}`,
-                                borderRadius: theme.borderRadius.sm,
-                                fontWeight: theme.typography.fontWeight.normal,
-                              }}
-                            >
-                              {tag}
-                            </span>
-                          ))}
-
-                          {prompt.tags.length > 3 && (
-                            <span
-                              style={{
-                                fontSize: theme.typography.fontSize.xs,
-                                color: theme.colors.textMuted,
-                                fontWeight: theme.typography.fontWeight.medium,
-                              }}
-                            >
-                              +{prompt.tags.length - 3}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Action buttons */}
-                        <div
+                        {/* Action buttons - show on hover */}
+                        <div 
+                          className="prompt-actions"
                           style={{
-                            position: 'absolute',
-                            top: theme.spacing.sm,
-                            right: theme.spacing.sm,
                             display: 'flex',
                             gap: theme.spacing.xs,
+                            opacity: 0,
+                            transition: 'opacity 0.2s ease'
                           }}
                         >
-                          <Button
+                          <button
                             onClick={(e) => { e.stopPropagation(); togglePin(prompt.id); }}
-                            variant="text"
-                            size="sm"
                             style={{
-                              color: theme.colors.textMuted,
+                              padding: '4px',
                               backgroundColor: 'transparent',
-                              minWidth: 'auto',
-                              padding: theme.spacing.xs,
+                              border: 'none',
+                              borderRadius: theme.borderRadius.sm,
+                              cursor: 'pointer',
+                              fontSize: '16px',
                               transition: 'all 0.15s ease',
-                              fontSize: '16px'
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
                             }}
                             onMouseEnter={(e) => {
-                              (e.currentTarget as HTMLButtonElement).style.color = theme.colors.accent;
-                              (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.1)';
+                              e.currentTarget.style.backgroundColor = theme.colors.background;
+                              e.currentTarget.style.transform = 'scale(1.1)';
                             }}
                             onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLButtonElement).style.color = theme.colors.textMuted;
-                              (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                              e.currentTarget.style.transform = 'scale(1)';
                             }}
                             title={prompt.isPinned ? 'Unpin prompt' : 'Pin prompt'}
                           >
                             {prompt.isPinned ? '📌' : '📍'}
-                          </Button>
-                          <Button
+                          </button>
+                          
+                          <button
                             onClick={(e) => { e.stopPropagation(); editPrompt(prompt); }}
-                            variant="text"
-                            size="sm"
                             style={{
+                              padding: '4px',
                               backgroundColor: 'transparent',
-                              minWidth: 'auto',
-                              padding: theme.spacing.xs,
-                              color: theme.colors.textMuted,
-                              fontSize: '16px'
+                              border: 'none',
+                              borderRadius: theme.borderRadius.sm,
+                              cursor: 'pointer',
+                              fontSize: '16px',
+                              transition: 'all 0.15s ease',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
                             }}
                             onMouseEnter={(e) => {
-                              (e.currentTarget as HTMLButtonElement).style.color = theme.colors.primary;
+                              e.currentTarget.style.backgroundColor = theme.colors.background;
+                              e.currentTarget.style.transform = 'scale(1.1)';
                             }}
                             onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLButtonElement).style.color = theme.colors.textMuted;
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                              e.currentTarget.style.transform = 'scale(1)';
                             }}
-                            title="Edit"
+                            title="Edit prompt"
                           >
                             ✏️
-                          </Button>
-                          <Button
+                          </button>
+                          
+                          <button
                             onClick={(e) => { e.stopPropagation(); deletePrompt(prompt.id); }}
-                            variant="text"
-                            size="sm"
                             style={{
+                              padding: '4px',
                               backgroundColor: 'transparent',
-                              minWidth: 'auto',
-                              padding: theme.spacing.xs,
-                              color: theme.colors.textMuted,
-                              fontSize: '16px'
+                              border: 'none',
+                              borderRadius: theme.borderRadius.sm,
+                              cursor: 'pointer',
+                              fontSize: '16px',
+                              transition: 'all 0.15s ease',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
                             }}
                             onMouseEnter={(e) => {
-                              (e.currentTarget as HTMLButtonElement).style.color = theme.colors.error;
+                              e.currentTarget.style.backgroundColor = theme.colors.background;
+                              e.currentTarget.style.transform = 'scale(1.1)';
                             }}
                             onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLButtonElement).style.color = theme.colors.textMuted;
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                              e.currentTarget.style.transform = 'scale(1)';
                             }}
-                            title="Delete"
+                            title="Delete prompt"
                           >
                             🗑️
-                          </Button>
+                          </button>
                         </div>
                       </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
 
-            <div style={{ 
-              padding: theme.spacing.lg, 
-              borderTop: `1px solid ${theme.colors.border}`, 
-              backgroundColor: theme.colors.surface,
-              flexShrink: 0
-            }}>
-              {showForm ? (
-                <PromptForm 
-                  prompt={editingPrompt}
-                  onSave={savePrompt}
-                  onCancel={() => {
-                    setShowForm(false);
-                    setEditingPrompt(null);
-                  }}
-                  workspaces={workspaces}
-                  allTags={allTags}
-                  onAddWorkspace={addWorkspace}
-                />
-              ) : (
-                <Button
-                  onClick={() => {
-                    console.log('Add New Prompt button clicked');
-                    setShowForm(true);
-                  }}
-                  variant="filled"
-                  style={{
-                    width: '100%',
-                    justifyContent: 'center'
-                  }}
-                >
-                  + Add New Prompt
-                </Button>
+                      {/* Preview text */}
+                      <p style={{
+                        color: theme.colors.textSecondary,
+                        fontSize: theme.typography.fontSize.sm,
+                        margin: `0 0 ${theme.spacing.md} 0`,
+                        lineHeight: '1.5',
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical'
+                      }}>
+                        {prompt.text}
+                      </p>
+
+                      {/* Meta information */}
+                      <div style={{ 
+                        display: 'flex', 
+                        gap: theme.spacing.xs, 
+                        alignItems: 'center', 
+                        flexWrap: 'wrap' 
+                      }}>
+                        <span style={{
+                          fontSize: theme.typography.fontSize.xs,
+                          backgroundColor: theme.colors.primary,
+                          color: 'white',
+                          padding: `2px ${theme.spacing.xs}`,
+                          borderRadius: theme.borderRadius.sm,
+                          fontWeight: theme.typography.fontWeight.medium
+                        }}>
+                          {prompt.workspace}
+                        </span>
+
+                        {prompt.usageCount > 0 && (
+                          <span style={{
+                            fontSize: theme.typography.fontSize.xs,
+                            backgroundColor: theme.colors.success,
+                            color: 'white',
+                            padding: `2px ${theme.spacing.xs}`,
+                            borderRadius: theme.borderRadius.sm,
+                            fontWeight: theme.typography.fontWeight.medium
+                          }}>
+                            {prompt.usageCount}×
+                          </span>
+                        )}
+
+                        {prompt.tags.slice(0, 2).map((tag) => (
+                          <span
+                            key={tag}
+                            style={{
+                              fontSize: theme.typography.fontSize.xs,
+                              backgroundColor: theme.colors.background,
+                              color: theme.colors.textSecondary,
+                              border: `1px solid ${theme.colors.border}`,
+                              padding: `1px ${theme.spacing.xs}`,
+                              borderRadius: theme.borderRadius.sm
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+
+                        {prompt.tags.length > 2 && (
+                          <span style={{
+                            fontSize: theme.typography.fontSize.xs,
+                            color: theme.colors.textMuted,
+                            fontWeight: theme.typography.fontWeight.medium
+                          }}>
+                            +{prompt.tags.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </>
