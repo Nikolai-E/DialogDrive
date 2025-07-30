@@ -65,9 +65,9 @@ const lightTheme: Theme = {
     surfaceHover: '#F1F5F9',
     border: '#E2E8F0', // Subtle borders
     borderHover: '#CBD5E1',
-    text: '#1E293B', // Nearly black, not pure black
-    textSecondary: '#475569', // Medium grey for secondary text
-    textMuted: '#94A3B8', // Lighter grey for muted text
+    text: '#0F172A', // Darker text for better contrast
+    textSecondary: '#334155', // Darker secondary text
+    textMuted: '#64748B', // Better muted text visibility
     success: '#16A34A',
     warning: '#F59E0B',
     error: '#DC2626',
@@ -111,23 +111,23 @@ const darkTheme: Theme = {
   ...lightTheme,
   mode: 'dark',
   colors: {
-    primary: '#2563EB', // Modern blue
-    primaryHover: '#3B82F6',
-    secondary: '#A78BFA', // Desaturated purple
-    background: '#0F172A', // Standard Material dark
-    surface: '#1E293B', // Lighter surface for cards
-    surfaceHover: '#334155', // Elevation overlay effect
-    border: '#334155', // Subtle dark borders
-    borderHover: '#475569',
-    text: '#E2E8F0', // Light grey text
-    textSecondary: '#94A3B8', // Medium grey for secondary
-    textMuted: '#64748B', // Muted text
-    success: '#22C55E',
+    primary: '#3B82F6', // Modern blue - more vibrant
+    primaryHover: '#2563EB',
+    secondary: '#8B5CF6', // Updated purple
+    background: '#0F1419', // Slightly warmer dark
+    surface: '#1F2937', // Better contrast for cards
+    surfaceHover: '#374151', // More pronounced hover
+    border: '#374151', // Better visible borders
+    borderHover: '#4B5563',
+    text: '#F9FAFB', // Higher contrast text
+    textSecondary: '#D1D5DB', // Better secondary text
+    textMuted: '#9CA3AF', // Improved muted text
+    success: '#10B981',
     warning: '#F59E0B',
-    error: '#F87171',
-    accent: '#2563EB', // Use new primary blue
-    shadow: '0 1px 2px 0 rgba(0, 0, 0, 0.2)',
-    shadowHover: '0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4)'
+    error: '#EF4444',
+    accent: '#3B82F6', // Consistent with primary
+    shadow: '0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2)',
+    shadowHover: '0 10px 25px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3)'
   }
 };
 
@@ -156,6 +156,14 @@ interface Prompt {
   isPinned: boolean;
 }
 
+// Toast notification interface
+interface Toast {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+  duration?: number;
+}
+
 // Workspace and tag management
 interface AppState {
   workspaces: string[];
@@ -169,6 +177,47 @@ const SUGGESTED_TAGS = [
   'explanation', 'tutorial', 'brainstorm', 'meeting', 'strategy', 'marketing',
   'technical', 'design', 'planning', 'urgent', 'draft', 'final', 'template'
 ] as const;
+
+// Toast Notification Component
+const ToastContainer: React.FC<{ toasts: Toast[]; onRemove: (id: string) => void }> = ({ toasts, onRemove }) => {
+  const { theme } = useTheme();
+  
+  return (
+    <div style={{
+      position: 'fixed',
+      top: theme.spacing.md,
+      right: theme.spacing.md,
+      zIndex: 1000,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: theme.spacing.sm,
+      pointerEvents: 'none'
+    }}>
+      {toasts.map((toast) => (
+        <div
+          key={toast.id}
+          style={{
+            backgroundColor: toast.type === 'success' ? theme.colors.success : 
+                           toast.type === 'error' ? theme.colors.error : theme.colors.primary,
+            color: 'white',
+            padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+            borderRadius: theme.borderRadius.md,
+            boxShadow: theme.colors.shadowHover,
+            fontSize: theme.typography.fontSize.sm,
+            fontWeight: theme.typography.fontWeight.medium,
+            maxWidth: '250px',
+            pointerEvents: 'auto',
+            animation: 'slideIn 0.3s ease-out',
+            cursor: 'pointer'
+          }}
+          onClick={() => onRemove(toast.id)}
+        >
+          {toast.message}
+        </div>
+      ))}
+    </div>
+  );
+};
 
 // Settings component
 const Settings: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -459,7 +508,13 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       <div>
-        <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '3px' }}>
+        <label style={{ 
+          display: 'block', 
+          fontSize: theme.typography.fontSize.sm, 
+          fontWeight: theme.typography.fontWeight.medium, 
+          marginBottom: '3px',
+          color: theme.colors.text
+        }}>
           Title
         </label>
         <input
@@ -468,12 +523,20 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
           onChange={(e) => setTitle(e.target.value)}
           style={{
             width: '100%',
-            padding: '6px',
-            backgroundColor: '#374151',
-            border: '1px solid #4b5563',
-            borderRadius: '4px',
-            color: 'white',
-            fontSize: '13px'
+            padding: theme.spacing.sm,
+            backgroundColor: theme.colors.surface,
+            border: `1px solid ${theme.colors.border}`,
+            borderRadius: theme.borderRadius.sm,
+            color: theme.colors.text,
+            fontSize: theme.typography.fontSize.sm,
+            outline: 'none',
+            transition: 'border-color 0.2s ease'
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = theme.colors.primary;
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = theme.colors.border;
           }}
           placeholder="Enter prompt title..."
         />
@@ -481,7 +544,11 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
 
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
-          <label style={{ fontSize: '13px', fontWeight: '500' }}>
+          <label style={{ 
+            fontSize: theme.typography.fontSize.sm, 
+            fontWeight: theme.typography.fontWeight.medium,
+            color: theme.colors.text
+          }}>
             Workspace
           </label>
           <button
@@ -489,12 +556,13 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
             onClick={() => setShowNewWorkspace(!showNewWorkspace)}
             style={{
               padding: '2px 6px',
-              backgroundColor: '#2563eb',
+              backgroundColor: theme.colors.primary,
               color: 'white',
               border: 'none',
-              borderRadius: '3px',
+              borderRadius: theme.borderRadius.sm,
               cursor: 'pointer',
-              fontSize: '10px'
+              fontSize: theme.typography.fontSize.xs,
+              fontWeight: theme.typography.fontWeight.medium
             }}
           >
             + New
@@ -510,25 +578,27 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
               placeholder="New workspace name..."
               style={{
                 flex: 1,
-                padding: '4px',
-                backgroundColor: '#374151',
-                border: '1px solid #4b5563',
-                borderRadius: '3px',
-                color: 'white',
-                fontSize: '12px'
+                padding: theme.spacing.xs,
+                backgroundColor: theme.colors.surface,
+                border: `1px solid ${theme.colors.border}`,
+                borderRadius: theme.borderRadius.sm,
+                color: theme.colors.text,
+                fontSize: theme.typography.fontSize.sm,
+                outline: 'none'
               }}
             />
             <button
               type="button"
               onClick={addNewWorkspace}
               style={{
-                padding: '4px 8px',
-                backgroundColor: '#059669',
+                padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+                backgroundColor: theme.colors.success,
                 color: 'white',
                 border: 'none',
-                borderRadius: '3px',
+                borderRadius: theme.borderRadius.sm,
                 cursor: 'pointer',
-                fontSize: '11px'
+                fontSize: theme.typography.fontSize.xs,
+                fontWeight: theme.typography.fontWeight.medium
               }}
             >
               Add
@@ -537,13 +607,14 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
               type="button"
               onClick={() => setShowNewWorkspace(false)}
               style={{
-                padding: '4px 8px',
-                backgroundColor: '#6b7280',
+                padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+                backgroundColor: theme.colors.textMuted,
                 color: 'white',
                 border: 'none',
-                borderRadius: '3px',
+                borderRadius: theme.borderRadius.sm,
                 cursor: 'pointer',
-                fontSize: '11px'
+                fontSize: theme.typography.fontSize.xs,
+                fontWeight: theme.typography.fontWeight.medium
               }}
             >
               Cancel
@@ -556,12 +627,13 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
           onChange={(e) => setWorkspace(e.target.value)}
           style={{
             width: '100%',
-            padding: '6px',
-            backgroundColor: '#374151',
-            border: '1px solid #4b5563',
-            borderRadius: '4px',
-            color: 'white',
-            fontSize: '13px'
+            padding: theme.spacing.sm,
+            backgroundColor: theme.colors.surface,
+            border: `1px solid ${theme.colors.border}`,
+            borderRadius: theme.borderRadius.sm,
+            color: theme.colors.text,
+            fontSize: theme.typography.fontSize.sm,
+            outline: 'none'
           }}
         >
           {workspaces.map(ws => (
@@ -571,7 +643,13 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
       </div>
 
       <div style={{ position: 'relative' }}>
-        <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '3px' }}>
+        <label style={{ 
+          display: 'block', 
+          fontSize: theme.typography.fontSize.sm, 
+          fontWeight: theme.typography.fontWeight.medium, 
+          marginBottom: '3px',
+          color: theme.colors.text
+        }}>
           Tags
         </label>
         <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
@@ -587,12 +665,13 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
             onBlur={() => setTimeout(() => setShowTagSuggestions(false), 150)}
             style={{
               flex: 1,
-              padding: '6px',
-              backgroundColor: '#374151',
-              border: '1px solid #4b5563',
-              borderRadius: '4px',
-              color: 'white',
-              fontSize: '13px'
+              padding: theme.spacing.sm,
+              backgroundColor: theme.colors.surface,
+              border: `1px solid ${theme.colors.border}`,
+              borderRadius: theme.borderRadius.sm,
+              color: theme.colors.text,
+              fontSize: theme.typography.fontSize.sm,
+              outline: 'none'
             }}
             placeholder="Add a tag..."
           />
@@ -600,13 +679,14 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
             type="button"
             onClick={() => addTag()}
             style={{
-              padding: '6px 10px',
-              backgroundColor: '#4b5563',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
+              padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+              backgroundColor: theme.colors.surfaceHover,
+              color: theme.colors.text,
+              border: `1px solid ${theme.colors.border}`,
+              borderRadius: theme.borderRadius.sm,
               cursor: 'pointer',
-              fontSize: '13px'
+              fontSize: theme.typography.fontSize.sm,
+              fontWeight: theme.typography.fontWeight.medium
             }}
           >
             Add
@@ -620,12 +700,13 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
             top: '100%',
             left: 0,
             right: 0,
-            backgroundColor: '#374151',
-            border: '1px solid #4b5563',
-            borderRadius: '4px',
+            backgroundColor: theme.colors.surface,
+            border: `1px solid ${theme.colors.border}`,
+            borderRadius: theme.borderRadius.sm,
             zIndex: 10,
             maxHeight: '120px',
-            overflowY: 'auto'
+            overflowY: 'auto',
+            boxShadow: theme.colors.shadowHover
           }}>
             {getSuggestedTags().map(suggestedTag => (
               <button
@@ -634,16 +715,23 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
                 onClick={() => addTag(suggestedTag)}
                 style={{
                   width: '100%',
-                  padding: '6px 8px',
+                  padding: `${theme.spacing.sm} ${theme.spacing.md}`,
                   backgroundColor: 'transparent',
                   border: 'none',
-                  borderBottom: '1px solid #4b5563',
-                  color: '#94a3b8',
+                  borderBottom: `1px solid ${theme.colors.border}`,
+                  color: theme.colors.textSecondary,
                   cursor: 'pointer',
-                  fontSize: '12px',
-                  textAlign: 'left'
+                  fontSize: theme.typography.fontSize.sm,
+                  textAlign: 'left',
+                  transition: 'background-color 0.15s ease'
                 }}
                 onMouseDown={(e) => e.preventDefault()} // Prevent blur
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.colors.surfaceHover;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
               >
                 {suggestedTag}
               </button>
@@ -656,11 +744,12 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
             <span
               key={tag}
               style={{
-                backgroundColor: '#2563eb',
+                backgroundColor: theme.colors.primary,
                 color: 'white',
-                padding: '2px 6px',
-                borderRadius: '10px',
-                fontSize: '11px',
+                padding: `2px ${theme.spacing.sm}`,
+                borderRadius: theme.borderRadius.full,
+                fontSize: theme.typography.fontSize.xs,
+                fontWeight: theme.typography.fontWeight.medium,
                 display: 'flex',
                 alignItems: 'center',
                 gap: '3px'
@@ -675,8 +764,9 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
                   border: 'none',
                   color: 'white',
                   cursor: 'pointer',
-                  fontSize: '11px',
-                  padding: 0
+                  fontSize: theme.typography.fontSize.xs,
+                  padding: 0,
+                  lineHeight: 1
                 }}
               >
                 ×
@@ -687,7 +777,13 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
       </div>
       
       <div>
-        <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '3px' }}>
+        <label style={{ 
+          display: 'block', 
+          fontSize: theme.typography.fontSize.sm, 
+          fontWeight: theme.typography.fontWeight.medium, 
+          marginBottom: '3px',
+          color: theme.colors.text
+        }}>
           Prompt Text
         </label>
         <textarea
@@ -696,73 +792,84 @@ const PromptForm: React.FC<PromptFormProps> = ({ prompt, onSave, onCancel, works
           rows={3}
           style={{
             width: '100%',
-            padding: '6px',
-            backgroundColor: '#374151',
-            border: '1px solid #4b5563',
-            borderRadius: '4px',
-            color: 'white',
-            fontSize: '13px',
-            resize: 'vertical'
+            padding: theme.spacing.sm,
+            backgroundColor: theme.colors.surface,
+            border: `1px solid ${theme.colors.border}`,
+            borderRadius: theme.borderRadius.sm,
+            color: theme.colors.text,
+            fontSize: theme.typography.fontSize.sm,
+            resize: 'vertical',
+            outline: 'none',
+            fontFamily: theme.typography.fontFamily,
+            lineHeight: '1.5'
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = theme.colors.primary;
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = theme.colors.border;
           }}
           placeholder="Enter your prompt text..."
         />
       </div>
       
-      <div style={{ display: 'flex', gap: '12px', fontSize: '13px' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <div style={{ display: 'flex', gap: '12px', fontSize: theme.typography.fontSize.sm }}>
+        <label style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '6px',
+          color: theme.colors.text,
+          fontWeight: theme.typography.fontWeight.medium
+        }}>
           <input
             type="checkbox"
             checked={includeTimestamp}
             onChange={(e) => setIncludeTimestamp(e.target.checked)}
-            style={{ accentColor: '#2563eb' }}
+            style={{ accentColor: theme.colors.primary }}
           />
           Timestamp
         </label>
         
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <label style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '6px',
+          color: theme.colors.text,
+          fontWeight: theme.typography.fontWeight.medium
+        }}>
           <input
             type="checkbox"
             checked={includeVoiceTag}
             onChange={(e) => setIncludeVoiceTag(e.target.checked)}
-            style={{ accentColor: '#2563eb' }}
+            style={{ accentColor: theme.colors.primary }}
           />
           Voice-friendly
         </label>
       </div>
       
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <button
+      <div style={{ display: 'flex', gap: theme.spacing.sm }}>
+        <Button
           type="submit"
+          variant="filled"
           style={{
             flex: 1,
-            padding: '8px 16px',
-            backgroundColor: '#059669',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '13px'
+            justifyContent: 'center'
           }}
         >
           {prompt ? 'Update' : 'Save'}
-        </button>
+        </Button>
         
-        <button
+        <Button
           type="button"
           onClick={onCancel}
+          variant="outlined"
           style={{
             flex: 1,
-            padding: '8px 16px',
-            backgroundColor: '#6b7280',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '13px'
+            justifyContent: 'center'
           }}
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -830,10 +937,10 @@ const ICONS: Record<IconName, string> = {
   settings: 'M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.44,0.17-0.48,0.41L9.22,5.72C8.63,5.96,8.1,6.29,7.6,6.67L5.21,5.71C4.99,5.62,4.74,5.69,4.62,5.92L2.7,9.24 c-0.11,0.2-0.06,0.47,0.12,0.61L4.85,11c-0.05,0.32-0.07,0.63-0.07,0.94s0.02,0.62,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.38,2.91 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48-0.41l0.38-2.91c0.59-0.24,1.12-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32C19.37,13.35,19.32,13.08,19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z',
   edit: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
   delete: 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
-  pin: 'M17 4v8l-2 2v2h-5.2v6h-1.6v-6H3v-2l-2-2V4h16z', // Filled pin
-  unpin: 'M16 12V4h-1V2H9v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z', // Outline pin
+  pin: 'M9 2v6h4V2h2v6h4l-1 1v4h-4v9h-2v-9H8V9l-1-1h4V2h2z', // Filled pin for pinned items
+  unpin: 'M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z', // Outline pin for unpinned items
   sun: 'M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.64 5.64c.39.39 1.02.39 1.41 0s.39-1.02 0-1.41L5.64 2.81c-.39-.39-1.02-.39-1.41 0s-.39 1.02 0 1.41L5.64 5.64zm12.72 12.72c.39.39 1.02.39 1.41 0s.39-1.02 0-1.41l-1.41-1.41c-.39-.39-1.02-.39-1.41 0s-.39 1.02 0 1.41l1.41 1.41zM4.22 18.36c-.39.39-.39 1.02 0 1.41s1.02.39 1.41 0l1.41-1.41c.39-.39.39-1.02 0-1.41s-1.02-.39-1.41 0l-1.41 1.41zM18.36 4.22c-.39.39-.39 1.02 0 1.41s1.02.39 1.41 0l1.41-1.41c.39-.39.39-1.02 0-1.41s-1.02-.39-1.41 0l-1.41 1.41z',
-  moon: 'M9.5 2.5C5.36 2.5 2 5.86 2 10c0 3.2 1.93 5.93 4.68 7.13c.29.08.62-.02.78-.26s.05-.58-.17-.78C5.38 14.64 4.5 12.45 4.5 10c0-2.76 2.24-5 5-5c2.45 0 4.64.88 6.13 2.72c.2.22.52.27.78.17s.34-.49.26-.78C15.43 4.43 12.7 2.5 9.5 2.5z',
+  moon: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z',
   close: 'M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'
 };
 
@@ -1001,6 +1108,7 @@ const App: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [toasts, setToasts] = useState<Toast[]>([]);
   
   // Phase 2A: Search and filter state with workspaces
   const [searchQuery, setSearchQuery] = useState('');
@@ -1012,6 +1120,21 @@ const App: React.FC = () => {
   // Workspace and tag management
   const [workspaces, setWorkspaces] = useState<string[]>(['General']);
   const [allTags, setAllTags] = useState<string[]>([]);
+
+  // Toast management functions
+  const addToast = (message: string, type: 'success' | 'error' | 'info' = 'info', duration = 3000) => {
+    const id = `toast-${Date.now()}`;
+    const newToast: Toast = { id, message, type, duration };
+    setToasts(prev => [...prev, newToast]);
+    
+    setTimeout(() => {
+      removeToast(id);
+    }, duration);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
 
   // Add new workspace
   const addWorkspace = (workspace: string) => {
@@ -1187,7 +1310,7 @@ const App: React.FC = () => {
     
     // Validate input data
     if (!promptData.title || !promptData.text) {
-      alert('Title and text are required');
+      addToast('❌ Title and text are required', 'error');
       return;
     }
     
@@ -1248,12 +1371,15 @@ const App: React.FC = () => {
       setShowForm(false);
       setEditingPrompt(null);
       
+      // Show success message
+      addToast(editingPrompt ? '✓ Prompt updated!' : '✓ Prompt saved!', 'success');
+      
       console.log('Save operation completed successfully');
       
     } catch (error) {
       console.error('Failed to save prompt:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      alert(`Failed to save prompt: ${errorMessage}. Please try again.`);
+      addToast(`❌ Failed to save: ${errorMessage}`, 'error');
     }
   };
 
@@ -1364,8 +1490,9 @@ const App: React.FC = () => {
             
             if (response?.success) {
               console.log('Successfully pasted via content script');
+              addToast('✓ Prompt pasted successfully!', 'success');
               // Close popup after successful paste
-              window.close();
+              setTimeout(() => window.close(), 800);
               return;
             } else {
               console.log('Content script paste failed, falling back to clipboard');
@@ -1384,7 +1511,7 @@ const App: React.FC = () => {
       try {
         await navigator.clipboard.writeText(transformedText);
         console.log('Successfully copied to clipboard');
-        alert('Prompt copied to clipboard! Paste it manually with Ctrl+V');
+        addToast('📋 Prompt copied to clipboard!', 'success');
       } catch (clipboardError) {
         console.error('Clipboard API failed:', clipboardError);
         
@@ -1399,7 +1526,7 @@ const App: React.FC = () => {
           
           if (success) {
             console.log('Successfully copied using execCommand');
-            alert('Prompt copied to clipboard! Paste it manually with Ctrl+V');
+            addToast('📋 Prompt copied to clipboard!', 'success');
           } else {
             throw new Error('execCommand copy failed');
           }
@@ -1411,7 +1538,7 @@ const App: React.FC = () => {
       
     } catch (error) {
       console.error('Failed to paste/copy prompt:', error);
-      alert('Failed to copy prompt. Please try copying the text manually.');
+      addToast('❌ Failed to copy prompt', 'error');
     }
   };
 
@@ -1515,6 +1642,18 @@ const App: React.FC = () => {
         }
         ::-webkit-scrollbar-thumb:hover {
           background: ${theme.colors.borderHover};
+        }
+        
+        /* Toast animations */
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
         }
       `}</style>
       <header 
@@ -1662,13 +1801,14 @@ const App: React.FC = () => {
                   onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                   style={{
                     padding: '2px 4px',
-                    backgroundColor: '#4b5563',
-                    border: 'none',
-                    borderRadius: '2px',
-                    color: 'white',
+                    backgroundColor: theme.colors.surfaceHover,
+                    border: `1px solid ${theme.colors.border}`,
+                    borderRadius: theme.borderRadius.sm,
+                    color: theme.colors.text,
                     cursor: 'pointer',
-                    fontSize: '10px',
-                    minWidth: '20px'
+                    fontSize: theme.typography.fontSize.xs,
+                    minWidth: '20px',
+                    fontWeight: theme.typography.fontWeight.medium
                   }}
                   title={`Sort ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
                 >
@@ -1679,12 +1819,12 @@ const App: React.FC = () => {
                   onClick={() => setShowPinnedOnly(!showPinnedOnly)}
                   style={{
                     padding: '2px 4px',
-                    backgroundColor: showPinnedOnly ? '#2563eb' : '#4b5563',
-                    border: 'none',
-                    borderRadius: '2px',
-                    color: 'white',
+                    backgroundColor: showPinnedOnly ? theme.colors.primary : theme.colors.surfaceHover,
+                    border: `1px solid ${showPinnedOnly ? theme.colors.primary : theme.colors.border}`,
+                    borderRadius: theme.borderRadius.sm,
+                    color: showPinnedOnly ? 'white' : theme.colors.text,
                     cursor: 'pointer',
-                    fontSize: '10px',
+                    fontSize: theme.typography.fontSize.xs,
                     minWidth: '20px'
                   }}
                   title="Show pinned only"
@@ -1733,12 +1873,12 @@ const App: React.FC = () => {
                           borderRadius: theme.borderRadius.md,
                           border: `1px solid ${theme.colors.border}`,
                           boxShadow: theme.colors.shadow,
-                          transition: 'all 0.15s ease',
+                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                           cursor: 'pointer',
                           position: 'relative' as const,
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
                           e.currentTarget.style.boxShadow = theme.colors.shadowHover;
                           e.currentTarget.style.borderColor = theme.colors.borderHover;
                         }}
@@ -1752,7 +1892,7 @@ const App: React.FC = () => {
                         <div style={{ marginBottom: theme.spacing.md }}>
                           <h3
                             style={{
-                              fontWeight: theme.typography.fontWeight.semibold,
+                              fontWeight: theme.typography.fontWeight.bold,
                               color: theme.colors.text,
                               margin: `0 0 ${theme.spacing.xs} 0`,
                               fontSize: theme.typography.fontSize.base,
@@ -1762,7 +1902,7 @@ const App: React.FC = () => {
                               gap: theme.spacing.sm,
                             }}
                           >
-                            {prompt.isPinned && <Icon name="pin" size={14} color={theme.colors.accent} />}
+                            {prompt.isPinned && <span style={{ color: theme.colors.accent, fontSize: '14px', marginRight: '2px' }}>📌</span>}
                             {prompt.title}
                           </h3>
 
@@ -1771,11 +1911,12 @@ const App: React.FC = () => {
                               color: theme.colors.textSecondary,
                               fontSize: theme.typography.fontSize.sm,
                               margin: 0,
-                              lineHeight: '1.4',
+                              lineHeight: '1.5',
                               overflow: 'hidden',
                               display: '-webkit-box',
                               WebkitLineClamp: 2,
                               WebkitBoxOrient: 'vertical',
+                              fontWeight: theme.typography.fontWeight.normal,
                             }}
                           >
                             {prompt.text}
@@ -1856,14 +1997,24 @@ const App: React.FC = () => {
                             variant="text"
                             size="sm"
                             style={{
-                              color: prompt.isPinned ? theme.colors.accent : theme.colors.textSecondary,
+                              color: theme.colors.textMuted,
                               backgroundColor: 'transparent',
                               minWidth: 'auto',
                               padding: theme.spacing.xs,
+                              transition: 'all 0.15s ease',
+                              fontSize: '16px'
                             }}
-                            title={prompt.isPinned ? 'Unpin' : 'Pin'}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.color = theme.colors.accent;
+                              (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.color = theme.colors.textMuted;
+                              (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
+                            }}
+                            title={prompt.isPinned ? 'Unpin prompt' : 'Pin prompt'}
                           >
-                            <Icon name={prompt.isPinned ? 'pin' : 'unpin'} size={16} />
+                            {prompt.isPinned ? '📌' : '📍'}
                           </Button>
                           <Button
                             onClick={(e) => { e.stopPropagation(); editPrompt(prompt); }}
@@ -1873,11 +2024,18 @@ const App: React.FC = () => {
                               backgroundColor: 'transparent',
                               minWidth: 'auto',
                               padding: theme.spacing.xs,
-                              color: theme.colors.textSecondary,
+                              color: theme.colors.textMuted,
+                              fontSize: '16px'
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.color = theme.colors.primary;
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.color = theme.colors.textMuted;
                             }}
                             title="Edit"
                           >
-                            <Icon name="edit" size={16} />
+                            ✏️
                           </Button>
                           <Button
                             onClick={(e) => { e.stopPropagation(); deletePrompt(prompt.id); }}
@@ -1887,17 +2045,18 @@ const App: React.FC = () => {
                               backgroundColor: 'transparent',
                               minWidth: 'auto',
                               padding: theme.spacing.xs,
-                              color: theme.colors.textSecondary,
+                              color: theme.colors.textMuted,
+                              fontSize: '16px'
                             }}
                             onMouseEnter={(e) => {
                               (e.currentTarget as HTMLButtonElement).style.color = theme.colors.error;
                             }}
                             onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLButtonElement).style.color = theme.colors.textSecondary;
+                              (e.currentTarget as HTMLButtonElement).style.color = theme.colors.textMuted;
                             }}
                             title="Delete"
                           >
-                            <Icon name="delete" size={16} />
+                            🗑️
                           </Button>
                         </div>
                       </div>
@@ -1944,6 +2103,9 @@ const App: React.FC = () => {
           </>
         )}
       </main>
+      
+      {/* Toast notifications */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 };
