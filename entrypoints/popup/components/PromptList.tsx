@@ -1,60 +1,24 @@
-import React, { useMemo } from 'react';
-import { usePromptStore } from '~/lib/promptStore';
+import React from 'react';
+import { usePromptStore } from '../../../lib/promptStore';
 import { PromptItem } from './PromptItem';
-import type { Prompt } from '~/types/prompt';
+import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert";
+import { Loader2, Info, Search } from 'lucide-react';
+import { SearchControls } from './SearchControls';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export const PromptList: React.FC = () => {
   const { 
-    prompts, 
+    filteredPrompts,
     isLoading, 
     error,
-    searchQuery,
-    selectedWorkspace,
-    showPinnedOnly
   } = usePromptStore();
-
-  // Filter and sort prompts
-  const filteredPrompts = useMemo(() => {
-    let filtered = prompts;
-
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(prompt => 
-        prompt.title.toLowerCase().includes(query) ||
-        prompt.text.toLowerCase().includes(query) ||
-        prompt.tags.some(tag => tag.toLowerCase().includes(query)) ||
-        prompt.workspace.toLowerCase().includes(query)
-      );
-    }
-
-    // Apply workspace filter
-    if (selectedWorkspace !== 'All') {
-      filtered = filtered.filter(prompt => prompt.workspace === selectedWorkspace);
-    }
-
-    // Apply pinned filter
-    if (showPinnedOnly) {
-      filtered = filtered.filter(prompt => prompt.isPinned);
-    }
-
-    // Sort: pinned first, then by creation date (newest first)
-    return filtered.sort((a, b) => {
-      // Pinned items first
-      if (a.isPinned && !b.isPinned) return -1;
-      if (!a.isPinned && b.isPinned) return 1;
-      
-      // Then by creation date (newest first)
-      return new Date(b.created).getTime() - new Date(a.created).getTime();
-    });
-  }, [prompts, searchQuery, selectedWorkspace, showPinnedOnly]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-48">
-        <div className="flex items-center gap-3 text-gray-500">
-          <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
-          <span>Loading prompts...</span>
+      <div className="flex items-center justify-center h-full">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading prompts...</p>
         </div>
       </div>
     );
@@ -62,62 +26,53 @@ export const PromptList: React.FC = () => {
 
   if (error) {
     return (
-      <div className="p-8 text-center">
-        <div className="text-red-500 text-lg mb-2">⚠️</div>
-        <p className="text-red-600 font-medium mb-2">Error loading prompts</p>
-        <p className="text-sm text-gray-500">{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+      <div className="p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
         >
-          Reload Extension
-        </button>
-      </div>
-    );
-  }
-
-  if (filteredPrompts.length === 0) {
-    const hasFilters = searchQuery || selectedWorkspace !== 'All' || showPinnedOnly;
-    
-    return (
-      <div className="p-8 text-center">
-        <div className="text-gray-400 text-4xl mb-4">
-          {hasFilters ? '🔍' : '💬'}
-        </div>
-        <h3 className="text-lg font-medium text-gray-800 mb-2">
-          {hasFilters ? 'No prompts match your filters' : 'No prompts yet'}
-        </h3>
-        <p className="text-sm text-gray-500 mb-4">
-          {hasFilters 
-            ? 'Try adjusting your search or filters' 
-            : 'Create your first prompt to get started'}
-        </p>
-        {!hasFilters && (
-          <button
-            onClick={() => usePromptStore.getState().setActivePromptId(null)}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            Create First Prompt
-          </button>
-        )}
+          <Alert variant="destructive">
+            <Info className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 space-y-3">
-      {/* Results count */}
-      <div className="text-sm text-gray-500 mb-3">
-        {filteredPrompts.length === prompts.length 
-          ? `${prompts.length} prompt${prompts.length !== 1 ? 's' : ''}`
-          : `${filteredPrompts.length} of ${prompts.length} prompt${prompts.length !== 1 ? 's' : ''}`
-        }
+    <div className="flex flex-col h-full">
+      <SearchControls />
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <AnimatePresence>
+          {filteredPrompts.length > 0 ? (
+            filteredPrompts.map((prompt: any, index: number) => (
+              <motion.div
+                key={prompt.id}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0, transition: { delay: index * 0.05 } }}
+                exit={{ opacity: 0, scale: 0.9 }}
+              >
+                <PromptItem prompt={prompt} />
+              </motion.div>
+            ))
+          ) : (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8"
+            >
+              <Search className="h-12 w-12 mb-4 text-gray-400" />
+              <h3 className="text-lg font-semibold text-foreground">No Prompts Found</h3>
+              <p className="text-sm">
+                Try adjusting your search or filter, or create a new prompt.
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-      
-      {/* Prompt items */}
-      {filteredPrompts.map((prompt) => (
-        <PromptItem key={prompt.id} prompt={prompt} />
-      ))}
     </div>
   );
 };

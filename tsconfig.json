@@ -1,6 +1,15 @@
 {
   "extends": "./.wxt/tsconfig.json",
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "~/*": [
+        "./entrypoints/popup/*"
+      ],
+      "@/*": [
+        "./entrypoints/popup/*"
+      ]
+    },
     "allowImportingTsExtensions": true,
     "jsx": "react-jsx"
   }

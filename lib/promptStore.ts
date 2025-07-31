@@ -1,20 +1,21 @@
 import { create } from 'zustand';
-import type { Prompt } from '~/types/prompt';
-import { promptStorage } from '~/lib/storage';
-import { logger, logPromptAction } from '~/lib/logger';
+import type { Prompt } from '../types/prompt';
+import { promptStorage } from './storage';
+import { logger, logPromptAction } from './logger';
 
 type AddPrompt = Omit<Prompt, 'id' | 'created'>;
+type SortByType = 'lastUsed' | 'title' | 'usageCount';
 
 interface PromptState {
   prompts: Prompt[];
-  activePromptId: string | null;
   isLoading: boolean;
   error: string | null;
   
   // Search and filter state
-  searchQuery: string;
-  selectedWorkspace: string;
-  showPinnedOnly: boolean;
+  searchTerm: string;
+  sortBy: SortByType;
+  filterTag: string;
+  showPinned: boolean;
   
   // View state
   currentView: 'list' | 'form' | 'settings';
@@ -23,19 +24,20 @@ interface PromptState {
   // Derived data
   workspaces: string[];
   allTags: string[];
+  filteredPrompts: Prompt[];
 
   // Actions
   loadPrompts: () => Promise<void>;
   addPrompt: (prompt: AddPrompt) => Promise<void>;
   updatePrompt: (prompt: Prompt) => Promise<void>;
   deletePrompt: (id: string) => Promise<void>;
-  togglePin: (id: string) => Promise<void>;
-  setActivePromptId: (id: string | null) => void;
+  togglePinPrompt: (id: string) => Promise<void>;
   
   // Search and filter actions
-  setSearchQuery: (query: string) => void;
-  setSelectedWorkspace: (workspace: string) => void;
-  setShowPinnedOnly: (show: boolean) => void;
+  setSearchTerm: (term: string) => void;
+  setSortBy: (sortBy: SortByType) => void;
+  setFilterTag: (tag: string) => void;
+  setShowPinned: (show: boolean) => void;
   resetFilters: () => void;
   
   // View actions
@@ -43,24 +45,83 @@ interface PromptState {
   setEditingPrompt: (prompt: Prompt | null) => void;
 }
 
+// Helper to update derived state and apply filters/sorting
+const getFilteredAndSortedPrompts = (
+  prompts: Prompt[],
+  searchTerm: string,
+  sortBy: SortByType,
+  filterTag: string,
+  showPinned: boolean
+): Prompt[] => {
+  let result = prompts;
+
+  // Filtering
+  if (showPinned) {
+    result = result.filter(p => p.isPinned);
+  }
+  if (filterTag !== 'all') {
+    result = result.filter(p => p.tags?.includes(filterTag));
+  }
+  if (searchTerm) {
+    const lowercasedTerm = searchTerm.toLowerCase();
+    result = result.filter(p =>
+      p.title.toLowerCase().includes(lowercasedTerm) ||
+      p.text.toLowerCase().includes(lowercasedTerm) ||
+      p.tags?.some((t: string) => t.toLowerCase().includes(lowercasedTerm))
+    );
+  }
+
+  // Sorting
+  result.sort((a, b) => {
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+
+    switch (sortBy) {
+      case 'title':
+        return a.title.localeCompare(b.title);
+      case 'usageCount':
+        return b.usageCount - a.usageCount;
+      case 'lastUsed':
+      default:
+        // Ensure lastUsed is treated as a number for sorting
+        const dateA = a.lastUsed ? new Date(a.lastUsed).getTime() : 0;
+        const dateB = b.lastUsed ? new Date(b.lastUsed).getTime() : 0;
+        return dateB - dateA;
+    }
+  });
+
+  return result;
+};
+
+const updateAndFilterState = (state: PromptState) => {
+  const workspaces = Array.from(new Set(['General', ...state.prompts.map(p => p.workspace).filter(Boolean)]));
+  const allTags = Array.from(new Set(state.prompts.flatMap(p => p.tags || [])));
+  const filteredPrompts = getFilteredAndSortedPrompts(
+    state.prompts,
+    state.searchTerm,
+    state.sortBy,
+    state.filterTag,
+    state.showPinned
+  );
+  return { ...state, workspaces, allTags, filteredPrompts };
+};
+
 export const usePromptStore = create<PromptState>((set, get) => ({
   prompts: [],
-  activePromptId: null,
   isLoading: true,
   error: null,
   
-  // Search and filter state
-  searchQuery: '',
-  selectedWorkspace: 'All',
-  showPinnedOnly: false,
+  searchTerm: '',
+  sortBy: 'lastUsed',
+  filterTag: 'all',
+  showPinned: false,
   
-  // View state
   currentView: 'list',
   editingPrompt: null,
   
-  // Derived data
   workspaces: ['General'],
   allTags: [],
+  filteredPrompts: [],
 
   loadPrompts: async () => {
     try {
@@ -69,11 +130,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       
       const prompts = await promptStorage.getAll();
       
-      // Extract workspaces and tags
-      const workspaces = Array.from(new Set(['General', ...prompts.map(p => p.workspace).filter(Boolean)]));
-      const allTags = Array.from(new Set(prompts.flatMap(p => p.tags || [])));
-      
-      set({ prompts, workspaces, allTags, isLoading: false });
+      set(state => updateAndFilterState({ ...state, prompts, isLoading: false }));
       logPromptAction('Prompts loaded successfully', undefined, { count: prompts.length });
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Failed to load prompts';
@@ -87,17 +144,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       logPromptAction('Adding new prompt', undefined, { title: prompt.title });
       const newPrompt = await promptStorage.add(prompt);
       
-      set((state) => {
-        const updatedPrompts = [...state.prompts, newPrompt];
-        const workspaces = Array.from(new Set(['General', ...updatedPrompts.map(p => p.workspace).filter(Boolean)]));
-        const allTags = Array.from(new Set(updatedPrompts.flatMap(p => p.tags || [])));
-        
-        return { 
-          prompts: updatedPrompts,
-          workspaces,
-          allTags
-        };
-      });
+      set(state => updateAndFilterState({ ...state, prompts: [...state.prompts, newPrompt] }));
       
       logPromptAction('Prompt added successfully', newPrompt.id);
     } catch (err) {
@@ -112,16 +159,9 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       logPromptAction('Updating prompt', prompt.id, { title: prompt.title });
       const updatedPrompt = await promptStorage.update(prompt);
       
-      set((state) => {
+      set(state => {
         const updatedPrompts = state.prompts.map((p) => (p.id === updatedPrompt.id ? updatedPrompt : p));
-        const workspaces = Array.from(new Set(['General', ...updatedPrompts.map(p => p.workspace).filter(Boolean)]));
-        const allTags = Array.from(new Set(updatedPrompts.flatMap(p => p.tags || [])));
-        
-        return { 
-          prompts: updatedPrompts,
-          workspaces,
-          allTags
-        };
+        return updateAndFilterState({ ...state, prompts: updatedPrompts });
       });
       
       logPromptAction('Prompt updated successfully', prompt.id);
@@ -137,16 +177,9 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       logPromptAction('Deleting prompt', id);
       await promptStorage.delete(id);
       
-      set((state) => {
+      set(state => {
         const updatedPrompts = state.prompts.filter((p) => p.id !== id);
-        const workspaces = Array.from(new Set(['General', ...updatedPrompts.map(p => p.workspace).filter(Boolean)]));
-        const allTags = Array.from(new Set(updatedPrompts.flatMap(p => p.tags || [])));
-        
-        return { 
-          prompts: updatedPrompts,
-          workspaces,
-          allTags
-        };
+        return updateAndFilterState({ ...state, prompts: updatedPrompts });
       });
       
       logPromptAction('Prompt deleted successfully', id);
@@ -157,7 +190,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
     }
   },
 
-  togglePin: async (id) => {
+  togglePinPrompt: async (id) => {
     try {
       const state = get();
       const prompt = state.prompts.find(p => p.id === id);
@@ -171,23 +204,20 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       logger.error('Failed to toggle pin:', err);
     }
   },
-
-  setActivePromptId: (id) => {
-    set({ activePromptId: id });
-    logPromptAction('Set active prompt', id || undefined);
-  },
   
-  // Search and filter actions
-  setSearchQuery: (query) => set({ searchQuery: query }),
-  setSelectedWorkspace: (workspace) => set({ selectedWorkspace: workspace }),
-  setShowPinnedOnly: (show) => set({ showPinnedOnly: show }),
-  resetFilters: () => set({ 
-    searchQuery: '', 
-    selectedWorkspace: 'All', 
-    showPinnedOnly: false 
-  }),
+  setSearchTerm: (term) => set(state => updateAndFilterState({ ...state, searchTerm: term })),
+  setSortBy: (sortBy) => set(state => updateAndFilterState({ ...state, sortBy })),
+  setFilterTag: (tag) => set(state => updateAndFilterState({ ...state, filterTag: tag })),
+  setShowPinned: (show) => set(state => updateAndFilterState({ ...state, showPinned: show })),
   
-  // View actions
   setCurrentView: (view) => set({ currentView: view }),
   setEditingPrompt: (prompt) => set({ editingPrompt: prompt }),
+  
+  resetFilters: () => set(state => updateAndFilterState({ 
+    ...state, 
+    searchTerm: '', 
+    filterTag: 'all', 
+    showPinned: false 
+  })),
 }));
+

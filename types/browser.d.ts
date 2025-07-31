@@ -21,6 +21,12 @@ declare global {
     runtime: {
       sendMessage: (message: any) => Promise<any>;
       id: string;
+      onInstalled: {
+        addListener: (callback: (details: { reason: string }) => void) => void;
+      };
+      onMessage: {
+        addListener: (callback: (message: any, sender: any, sendResponse: (response: any) => void) => boolean | void) => void;
+      };
     };
   };
 }

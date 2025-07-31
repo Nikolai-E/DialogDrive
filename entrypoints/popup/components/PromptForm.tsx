@@ -1,17 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { usePromptStore } from '~/lib/promptStore';
-import { showToast } from './ToastProvider';
-import type { Prompt } from '~/types/prompt';
+import React, { useState, useEffect, useRef } from 'react';
+import { usePromptStore } from '../../../lib/promptStore';
+import { toast } from "sonner";
+import type { Prompt } from '../../../types/prompt';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Label } from '../../../components/ui/label';
+import { Textarea } from '../../../components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select";
+import { Switch } from '../../../components/ui/switch';
+import { Badge } from '../../../components/ui/badge';
+import { ArrowLeft, Loader2, X, Clock, Mic, Hash } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export const PromptForm: React.FC = () => {
   const { 
-    activePromptId, 
-    prompts, 
+    editingPrompt,
     workspaces,
     allTags,
     addPrompt, 
     updatePrompt, 
-    setActivePromptId 
+    setCurrentView,
+    setEditingPrompt,
   } = usePromptStore();
   
   const [title, setTitle] = useState('');
@@ -23,38 +38,34 @@ export const PromptForm: React.FC = () => {
   const [includeVoiceTag, setIncludeVoiceTag] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const activePrompt = prompts.find((p) => p.id === activePromptId);
+  const tagInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (activePrompt) {
-      setTitle(activePrompt.title);
-      setText(activePrompt.text);
-      setWorkspace(activePrompt.workspace);
-      setTags(activePrompt.tags);
-      setIncludeTimestamp(activePrompt.includeTimestamp);
-      setIncludeVoiceTag(activePrompt.includeVoiceTag);
+    if (editingPrompt) {
+      setTitle(editingPrompt.title);
+      setText(editingPrompt.text);
+      setWorkspace(editingPrompt.workspace);
+      setTags(editingPrompt.tags || []);
+      setIncludeTimestamp(editingPrompt.includeTimestamp);
+      setIncludeVoiceTag(editingPrompt.includeVoiceTag);
     } else {
-      // Reset form when there's no active prompt
       setTitle('');
       setText('');
       setWorkspace('General');
       setTags([]);
-      setTagInput('');
       setIncludeTimestamp(false);
       setIncludeVoiceTag(false);
     }
-  }, [activePrompt]);
+  }, [editingPrompt]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!title.trim() || !text.trim()) {
-      showToast.error('Title and prompt text are required');
+      toast.error('Title and prompt text are required.');
       return;
     }
 
     setIsSubmitting(true);
-
     try {
       const promptData = {
         title: title.trim(),
@@ -63,222 +74,256 @@ export const PromptForm: React.FC = () => {
         tags,
         includeTimestamp,
         includeVoiceTag,
-        usageCount: activePrompt?.usageCount || 0,
-        isPinned: activePrompt?.isPinned || false,
+        usageCount: editingPrompt?.usageCount || 0,
+        isPinned: editingPrompt?.isPinned || false,
+        lastUsed: editingPrompt?.lastUsed,
       };
 
-      if (activePrompt) {
-        await updatePrompt({ 
-          ...activePrompt, 
-          ...promptData 
-        });
-        showToast.success('Prompt updated successfully!');
+      if (editingPrompt) {
+        await updatePrompt({ ...editingPrompt, ...promptData });
+        toast.success('Prompt updated successfully!');
       } else {
-        await addPrompt(promptData);
-        showToast.success('Prompt created successfully!');
+        await addPrompt(promptData as Omit<Prompt, 'id' | 'created'>);
+        toast.success('Prompt created successfully!');
       }
       
-      // Reset form and close
-      setActivePromptId(null);
+      handleClose();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      showToast.error(`Failed to save prompt: ${errorMessage}`);
+      toast.error(`Failed to save prompt: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleCancel = () => {
-    setActivePromptId(null);
+  const handleClose = () => {
+    setEditingPrompt(null);
+    setCurrentView('list');
   };
 
   const addTag = (tagToAdd?: string) => {
-    const newTag = (tagToAdd || tagInput).trim();
+    const newTag = (tagToAdd || tagInput).trim().toLowerCase();
     if (newTag && !tags.includes(newTag)) {
       setTags([...tags, newTag]);
-      setTagInput('');
     }
+    setTagInput('');
   };
 
   const removeTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
-  const handleTagKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+  const handleTagKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       addTag();
-    } else if (e.key === 'Escape') {
-      setTagInput('');
     }
   };
 
-  // Get suggested tags based on input
-  const suggestedTags = tagInput.trim() 
-    ? allTags.filter(tag => 
-        tag.toLowerCase().includes(tagInput.toLowerCase()) && 
-        !tags.includes(tag)
+  const suggestedTags = tagInput.trim()
+    ? allTags.filter((tag: string) => 
+        tag.toLowerCase().includes(tagInput.toLowerCase()) && !tags.includes(tag)
       ).slice(0, 5)
     : [];
 
   return (
-    <div className="flex flex-col h-full bg-white border-t border-gray-200">
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-800">
-          {activePrompt ? 'Edit Prompt' : 'Create New Prompt'}
+    <div className="flex flex-col h-full">
+      <motion.div 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="flex items-center p-3 border-b bg-background/80 backdrop-blur-sm"
+      >
+        <Button variant="ghost" size="icon" className="h-8 w-8 mr-2" onClick={handleClose}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <h2 className="text-lg font-semibold">
+          {editingPrompt ? 'Edit Prompt' : 'Create New Prompt'}
         </h2>
-      </div>
+      </motion.div>
       
-      <form onSubmit={handleSubmit} className="flex flex-col flex-1 p-4 space-y-4">
-        {/* Title */}
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-            Title
-          </label>
-          <input
-            type="text"
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g., 'Summarize Article'"
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-        
-        {/* Prompt Text */}
-        <div className="flex-1">
-          <label htmlFor="text" className="block text-sm font-medium text-gray-700 mb-1">
-            Prompt Text
-          </label>
-          <textarea
-            id="text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Enter your prompt here..."
-            rows={4}
-            required
-            className="w-full h-full min-h-[100px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-          />
-        </div>
-
-        {/* Workspace */}
-        <div>
-          <label htmlFor="workspace" className="block text-sm font-medium text-gray-700 mb-1">
-            Workspace
-          </label>
-          <select
-            id="workspace"
-            value={workspace}
-            onChange={(e) => setWorkspace(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      <motion.form 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        onSubmit={handleSubmit} 
+        className="flex flex-col flex-1 overflow-hidden"
+      >
+        <div className="flex-1 p-4 space-y-4 overflow-y-auto scrollbar-thin">
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+            className="space-y-2"
           >
-            {workspaces.map(ws => (
-              <option key={ws} value={ws}>{ws}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Tags */}
-        <div>
-          <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
-            Tags
-          </label>
-          <div className="space-y-2">
-            <input
-              type="text"
-              id="tags"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyPress={handleTagKeyPress}
-              placeholder="Add tags..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            <Label htmlFor="title" className="text-sm font-medium">Title</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
+              placeholder="e.g., 'Summarize Article'"
+              required
+              disabled={isSubmitting}
+              className="shadow-sm"
             />
-            
-            {/* Tag suggestions */}
-            {suggestedTags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {suggestedTags.map(tag => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => addTag(tag)}
-                    className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            )}
-            
-            {/* Current tags */}
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {tags.map(tag => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded"
-                  >
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => removeTag(tag)}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      ✕
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {/* Checkboxes */}
-        <div className="flex gap-6 text-sm">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={includeTimestamp}
-              onChange={(e) => setIncludeTimestamp(e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-            />
-            Include Timestamp
-          </label>
+          </motion.div>
           
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={includeVoiceTag}
-              onChange={(e) => setIncludeVoiceTag(e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.25 }}
+            className="space-y-2"
+          >
+            <Label htmlFor="text" className="text-sm font-medium">Prompt Text</Label>
+            <Textarea
+              id="text"
+              value={text}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
+              placeholder="Enter your prompt here..."
+              required
+              className="min-h-[120px] resize-y shadow-sm"
+              disabled={isSubmitting}
             />
-            Voice-friendly
-          </label>
+          </motion.div>
+
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+            className="space-y-2"
+          >
+            <Label htmlFor="workspace" className="text-sm font-medium">Workspace</Label>
+            <Select value={workspace} onValueChange={setWorkspace} disabled={isSubmitting}>
+              <SelectTrigger id="workspace" className="shadow-sm">
+                <SelectValue placeholder="Select a workspace" />
+              </SelectTrigger>
+              <SelectContent>
+                {workspaces.map((ws: string) => (
+                  <SelectItem key={ws} value={ws}>{ws}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </motion.div>
+
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.35 }}
+            className="space-y-2"
+          >
+            <Label htmlFor="tags" className="text-sm font-medium flex items-center gap-2">
+              <Hash className="h-4 w-4" />
+              Tags
+            </Label>
+            <div className="relative">
+              <Input
+                id="tags"
+                ref={tagInputRef}
+                value={tagInput}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                placeholder="Add tags (press Enter to add)"
+                disabled={isSubmitting}
+                className="shadow-sm"
+              />
+            </div>
+            {suggestedTags.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-wrap gap-1 mt-1"
+              >
+                {suggestedTags.map((tag: string) => (
+                  <Button 
+                    key={tag} 
+                    type="button" 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => addTag(tag)} 
+                    className="h-6 text-xs hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    {tag}
+                  </Button>
+                ))}
+              </motion.div>
+            )}
+            {tags.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-wrap gap-1 mt-2"
+              >
+                {tags.map((tag, index) => (
+                  <motion.div
+                    key={tag}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="rounded-full hover:bg-muted-foreground/20 transition-colors"
+                        disabled={isSubmitting}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </motion.div>
+          
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.4 }}
+            className="space-y-3 pt-2"
+          >
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+              <Label htmlFor="timestamp-switch" className="flex items-center gap-2 cursor-pointer">
+                <Clock className="h-4 w-4 text-blue-500" />
+                <span className="text-sm font-medium">Include Timestamp</span>
+              </Label>
+              <Switch
+                id="timestamp-switch"
+                checked={includeTimestamp}
+                onCheckedChange={setIncludeTimestamp}
+                disabled={isSubmitting}
+              />
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+              <Label htmlFor="voice-switch" className="flex items-center gap-2 cursor-pointer">
+                <Mic className="h-4 w-4 text-green-500" />
+                <span className="text-sm font-medium">Voice-friendly Tone</span>
+              </Label>
+              <Switch
+                id="voice-switch"
+                checked={includeVoiceTag}
+                onCheckedChange={setIncludeVoiceTag}
+                disabled={isSubmitting}
+              />
+            </div>
+          </motion.div>
         </div>
         
-        {/* Form Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-          <button 
-            type="button" 
-            onClick={handleCancel}
-            disabled={isSubmitting}
-            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
-          >
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.5 }}
+          className="flex justify-end gap-3 p-3 border-t bg-background/80 backdrop-blur-sm"
+        >
+          <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
             Cancel
-          </button>
-          <button 
-            type="submit"
-            disabled={isSubmitting}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-2"
-          >
-            {isSubmitting && (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            )}
-            {activePrompt ? 'Update Prompt' : 'Create Prompt'}
-          </button>
-        </div>
-      </form>
+          </Button>
+          <Button type="submit" disabled={isSubmitting} className="min-w-[120px]">
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {editingPrompt ? 'Update Prompt' : 'Create Prompt'}
+          </Button>
+        </motion.div>
+      </motion.form>
     </div>
   );
 };

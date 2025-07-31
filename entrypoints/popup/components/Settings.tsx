@@ -1,87 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { showToast } from './ToastProvider';
-import { logger } from '~/lib/logger';
+import { usePromptStore } from '../../../lib/promptStore';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Label } from '../../../components/ui/label';
+import { Badge } from '../../../components/ui/badge';
+import { Separator } from '../../../components/ui/separator';
+import { toast } from "sonner";
+import { ArrowLeft, Loader2, Key, Shield, Info, ExternalLink, Zap } from 'lucide-react';
+import { logger } from '../../../lib/logger';
+import { motion } from 'framer-motion';
 
-interface SettingsProps {
-  onClose: () => void;
-}
-
-export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
+export const Settings: React.FC = () => {
+  const { setCurrentView, prompts } = usePromptStore();
   const [apiKey, setApiKey] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    const loadApiKey = async () => {
+      try {
+        const result = await browser.storage.sync.get('openai-api-key');
+        setApiKey(result['openai-api-key'] || '');
+      } catch (error) {
+        logger.error('Failed to load API key:', error);
+        toast.error('Failed to load API key');
+      } finally {
+        setIsLoading(false);
+      }
+    };
     loadApiKey();
   }, []);
 
-  const loadApiKey = async () => {
-    try {
-      if (typeof browser !== 'undefined' && browser.storage && browser.storage.sync) {
-        const result = await browser.storage.sync.get('openai-api-key');
-        setApiKey(result['openai-api-key'] || '');
-      } else {
-        // Fallback to localStorage
-        const key = localStorage.getItem('openai-api-key') || '';
-        setApiKey(key);
-      }
-    } catch (error) {
-      logger.error('Failed to load API key:', error);
-      // Try localStorage fallback
-      try {
-        const key = localStorage.getItem('openai-api-key') || '';
-        setApiKey(key);
-      } catch (localError) {
-        logger.error('localStorage fallback failed:', localError);
-        showToast.error('Failed to load API key');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const saveApiKey = async () => {
-    if (!apiKey.trim()) {
-      showToast.error('Please enter a valid API key');
-      return;
-    }
-
-    if (!apiKey.startsWith('sk-')) {
-      showToast.error('OpenAI API keys should start with "sk-"');
+    if (!apiKey.trim() || !apiKey.startsWith('sk-')) {
+      toast.error('Please enter a valid OpenAI API key starting with "sk-".');
       return;
     }
 
     setIsSaving(true);
-
     try {
-      let success = false;
-      
-      // Try browser storage first
-      if (typeof browser !== 'undefined' && browser.storage && browser.storage.sync) {
-        try {
-          await browser.storage.sync.set({ 'openai-api-key': apiKey });
-          success = true;
-          logger.log('API key saved to browser storage');
-        } catch (browserError) {
-          logger.error('Browser sync storage failed:', browserError);
-        }
-      }
-      
-      // Fallback to localStorage
-      if (!success) {
-        localStorage.setItem('openai-api-key', apiKey);
-        success = true;
-        logger.log('API key saved to localStorage');
-      }
-      
-      if (success) {
-        showToast.success('API key saved successfully!');
-      } else {
-        throw new Error('All storage methods failed');
-      }
+      await browser.storage.sync.set({ 'openai-api-key': apiKey });
+      toast.success('API key saved successfully!');
     } catch (error) {
       logger.error('Failed to save API key:', error);
-      showToast.error('Failed to save API key. Please try again.');
+      toast.error('Failed to save API key. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -92,136 +54,122 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     saveApiKey();
   };
 
+  const stats = {
+    totalPrompts: prompts.length,
+    pinnedPrompts: prompts.filter((p: any) => p.isPinned).length,
+    totalUsage: prompts.reduce((sum: number, p: any) => sum + p.usageCount, 0),
+  };
+
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-800">Settings</h2>
-        <button
-          onClick={onClose}
-          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-          title="Close Settings"
+      <motion.div 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="flex items-center p-4 border-b border-gray-100"
+      >
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-9 w-9 mr-3 hover:bg-gray-100 rounded-xl" 
+          onClick={() => setCurrentView('list')}
         >
-          ✕
-        </button>
-      </div>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <h2 className="text-lg font-semibold text-gray-900">Settings</h2>
+      </motion.div>
 
-      {/* Content */}
-      <div className="flex-1 p-4 overflow-auto">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* API Key Section */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-800 mb-3">
-              OpenAI API Configuration
-            </h3>
-            
-            <div className="space-y-3">
-              <div>
-                <label 
-                  htmlFor="apiKey" 
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  API Key
-                </label>
-                {isLoading ? (
-                  <div className="w-full h-10 bg-gray-100 rounded-md animate-pulse"></div>
-                ) : (
-                  <input
+      <div className="p-4 space-y-6 flex-1 overflow-y-auto">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-full">
+            <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+          </div>
+        ) : (
+          <>
+            {/* Quick Stats */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="space-y-3"
+            >
+              <h3 className="text-sm font-semibold text-gray-900">Quick Stats</h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 rounded-xl bg-blue-50 text-center">
+                  <div className="text-2xl font-bold text-blue-600">{stats.totalPrompts}</div>
+                  <div className="text-xs text-blue-600/70">Prompts</div>
+                </div>
+                <div className="p-3 rounded-xl bg-amber-50 text-center">
+                  <div className="text-2xl font-bold text-amber-600">{stats.pinnedPrompts}</div>
+                  <div className="text-xs text-amber-600/70">Pinned</div>
+                </div>
+                <div className="p-3 rounded-xl bg-green-50 text-center">
+                  <div className="text-2xl font-bold text-green-600">{stats.totalUsage}</div>
+                  <div className="text-xs text-green-600/70">Uses</div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* API Key Section */}
+            <motion.form
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              onSubmit={handleSubmit} 
+              className="space-y-4"
+            >
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-gray-900">OpenAI Integration</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="api-key" className="text-sm font-medium text-gray-700">API Key</Label>
+                  <Input
+                    id="api-key"
                     type="password"
-                    id="apiKey"
                     value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setApiKey(e.target.value)}
                     placeholder="sk-..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={isSaving}
+                    className="border-gray-200 rounded-xl"
                   />
-                )}
-                <p className="text-xs text-gray-500 mt-1">
-                  Used for prompt improvement feature. Get your API key from{' '}
-                  <a 
-                    href="https://platform.openai.com/api-keys" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 underline"
-                  >
-                    OpenAI Platform
-                  </a>
-                </p>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Shield className="h-3 w-3" />
+                    <span>Stored securely in your browser</span>
+                  </div>
+                </div>
+                <Button 
+                  type="submit" 
+                  disabled={isSaving} 
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-xl py-2.5"
+                >
+                  {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSaving ? 'Saving...' : 'Save API Key'}
+                </Button>
               </div>
+            </motion.form>
 
-              <button
-                type="submit"
-                disabled={isSaving || isLoading}
-                className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isSaving && (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                )}
-                {isSaving ? 'Saving...' : 'Save API Key'}
-              </button>
-            </div>
-          </div>
-
-          {/* Features Section */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-800 mb-3">
-              Features
-            </h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                <span>Prompt library management</span>
+            {/* About Section */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+              className="space-y-3"
+            >
+              <h3 className="text-sm font-semibold text-gray-900">About DialogDrive</h3>
+              <div className="space-y-3 text-sm text-gray-600">
+                <p>Manage and paste AI prompts into ChatGPT, Claude, and Gemini with ease.</p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-0">v1.0.0</Badge>
+                  <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-0">WXT Framework</Badge>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">ChatGPT</span>
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700">Claude</span>
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">Gemini</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                <span>Cross-site prompt injection</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                <span>Workspace organization</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                <span>AI prompt improvement (requires API key)</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Keyboard Shortcuts */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-800 mb-3">
-              Keyboard Shortcuts
-            </h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <div className="flex justify-between">
-                <span>New prompt</span>
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+N</kbd>
-              </div>
-              <div className="flex justify-between">
-                <span>Search prompts</span>
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+F</kbd>
-              </div>
-              <div className="flex justify-between">
-                <span>Close forms/settings</span>
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">Escape</kbd>
-              </div>
-            </div>
-          </div>
-
-          {/* About Section */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-800 mb-3">
-              About
-            </h3>
-            <div className="text-sm text-gray-600">
-              <p className="mb-2">
-                <strong>DialogDrive v1.0.0</strong>
-              </p>
-              <p>
-                Your AI prompt library and assistant for ChatGPT, Claude, and Gemini.
-              </p>
-            </div>
-          </div>
-        </form>
+            </motion.div>
+          </>
+        )}
       </div>
     </div>
   );

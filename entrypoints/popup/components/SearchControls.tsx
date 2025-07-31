@@ -1,24 +1,38 @@
-import React, { useRef } from 'react';
-import { usePromptStore } from '~/lib/promptStore';
+import React, { useRef, useEffect } from 'react';
+import { usePromptStore } from '../../../lib/promptStore';
+import { Input } from '../../../components/ui/input';
+import { Button } from '../../../components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../../components/ui/select';
+import { Switch } from '../../../components/ui/switch';
+import { Label } from '../../../components/ui/label';
+import { Search, Filter, SortAsc, X } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export const SearchControls: React.FC = () => {
   const {
-    searchQuery,
-    selectedWorkspace,
-    showPinnedOnly,
-    workspaces,
-    setSearchQuery,
-    setSelectedWorkspace,
-    setShowPinnedOnly,
+    searchTerm,
+    sortBy,
+    filterTag,
+    showPinned,
+    allTags,
+    setSearchTerm,
+    setSortBy,
+    setFilterTag,
+    setShowPinned,
     resetFilters,
   } = usePromptStore();
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   
-  const hasActiveFilters = searchQuery || selectedWorkspace !== 'All' || showPinnedOnly;
+  const hasActiveFilters = searchTerm || filterTag !== 'all' || showPinned;
 
-  // Expose search input ref for keyboard shortcuts
-  React.useEffect(() => {
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
@@ -31,65 +45,71 @@ export const SearchControls: React.FC = () => {
   }, []);
 
   return (
-    <div className="p-4 bg-gray-50 border-b border-gray-200 space-y-3">
-      {/* Search Input */}
+    <motion.div 
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="p-4 border-b border-gray-100 bg-white space-y-3"
+    >
       <div className="relative">
-        <input
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Input
           ref={searchInputRef}
           type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search prompts... (Ctrl+F)"
-          className="w-full px-3 py-2 pr-8 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          value={searchTerm}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+          placeholder="Search prompts..."
+          className="pl-10 border-gray-200 rounded-xl bg-gray-50 focus:bg-white transition-colors"
         />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery('')}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+        {searchTerm && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSearchTerm('')}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 hover:bg-gray-100 rounded-full"
           >
-            ✕
-          </button>
+            <X className="h-3 w-3" />
+          </Button>
         )}
       </div>
+      
+      {(allTags.length > 0 || hasActiveFilters) && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={showPinned}
+              onCheckedChange={setShowPinned}
+              className="scale-90"
+            />
+            <Label className="text-xs text-gray-600">Pinned only</Label>
+          </div>
 
-      {/* Filter Controls */}
-      <div className="flex items-center gap-2 text-sm">
-        {/* Workspace Filter */}
-        <select
-          value={selectedWorkspace}
-          onChange={(e) => setSelectedWorkspace(e.target.value)}
-          className="px-2 py-1 border border-gray-300 rounded text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option value="All">All Workspaces</option>
-          {workspaces.map(workspace => (
-            <option key={workspace} value={workspace}>
-              {workspace}
-            </option>
-          ))}
-        </select>
+          {allTags.length > 0 && (
+            <Select value={filterTag} onValueChange={setFilterTag}>
+              <SelectTrigger className="w-auto h-8 border-gray-200 rounded-lg text-xs">
+                <SelectValue placeholder="All tags" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All tags</SelectItem>
+                {allTags.map((tag: string) => (
+                  <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
-        {/* Pinned Filter */}
-        <button
-          onClick={() => setShowPinnedOnly(!showPinnedOnly)}
-          className={`px-2 py-1 text-xs rounded border transition-colors ${
-            showPinnedOnly
-              ? 'bg-blue-500 text-white border-blue-500'
-              : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-          }`}
-        >
-          📌 Pinned
-        </button>
-
-        {/* Clear Filters */}
-        {hasActiveFilters && (
-          <button
-            onClick={resetFilters}
-            className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 border border-transparent hover:border-gray-300 rounded transition-colors"
-          >
-            Clear
-          </button>
-        )}
-      </div>
-    </div>
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetFilters}
+              className="h-8 px-2 text-xs text-gray-500 hover:text-gray-700"
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+      )}
+    </motion.div>
   );
 };

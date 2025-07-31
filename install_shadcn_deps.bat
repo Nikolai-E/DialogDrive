@@ -1,0 +1,1 @@
+npm install class-variance-authority clsx tailwind-merge lucide-react tailwindcss-animate @radix-ui/react-slot @radix-ui/react-dialog @radix-ui/react-label @radix-ui/react-select @radix-ui/react-toast @radix-ui/react-switch @radix-ui/react-popover cmdk @radix-ui/react-separator

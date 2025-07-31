@@ -1,1 +1,111 @@
-/* Remove default styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Bright, clean Apple/Google inspired palette */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 20%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 20%;
+
+    /* Google Blue - brighter and more playful */
+    --primary: 220 90% 56%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Light, airy secondary */
+    --secondary: 210 40% 98%;
+    --secondary-foreground: 220 10% 40%;
+
+    --muted: 210 40% 98%;
+    --muted-foreground: 220 10% 50%;
+
+    /* Playful green accent */
+    --accent: 130 70% 95%;
+    --accent-foreground: 130 70% 30%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Very light borders for clean look */
+    --border: 220 13% 94%;
+    --input: 220 13% 97%;
+    --ring: 220 90% 56%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 220 14% 10%;
+    --foreground: 220 15% 90%;
+
+    --card: 220 14% 12%;
+    --card-foreground: 220 15% 90%;
+
+    --popover: 220 14% 10%;
+    --popover-foreground: 220 15% 90%;
+
+    /* A brighter blue for dark mode */
+    --primary: 217 91% 65%;
+    --primary-foreground: 220 10% 10%;
+
+    --secondary: 220 14% 15%;
+    --secondary-foreground: 220 15% 95%;
+
+    --muted: 220 14% 15%;
+    --muted-foreground: 220 10% 65%;
+
+    /* A brighter green for dark mode */
+    --accent: 142 76% 46%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 63% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 14% 20%;
+    --input: 220 14% 20%;
+    --ring: 217 91% 65%;
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #e5e7eb #f9fafb;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #f9fafb;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #e5e7eb;
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: #d1d5db;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
