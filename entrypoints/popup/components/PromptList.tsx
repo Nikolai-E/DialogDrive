@@ -28,8 +28,9 @@ export const PromptList: React.FC = () => {
     return (
       <div className="p-4">
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.15 }}
         >
           <Alert variant="destructive">
             <Info className="h-4 w-4" />
@@ -50,18 +51,19 @@ export const PromptList: React.FC = () => {
             filteredPrompts.map((prompt: any, index: number) => (
               <motion.div
                 key={prompt.id}
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0, transition: { delay: index * 0.05 } }}
-                exit={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.1 }}
               >
                 <PromptItem prompt={prompt} />
               </motion.div>
             ))
           ) : (
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.15 }}
               className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8"
             >
               <Search className="h-12 w-12 mb-4 text-gray-400" />

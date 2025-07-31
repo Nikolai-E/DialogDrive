@@ -5,7 +5,7 @@ export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   alias: {
     '~': './entrypoints/popup',
-    '@': './entrypoints/popup',
+    '@': '.',
   },
   manifest: {
     name: 'DialogDrive',

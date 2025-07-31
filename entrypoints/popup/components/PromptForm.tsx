@@ -128,9 +128,9 @@ export const PromptForm: React.FC = () => {
   return (
     <div className="flex flex-col h-full">
       <motion.div 
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.15 }}
         className="flex items-center p-3 border-b bg-background/80 backdrop-blur-sm"
       >
         <Button variant="ghost" size="icon" className="h-8 w-8 mr-2" onClick={handleClose}>
@@ -144,15 +144,15 @@ export const PromptForm: React.FC = () => {
       <motion.form 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
+        transition={{ duration: 0.2 }}
         onSubmit={handleSubmit} 
         className="flex flex-col flex-1 overflow-hidden"
       >
         <div className="flex-1 p-4 space-y-4 overflow-y-auto scrollbar-thin">
           <motion.div 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15 }}
             className="space-y-2"
           >
             <Label htmlFor="title" className="text-sm font-medium">Title</Label>
@@ -168,9 +168,9 @@ export const PromptForm: React.FC = () => {
           </motion.div>
           
           <motion.div 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.25 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15 }}
             className="space-y-2"
           >
             <Label htmlFor="text" className="text-sm font-medium">Prompt Text</Label>
@@ -186,9 +186,9 @@ export const PromptForm: React.FC = () => {
           </motion.div>
 
           <motion.div 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.3 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15 }}
             className="space-y-2"
           >
             <Label htmlFor="workspace" className="text-sm font-medium">Workspace</Label>
@@ -205,9 +205,9 @@ export const PromptForm: React.FC = () => {
           </motion.div>
 
           <motion.div 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.35 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15 }}
             className="space-y-2"
           >
             <Label htmlFor="tags" className="text-sm font-medium flex items-center gap-2">
@@ -277,9 +277,9 @@ export const PromptForm: React.FC = () => {
           </motion.div>
           
           <motion.div 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.4 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15 }}
             className="space-y-3 pt-2"
           >
             <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
@@ -310,9 +310,9 @@ export const PromptForm: React.FC = () => {
         </div>
         
         <motion.div 
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.5 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.15 }}
           className="flex justify-end gap-3 p-3 border-t bg-background/80 backdrop-blur-sm"
         >
           <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>

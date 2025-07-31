@@ -46,69 +46,97 @@ export const SearchControls: React.FC = () => {
 
   return (
     <motion.div 
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="p-4 border-b border-gray-100 bg-white space-y-3"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.15 }}
+      className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/80 p-3 space-y-3"
     >
+      {/* Search Input */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           ref={searchInputRef}
-          type="text"
+          placeholder="Search prompts... (⌘F)"
           value={searchTerm}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-          placeholder="Search prompts..."
-          className="pl-10 border-gray-200 rounded-xl bg-gray-50 focus:bg-white transition-colors"
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10 pr-10 h-9 bg-muted/30 border-border/50 rounded-lg text-sm placeholder:text-muted-foreground/70"
         />
         {searchTerm && (
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setSearchTerm('')}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 hover:bg-gray-100 rounded-full"
+            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 hover:bg-muted rounded-md"
           >
-            <X className="h-3 w-3" />
+            <X className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>
-      
-      {(allTags.length > 0 || hasActiveFilters) && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={showPinned}
-              onCheckedChange={setShowPinned}
-              className="scale-90"
-            />
-            <Label className="text-xs text-gray-600">Pinned only</Label>
-          </div>
 
-          {allTags.length > 0 && (
-            <Select value={filterTag} onValueChange={setFilterTag}>
-              <SelectTrigger className="w-auto h-8 border-gray-200 rounded-lg text-xs">
-                <SelectValue placeholder="All tags" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All tags</SelectItem>
-                {allTags.map((tag: string) => (
-                  <SelectItem key={tag} value={tag}>{tag}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+      {/* Controls Row */}
+      <div className="flex items-center gap-2 text-sm">
+        {/* Sort */}
+        <Select value={sortBy} onValueChange={(value: string) => setSortBy(value as any)}>
+          <SelectTrigger className="w-auto h-8 px-3 bg-muted/30 border-border/50 rounded-md">
+            <SortAsc className="h-3.5 w-3.5 mr-1.5" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="rounded-lg border-border/50">
+            <SelectItem value="lastUsed">Recent</SelectItem>
+            <SelectItem value="title">A-Z</SelectItem>
+            <SelectItem value="usageCount">Most Used</SelectItem>
+          </SelectContent>
+        </Select>
 
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={resetFilters}
-              className="h-8 px-2 text-xs text-gray-500 hover:text-gray-700"
-            >
-              Clear
-            </Button>
-          )}
+        {/* Filter */}
+        {allTags.length > 0 && (
+          <Select value={filterTag} onValueChange={setFilterTag}>
+            <SelectTrigger className="w-auto h-8 px-3 bg-muted/30 border-border/50 rounded-md">
+              <Filter className="h-3.5 w-3.5 mr-1.5" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="rounded-lg border-border/50">
+              <SelectItem value="all">All Tags</SelectItem>
+              {allTags.map((tag) => (
+                <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Pinned Filter */}
+        <div className="flex items-center gap-2 ml-auto">
+          <Label htmlFor="pinned-filter" className="text-xs text-muted-foreground">
+            Pinned only
+          </Label>
+          <Switch
+            id="pinned-filter"
+            checked={showPinned}
+            onCheckedChange={setShowPinned}
+            className="data-[state=checked]:bg-accent"
+          />
         </div>
+      </div>
+
+      {/* Clear Filters */}
+      {hasActiveFilters && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.1 }}
+          className="pt-2"
+        >
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={resetFilters}
+            className="h-7 px-3 text-xs text-muted-foreground hover:text-foreground rounded-md"
+          >
+            <X className="h-3 w-3 mr-1" />
+            Clear filters
+          </Button>
+        </motion.div>
       )}
     </motion.div>
   );

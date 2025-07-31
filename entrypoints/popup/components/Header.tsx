@@ -14,31 +14,31 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onSettings }) => {
 
   return (
     <motion.header 
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="flex items-center justify-between p-4 bg-white border-b border-gray-100"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.15 }}
+      className="flex items-center justify-between p-3 bg-background/80 backdrop-blur-sm border-b border-border/80 sticky top-0 z-10"
     >
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm">
-          <Sparkles className="h-4 w-4 text-white" />
-        </div>
-        <h1 className="text-lg font-bold text-gray-900 tracking-tight">DialogDrive</h1>
-      </div>
       <div className="flex items-center gap-2">
+        <div className="w-7 h-7 bg-gradient-to-br from-primary to-accent/80 rounded-lg flex items-center justify-center shadow-sm">
+          <Sparkles className="h-4 w-4 text-primary-foreground" />
+        </div>
+        <h1 className="text-base font-semibold text-foreground tracking-tight">DialogDrive</h1>
+      </div>
+      <div className="flex items-center gap-1.5">
         <AnimatePresence>
           {currentView !== 'form' && (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.1 }}
             >
               <Button 
                 onClick={onNewPrompt} 
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-sm"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground h-8 px-3 rounded-lg text-xs font-bold shadow-sm"
               >
-                <Plus className="h-4 w-4 mr-1.5" />
+                <Plus className="h-3.5 w-3.5 mr-1" />
                 New
               </Button>
             </motion.div>
@@ -48,9 +48,9 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onSettings }) => {
           variant="ghost" 
           size="icon" 
           onClick={onSettings} 
-          className="h-9 w-9 hover:bg-gray-100 rounded-xl"
+          className="h-8 w-8 hover:bg-muted rounded-lg"
         >
-          <SettingsIcon className="h-4 w-4 text-gray-600" />
+          <SettingsIcon className="h-4 w-4 text-muted-foreground" />
         </Button>
       </div>
     </motion.header>

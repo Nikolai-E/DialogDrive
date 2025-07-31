@@ -32,6 +32,8 @@ interface PromptState {
   updatePrompt: (prompt: Prompt) => Promise<void>;
   deletePrompt: (id: string) => Promise<void>;
   togglePinPrompt: (id: string) => Promise<void>;
+  incrementUsage: (id: string) => Promise<void>;
+  incrementUsage: (id: string) => Promise<void>;
   
   // Search and filter actions
   setSearchTerm: (term: string) => void;
@@ -202,6 +204,25 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       logPromptAction('Toggled pin status', id, { isPinned: updatedPrompt.isPinned });
     } catch (err) {
       logger.error('Failed to toggle pin:', err);
+    }
+  },
+
+  incrementUsage: async (id) => {
+    try {
+      const state = get();
+      const prompt = state.prompts.find(p => p.id === id);
+      if (!prompt) throw new Error('Prompt not found');
+      
+      const updatedPrompt = { 
+        ...prompt, 
+        usageCount: (prompt.usageCount || 0) + 1,
+        lastUsed: new Date().toISOString()
+      };
+      await get().updatePrompt(updatedPrompt);
+      
+      logPromptAction('Incremented usage count', id, { usageCount: updatedPrompt.usageCount });
+    } catch (err) {
+      logger.error('Failed to increment usage:', err);
     }
   },
   

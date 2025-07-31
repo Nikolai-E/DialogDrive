@@ -61,28 +61,28 @@ export const Settings: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-background">
       <motion.div 
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="flex items-center p-4 border-b border-gray-100"
+        className="flex items-center p-4 border-b border-border"
       >
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-9 w-9 mr-3 hover:bg-gray-100 rounded-xl" 
+          className="h-9 w-9 mr-3 hover:bg-muted rounded-xl" 
           onClick={() => setCurrentView('list')}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-lg font-semibold text-gray-900">Settings</h2>
+        <h2 className="text-lg font-semibold text-foreground">Settings</h2>
       </motion.div>
 
       <div className="p-4 space-y-6 flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="flex justify-center items-center h-full">
-            <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (
           <>
@@ -93,17 +93,17 @@ export const Settings: React.FC = () => {
               transition={{ duration: 0.4, delay: 0.1 }}
               className="space-y-3"
             >
-              <h3 className="text-sm font-semibold text-gray-900">Quick Stats</h3>
+              <h3 className="text-sm font-semibold text-foreground">Quick Stats</h3>
               <div className="grid grid-cols-3 gap-3">
-                <div className="p-3 rounded-xl bg-blue-50 text-center">
-                  <div className="text-2xl font-bold text-blue-600">{stats.totalPrompts}</div>
-                  <div className="text-xs text-blue-600/70">Prompts</div>
+                <div className="p-3 rounded-xl bg-primary/10 text-center border border-primary/20">
+                  <div className="text-2xl font-bold text-primary">{stats.totalPrompts}</div>
+                  <div className="text-xs text-primary/70">Prompts</div>
                 </div>
-                <div className="p-3 rounded-xl bg-amber-50 text-center">
+                <div className="p-3 rounded-xl bg-amber-50 text-center border border-amber-200">
                   <div className="text-2xl font-bold text-amber-600">{stats.pinnedPrompts}</div>
                   <div className="text-xs text-amber-600/70">Pinned</div>
                 </div>
-                <div className="p-3 rounded-xl bg-green-50 text-center">
+                <div className="p-3 rounded-xl bg-green-50 text-center border border-green-200">
                   <div className="text-2xl font-bold text-green-600">{stats.totalUsage}</div>
                   <div className="text-xs text-green-600/70">Uses</div>
                 </div>
@@ -119,9 +119,9 @@ export const Settings: React.FC = () => {
               className="space-y-4"
             >
               <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-gray-900">OpenAI Integration</h3>
+                <h3 className="text-sm font-semibold text-foreground">OpenAI Integration</h3>
                 <div className="space-y-2">
-                  <Label htmlFor="api-key" className="text-sm font-medium text-gray-700">API Key</Label>
+                  <Label htmlFor="api-key" className="text-sm font-medium text-foreground">API Key</Label>
                   <Input
                     id="api-key"
                     type="password"
@@ -129,9 +129,9 @@ export const Settings: React.FC = () => {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setApiKey(e.target.value)}
                     placeholder="sk-..."
                     disabled={isSaving}
-                    className="border-gray-200 rounded-xl"
+                    className="border-border rounded-xl"
                   />
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Shield className="h-3 w-3" />
                     <span>Stored securely in your browser</span>
                   </div>
@@ -139,7 +139,7 @@ export const Settings: React.FC = () => {
                 <Button 
                   type="submit" 
                   disabled={isSaving} 
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-xl py-2.5"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl py-2.5"
                 >
                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {isSaving ? 'Saving...' : 'Save API Key'}
@@ -154,12 +154,12 @@ export const Settings: React.FC = () => {
               transition={{ duration: 0.4, delay: 0.3 }}
               className="space-y-3"
             >
-              <h3 className="text-sm font-semibold text-gray-900">About DialogDrive</h3>
-              <div className="space-y-3 text-sm text-gray-600">
+              <h3 className="text-sm font-semibold text-foreground">About DialogDrive</h3>
+              <div className="space-y-3 text-sm text-muted-foreground">
                 <p>Manage and paste AI prompts into ChatGPT, Claude, and Gemini with ease.</p>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-0">v1.0.0</Badge>
-                  <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-0">WXT Framework</Badge>
+                  <Badge variant="secondary" className="bg-secondary text-secondary-foreground border-0">v1.0.0</Badge>
+                  <Badge variant="secondary" className="bg-secondary text-secondary-foreground border-0">WXT Framework</Badge>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">ChatGPT</span>
