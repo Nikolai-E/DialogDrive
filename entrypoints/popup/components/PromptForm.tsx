@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { usePromptStore } from '../../../lib/promptStore';
+import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { toast } from "sonner";
 import type { Prompt } from '../../../types/prompt';
 import { Button } from '../../../components/ui/button';
@@ -27,7 +27,7 @@ export const PromptForm: React.FC = () => {
     updatePrompt, 
     setCurrentView,
     setEditingPrompt,
-  } = usePromptStore();
+  } = useUnifiedStore();
   
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');

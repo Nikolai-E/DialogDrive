@@ -1,28 +1,29 @@
 import React, { useEffect } from 'react';
-import { usePromptStore } from '../../lib/promptStore';
+import { useUnifiedStore } from '../../lib/unifiedStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Header } from './components/Header';
-import { PromptList } from './components/PromptList';
+import { UnifiedList } from './components/UnifiedList';
 import { PromptForm } from './components/PromptForm';
+import { ChatForm } from './components/ChatForm';
 import { Settings } from './components/Settings';
 import { Toaster } from 'sonner';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 import { logger } from '../../lib/logger';
-import { AnimatePresence, motion, Transition } from 'framer-motion';
 import './App.css';
 
 const App: React.FC = () => {
   const { 
     currentView, 
     setCurrentView, 
-    loadPrompts, 
+    loadAll, 
     setEditingPrompt,
-  } = usePromptStore();
+    setEditingChat,
+  } = useUnifiedStore();
 
   useEffect(() => {
-    logger.log('App mounted, loading prompts...');
-    loadPrompts();
-  }, [loadPrompts]);
+    logger.log('App mounted, loading all data...');
+    loadAll();
+  }, [loadAll]);
 
   useGlobalShortcuts();
 
@@ -31,54 +32,42 @@ const App: React.FC = () => {
     setCurrentView('form');
   };
 
+  const handleNewChat = () => {
+    setEditingChat(null);
+    setCurrentView('chat-form');
+  };
+
   const handleShowSettings = () => {
     setCurrentView('settings');
   };
 
-  const pageVariants = {
-    initial: { opacity: 0 },
-    in: { opacity: 1 },
-    out: { opacity: 0 },
-  };
-
-  const pageTransition: Transition = {
-    type: 'tween',
-    ease: 'easeInOut',
-    duration: 0.12,
-  };
-
   return (
     <ErrorBoundary>
-      <main className="w-full h-full max-w-sm mx-auto bg-background flex flex-col overflow-hidden rounded-2xl shadow-2xl border border-border/50">
-        <Header onNewPrompt={handleNewPrompt} onSettings={() => setCurrentView('settings')} />
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentView}
-            initial="initial"
-            animate="in"
-            exit="out"
-            variants={pageVariants}
-            transition={pageTransition}
-            className="flex-1 overflow-y-auto"
-          >
-            {currentView === 'list' && <PromptList />}
-            {currentView === 'form' && <PromptForm />}
-            {currentView === 'settings' && <Settings />}
-          </motion.div>
-        </AnimatePresence>
+      <main className="w-full h-full max-w-[400px] mx-auto bg-white flex flex-col overflow-hidden">
+        <Header 
+          onNewPrompt={handleNewPrompt} 
+          onNewChat={handleNewChat}
+          onSettings={handleShowSettings} 
+        />
+        <div className="flex-1 overflow-hidden">
+          {currentView === 'list' && <UnifiedList />}
+          {currentView === 'form' && <PromptForm />}
+          {currentView === 'chat-form' && <ChatForm />}
+          {currentView === 'settings' && <Settings />}
+        </div>
         <Toaster 
           richColors 
           theme="light" 
           position="bottom-center"
           toastOptions={{
-            duration: 2500,
+            duration: 2000,
             style: {
-              background: 'hsl(var(--popover))',
-              color: 'hsl(var(--popover-foreground))',
-              border: '1px solid hsl(var(--border))',
-              borderRadius: 'calc(var(--radius) + 4px)',
+              background: '#ffffff',
+              color: '#374151',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
               fontSize: '14px',
-              bottom: '10px',
+              bottom: '8px',
             }
           }}
         />

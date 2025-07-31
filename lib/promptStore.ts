@@ -33,7 +33,6 @@ interface PromptState {
   deletePrompt: (id: string) => Promise<void>;
   togglePinPrompt: (id: string) => Promise<void>;
   incrementUsage: (id: string) => Promise<void>;
-  incrementUsage: (id: string) => Promise<void>;
   
   // Search and filter actions
   setSearchTerm: (term: string) => void;

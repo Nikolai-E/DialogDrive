@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { usePromptStore } from '../../../lib/promptStore';
+import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
 import {
@@ -11,25 +11,31 @@ import {
 } from '../../../components/ui/select';
 import { Switch } from '../../../components/ui/switch';
 import { Label } from '../../../components/ui/label';
-import { Search, Filter, SortAsc, X, Pin } from 'lucide-react';
+import { Search, Filter, SortAsc, X, Pin, FileText, MessageSquare, Building2 } from 'lucide-react';
 
-export const SearchControls: React.FC = () => {
+export const EnhancedSearchControls: React.FC = () => {
   const {
     searchTerm,
     sortBy,
     filterTag,
     showPinned,
+    contentFilter,
+    selectedWorkspace,
     allTags,
+    workspaces,
     setSearchTerm,
     setSortBy,
     setFilterTag,
     setShowPinned,
+    setContentFilter,
+    setSelectedWorkspace,
     resetFilters,
-  } = usePromptStore();
+  } = useUnifiedStore();
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   
-  const hasActiveFilters = searchTerm || filterTag !== 'all' || showPinned;
+  const hasActiveFilters = searchTerm || filterTag !== 'all' || showPinned || 
+                          contentFilter !== 'all' || selectedWorkspace !== 'all';
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -45,12 +51,12 @@ export const SearchControls: React.FC = () => {
 
   return (
     <div className="px-4 py-3 space-y-3 bg-gray-50 border-b border-gray-200">
-      {/* Search Input */}
+      {/* Search Input - LOCKED SPECIFICATION */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
           ref={searchInputRef}
-          placeholder="Search prompts... (Ctrl+F)"
+          placeholder="Search prompts and chats... (Ctrl+F)"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10 pr-10 h-10 bg-white border-gray-300 rounded-lg text-sm placeholder:text-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
@@ -67,14 +73,62 @@ export const SearchControls: React.FC = () => {
         )}
       </div>
 
-      {/* Controls Row */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+      {/* Enhanced Controls Row */}
+      <div className="grid grid-cols-2 gap-2">
+        {/* Left Column */}
+        <div className="space-y-2">
+          {/* Content Type Filter */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <FileText className="h-3.5 w-3.5 text-gray-500" />
+              <MessageSquare className="h-3.5 w-3.5 text-gray-500" />
+            </div>
+            <Select value={contentFilter} onValueChange={setContentFilter}>
+              <SelectTrigger className="h-8 px-3 bg-white border-gray-300 rounded-md text-sm flex-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-lg border-gray-200 shadow-lg">
+                <SelectItem value="all">All Items</SelectItem>
+                <SelectItem value="prompts">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-3.5 w-3.5" />
+                    Prompts Only
+                  </div>
+                </SelectItem>
+                <SelectItem value="chats">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-3.5 w-3.5" />
+                    Chats Only
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Workspace Filter */}
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-gray-500" />
+            <Select value={selectedWorkspace} onValueChange={setSelectedWorkspace}>
+              <SelectTrigger className="h-8 px-3 bg-white border-gray-300 rounded-md text-sm flex-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-lg border-gray-200 shadow-lg">
+                <SelectItem value="all">All Workspaces</SelectItem>
+                {workspaces.map((workspace) => (
+                  <SelectItem key={workspace} value={workspace}>{workspace}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Right Column */}
+        <div className="space-y-2">
           {/* Sort */}
           <div className="flex items-center gap-2">
             <SortAsc className="h-4 w-4 text-gray-500" />
             <Select value={sortBy} onValueChange={(value: string) => setSortBy(value as any)}>
-              <SelectTrigger className="h-8 px-3 bg-white border-gray-300 rounded-md text-sm min-w-[100px]">
+              <SelectTrigger className="h-8 px-3 bg-white border-gray-300 rounded-md text-sm flex-1">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-lg border-gray-200 shadow-lg">
@@ -85,12 +139,12 @@ export const SearchControls: React.FC = () => {
             </Select>
           </div>
 
-          {/* Filter by Tag */}
+          {/* Tag Filter */}
           {allTags.length > 0 && (
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
               <Select value={filterTag} onValueChange={setFilterTag}>
-                <SelectTrigger className="h-8 px-3 bg-white border-gray-300 rounded-md text-sm min-w-[100px]">
+                <SelectTrigger className="h-8 px-3 bg-white border-gray-300 rounded-md text-sm flex-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-lg border-gray-200 shadow-lg">
@@ -103,20 +157,22 @@ export const SearchControls: React.FC = () => {
             </div>
           )}
         </div>
+      </div>
 
-        {/* Pinned Filter */}
+      {/* Pinned Filter */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Pin className="h-4 w-4 text-gray-500" />
           <Label htmlFor="pinned-filter" className="text-sm text-gray-700 font-medium">
-            Pinned Only
+            Show Pinned Only
           </Label>
-          <Switch
-            id="pinned-filter"
-            checked={showPinned}
-            onCheckedChange={setShowPinned}
-            className="data-[state=checked]:bg-blue-600"
-          />
         </div>
+        <Switch
+          id="pinned-filter"
+          checked={showPinned}
+          onCheckedChange={setShowPinned}
+          className="data-[state=checked]:bg-blue-600"
+        />
       </div>
 
       {/* Clear Filters */}

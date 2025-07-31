@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { usePromptStore } from '../../../lib/promptStore';
+import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
@@ -11,7 +11,7 @@ import { logger } from '../../../lib/logger';
 import { motion } from 'framer-motion';
 
 export const Settings: React.FC = () => {
-  const { setCurrentView, prompts } = usePromptStore();
+  const { setCurrentView, prompts } = useUnifiedStore();
   const [apiKey, setApiKey] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
