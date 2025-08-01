@@ -14,17 +14,17 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
   const { copyToClipboard } = useCopyToClipboard();
   const [isProcessing, setIsProcessing] = React.useState(false);
 
-  // Get color based on workspace/category
+  // Get color based on workspace/category - using professional theme-aligned colors
   const getCategoryColor = (workspace: string): string => {
     const colors = {
-      'General': '#3b82f6',     // blue-500
-      'Work': '#10b981',        // green-500
-      'Personal': '#8b5cf6',    // purple-500
-      'Development': '#f97316', // orange-500
-      'Research': '#14b8a6',    // teal-500
-      'Writing': '#ec4899',     // pink-500
+      'General': 'hsl(215, 73%, 52%)',    // Primary blue
+      'Work': 'hsl(158, 61%, 40%)',       // Professional green  
+      'Personal': 'hsl(265, 73%, 52%)',   // Purple
+      'Development': 'hsl(25, 95%, 53%)', // Orange
+      'Research': 'hsl(173, 73%, 40%)',   // Teal
+      'Writing': 'hsl(330, 73%, 52%)',    // Pink
     };
-    return colors[workspace as keyof typeof colors] || '#6b7280'; // gray-500
+    return colors[workspace as keyof typeof colors] || 'hsl(var(--muted-foreground))';
   };
 
   const handleCardClick = async () => {
@@ -50,7 +50,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
               text: prompt.text 
             });
             if (response?.success) {
-              toast.success('✨ Pasted to active tab');
+              toast.success('✨ Pasted');
               return;
             }
           }
@@ -59,7 +59,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
         console.warn('Could not paste to tab, copied to clipboard');
       }
       
-      toast.success('📋 Copied to clipboard');
+      toast.success('📋 Copied');
     } catch (error) {
       toast.error('Failed to copy');
     } finally {

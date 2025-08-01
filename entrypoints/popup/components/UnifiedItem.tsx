@@ -28,17 +28,17 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
   const { copyToClipboard } = useCopyToClipboard();
   const [isProcessing, setIsProcessing] = React.useState(false);
 
-  // Get color based on workspace/category (locked specification)
+  // Get color based on workspace/category - using professional theme-aligned colors
   const getCategoryColor = (workspace: string): string => {
     const colors = {
-      'General': '#3b82f6',     // blue-500
-      'Work': '#10b981',        // green-500
-      'Personal': '#8b5cf6',    // purple-500
-      'Development': '#f97316', // orange-500
-      'Research': '#14b8a6',    // teal-500
-      'Writing': '#ec4899',     // pink-500
+      'General': 'hsl(215, 73%, 52%)',    // Primary blue
+      'Work': 'hsl(158, 61%, 40%)',       // Professional green  
+      'Personal': 'hsl(265, 73%, 52%)',   // Purple
+      'Development': 'hsl(25, 95%, 53%)', // Orange
+      'Research': 'hsl(173, 73%, 40%)',   // Teal
+      'Writing': 'hsl(330, 73%, 52%)',    // Pink
     };
-    return colors[workspace as keyof typeof colors] || '#6b7280'; // gray-500
+    return colors[workspace as keyof typeof colors] || 'hsl(var(--muted-foreground))';
   };
 
   const handleCardClick = async () => {
@@ -66,7 +66,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
                 text: prompt.text 
               });
               if (response?.success) {
-                toast.success('✨ Pasted to active tab');
+                toast.success('✨ Pasted');
                 return;
               }
             }
@@ -75,13 +75,13 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
           console.warn('Could not paste to tab, copied to clipboard');
         }
         
-        toast.success('📋 Copied to clipboard');
+        toast.success('📋 Copied');
       } else if (item.type === 'chat') {
         // New chat logic - open in new tab
         const chat = item.data as ChatBookmark;
         window.open(chat.url, '_blank');
         await incrementChatAccess(chat.id);
-        toast.success('🔗 Chat opened in new tab');
+        toast.success('🔗 Opened');
       }
     } catch (error) {
       toast.error(`Failed to ${item.type === 'prompt' ? 'copy' : 'open chat'}`);
@@ -134,7 +134,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
 
   const getTypeIcon = () => {
     if (item.type === 'prompt') {
-      return <FileText className="w-3 h-3 text-blue-600" />;
+      return <FileText className="w-3 h-3 text-accent" />;
     } else {
       const chat = item.data as ChatBookmark;
       const platformIcons = {
@@ -149,11 +149,11 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
       
       return (
         <div className="flex items-center gap-1">
-          <MessageSquare className="w-3 h-3 text-green-600" />
+          <MessageSquare className="w-3 h-3 text-secondary" />
           <span className="text-xs">{platformIcons[chat.platform]}</span>
           {isShareLink && (
             <span 
-              className="text-xs text-blue-600 bg-blue-100 px-1 rounded"
+              className="text-xs text-accent bg-accent/10 px-1 rounded"
               title="Public share link - works without login"
             >
               🔗
@@ -161,7 +161,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
           )}
           {!isShareLink && (
             <span 
-              className="text-xs text-orange-600 bg-orange-100 px-1 rounded"
+              className="text-xs text-destructive bg-destructive/10 px-1 rounded"
               title="Private conversation - requires login"
             >
               🔒
@@ -174,10 +174,10 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
 
   // LOCKED SPECIFICATION: Maintain exact layout and dimensions
   return (
-    <div className="group border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors duration-200 ease-apple">
+    <div className="group border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors duration-200 ease-apple">
       <div 
         className={`relative flex items-center min-h-[52px] px-4 py-3 cursor-pointer transition-all duration-200 ease-apple
-          ${isProcessing ? 'animate-pulse bg-blue-50' : ''}
+          ${isProcessing ? 'animate-pulse bg-accent/5' : ''}
           hover:shadow-sm
         `}
         onClick={handleCardClick}
@@ -195,7 +195,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
           <div 
             className="absolute top-2 left-1 w-1.5 h-1.5 rounded-full"
             style={{
-              backgroundColor: item.usageCount > 10 ? '#34A853' : item.usageCount > 5 ? '#FBBC04' : '#4285F4'
+              backgroundColor: item.usageCount > 10 ? 'hsl(var(--secondary))' : item.usageCount > 5 ? 'hsl(var(--warning))' : 'hsl(var(--accent))'
             }}
             title={`${item.usageCount} uses`}
           ></div>
@@ -206,11 +206,11 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
           <div className="flex items-center gap-2 mb-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {getTypeIcon()}
-              <h3 className="text-base font-semibold text-gray-900 truncate flex-1">
+              <h3 className="text-base font-semibold text-foreground truncate flex-1">
                 {item.title}
               </h3>
             </div>
-            <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded shrink-0">
+            <span className="px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded shrink-0">
               {item.workspace || 'General'}
             </span>
           </div>
@@ -221,20 +221,20 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
               {item.tags && item.tags.length > 0 && (
                 <div className="flex gap-1 min-w-0">
                   {item.tags.slice(0, 3).map((tag) => (
-                    <span key={tag} className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-xs font-medium shrink-0">
+                    <span key={tag} className="px-1.5 py-0.5 bg-accent/10 text-accent rounded text-xs font-medium shrink-0">
                       {tag}
                     </span>
                   ))}
                   {item.tags.length > 3 && (
-                    <span className="text-gray-400 font-medium shrink-0">+{item.tags.length - 3}</span>
+                    <span className="text-muted-foreground font-medium shrink-0">+{item.tags.length - 3}</span>
                   )}
                 </div>
               )}
             </div>
             
-            <div className="flex items-center gap-2 text-gray-500 shrink-0">
+            <div className="flex items-center gap-2 text-muted-foreground shrink-0">
               <span className="flex items-center gap-1 font-medium">
-                <div className="w-2 h-2 rounded-full bg-blue-200"></div>
+                <div className="w-2 h-2 rounded-full bg-accent/30"></div>
                 {item.usageCount || 0}
               </span>
               {item.lastUsed && (
@@ -245,13 +245,13 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
         </div>
 
         {/* Action buttons - LOCKED SPECIFICATION: float above without affecting layout */}
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 ease-apple bg-white/95 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-lg border border-gray-200 z-10">
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 ease-apple bg-card/95 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-lg border border-border z-10">
           <button
             onClick={handlePin}
             className={`p-1.5 rounded-md transition-all duration-200 ease-apple hover:scale-105 active:scale-95 ${
               item.isPinned 
-                ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200' 
-                : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
+                ? 'text-accent bg-accent/10 hover:bg-accent/20 border border-accent/20' 
+                : 'text-muted-foreground hover:text-accent hover:bg-accent/10'
             }`}
             title={item.isPinned ? `Unpin ${item.type}` : `Pin ${item.type}`}
           >
@@ -270,7 +270,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
                   toast.error('Failed to update chat access count');
                 }
               }}
-              className="p-1.5 rounded-md text-gray-400 hover:text-green-600 hover:bg-green-50 transition-all duration-200 ease-apple hover:scale-105 active:scale-95"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-secondary hover:bg-secondary/10 transition-all duration-200 ease-apple hover:scale-105 active:scale-95"
               title="Open chat in new tab"
             >
               <ExternalLink className="w-3.5 h-3.5" />
@@ -279,7 +279,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
           
           <button
             onClick={handleEdit}
-            className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 ease-apple hover:scale-105 active:scale-95"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-accent hover:bg-accent/10 transition-all duration-200 ease-apple hover:scale-105 active:scale-95"
             title={`Edit ${item.type}`}
           >
             <Edit2 className="w-3.5 h-3.5" />
@@ -287,7 +287,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
           
           <button
             onClick={handleDelete}
-            className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all duration-200 ease-apple hover:scale-105 active:scale-95"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 ease-apple hover:scale-105 active:scale-95"
             title={`Delete ${item.type}`}
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -296,9 +296,9 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
 
         {/* Processing overlay - LOCKED SPECIFICATION */}
         {isProcessing && (
-          <div className="absolute inset-0 flex items-center justify-center bg-blue-50/90 rounded-lg backdrop-blur-sm">
-            <div className="flex items-center gap-2 text-blue-700 font-medium">
-              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center bg-accent/5 rounded-lg backdrop-blur-sm">
+            <div className="flex items-center gap-2 text-accent font-medium">
+              <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
               {item.type === 'prompt' ? 'Processing...' : 'Opening...'}
             </div>
           </div>

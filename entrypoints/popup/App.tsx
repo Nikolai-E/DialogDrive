@@ -43,7 +43,7 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <main className="w-full h-full max-w-[400px] mx-auto bg-white flex flex-col overflow-hidden">
+      <main className="w-full h-full max-w-[400px] mx-auto bg-background flex flex-col overflow-hidden">
         <Header 
           onNewPrompt={handleNewPrompt} 
           onNewChat={handleNewChat}
@@ -57,17 +57,18 @@ const App: React.FC = () => {
         </div>
         <Toaster 
           richColors 
-          theme="light" 
+          theme="dark" 
           position="bottom-center"
           toastOptions={{
             duration: 2000,
             style: {
-              background: '#ffffff',
-              color: '#374151',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              fontSize: '14px',
-              bottom: '8px',
+              background: 'hsl(var(--card))',
+              color: 'hsl(var(--foreground))',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '11px',
+              fontWeight: '500',
+              boxShadow: 'var(--shadow)',
             }
           }}
         />

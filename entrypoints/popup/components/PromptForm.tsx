@@ -284,7 +284,7 @@ export const PromptForm: React.FC = () => {
           >
             <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
               <Label htmlFor="timestamp-switch" className="flex items-center gap-2 cursor-pointer">
-                <Clock className="h-4 w-4 text-blue-500" />
+                <Clock className="h-4 w-4 text-accent" />
                 <span className="text-sm font-medium">Include Timestamp</span>
               </Label>
               <Switch
