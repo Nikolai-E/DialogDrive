@@ -1,5 +1,6 @@
 import { logger } from '../lib/logger';
 import { ChatStorage } from '../lib/chatStorage';
+import { AI_PLATFORM_SELECTORS } from '../lib/constants';
 
 const SUPPORTED_SITES = [
   /chat\.openai\.com/,
@@ -16,7 +17,7 @@ function isSupportedSite() {
 async function captureCurrentChat() {
   try {
     const currentUrl = window.location.href;
-    console.log('Capturing chat from URL:', currentUrl);
+    logger.info('Capturing chat from URL:', currentUrl);
     
     let platform: 'chatgpt' | 'gemini' | 'claude' | null = null;
     let title = '';
@@ -54,7 +55,7 @@ async function captureCurrentChat() {
       }
     };
 
-    console.log('Successfully captured chat data:', chatData);
+    logger.info('Successfully captured chat data:', chatData);
     return {
       success: true,
       data: chatData,
@@ -72,7 +73,7 @@ async function captureCurrentChat() {
 
 // ChatGPT-specific content extraction
 async function extractChatGPTTitle(): Promise<string> {
-  console.log('Extracting ChatGPT title...');
+  logger.info('Extracting ChatGPT title...');
   
   // Wait a bit for dynamic content to load
   await new Promise(resolve => setTimeout(resolve, 500));
@@ -86,7 +87,7 @@ async function extractChatGPTTitle(): Promise<string> {
       
       if (conversationMatch) {
         const conversationId = conversationMatch[1];
-        console.log('Looking for conversation ID:', conversationId);
+        logger.info('Looking for conversation ID:', conversationId);
         
         // Look for active conversation link that matches current URL
         const activeLinks = document.querySelectorAll(`nav a[href*="${conversationId}"], aside a[href*="${conversationId}"]`);
@@ -96,7 +97,7 @@ async function extractChatGPTTitle(): Promise<string> {
           if (text && text.length > 3 && text.length < 200 && 
               !text.includes('Search chats') && !text.includes('New chat') && 
               !text.includes('ChatGPT') && text !== 'Search') {
-            console.log('Found title via active conversation ID match:', text);
+            logger.info('Found title via active conversation ID match:', text);
             return text;
           }
         }
@@ -116,7 +117,7 @@ async function extractChatGPTTitle(): Promise<string> {
         if (text && text.length > 3 && text.length < 200 && 
             !text.includes('Search chats') && !text.includes('New chat') && 
             !text.includes('ChatGPT') && text !== 'Search') {
-          console.log('Found title via active indicator:', text);
+          logger.info('Found title via active indicator:', text);
           return text;
         }
       }
@@ -129,7 +130,7 @@ async function extractChatGPTTitle(): Promise<string> {
       if (pageTitle && pageTitle !== 'ChatGPT' && !pageTitle.includes('New chat')) {
         const cleaned = pageTitle.replace(' | ChatGPT', '').replace(' - ChatGPT', '').trim();
         if (cleaned && cleaned !== 'ChatGPT' && cleaned.length > 3) {
-          console.log('Found title via page title:', cleaned);
+          logger.info('Found title via page title:', cleaned);
           return cleaned;
         }
       }
@@ -143,7 +144,7 @@ async function extractChatGPTTitle(): Promise<string> {
         const text = el.textContent?.trim();
         if (text && text.length > 5 && text.length < 100 && 
             !text.includes('New chat') && !text.includes('Search chats')) {
-          console.log('Found title via active item strategy:', text);
+          logger.info('Found title via active item strategy:', text);
           return text;
         }
       }
@@ -156,7 +157,7 @@ async function extractChatGPTTitle(): Promise<string> {
       if (firstUserMessage?.textContent) {
         const text = firstUserMessage.textContent.trim().slice(0, 60);
         if (text.length > 10) {
-          console.log('Found title via first message:', text + '...');
+          logger.info('Found title via first message:', text + '...');
           return text + '...';
         }
       }
@@ -171,7 +172,7 @@ async function extractChatGPTTitle(): Promise<string> {
         if (text && text.length > 5 && text.length < 100 && 
             !text.includes('ChatGPT') && !text.includes('New chat') && 
             !text.includes('Search chats')) {
-          console.log('Found title via heading strategy:', text);
+          logger.info('Found title via heading strategy:', text);
           return text;
         }
       }
@@ -186,7 +187,7 @@ async function extractChatGPTTitle(): Promise<string> {
     }
   }
   
-  console.log('No title found, using date-based fallback');
+  logger.info('No title found, using date-based fallback');
   // Generate a meaningful fallback title with current date/time
   const now = new Date();
   const timeStr = now.toLocaleTimeString('en-US', { 
@@ -202,7 +203,7 @@ async function extractChatGPTTitle(): Promise<string> {
 }
 
 async function extractChatGPTContent() {
-  console.log('Extracting ChatGPT content...');
+  logger.info('Extracting ChatGPT content...');
   
   await new Promise(resolve => setTimeout(resolve, 300));
   
@@ -216,7 +217,7 @@ async function extractChatGPTContent() {
     lastMessage = lastEl.textContent?.slice(0, 150) || '';
   }
   
-  console.log(`Found ${messages.length} total messages (${userMessages.length} user, ${assistantMessages.length} assistant)`);
+  logger.info(`Found ${messages.length} total messages (${userMessages.length} user, ${assistantMessages.length} assistant)`);
   
   return {
     messageCount: messages.length,
@@ -229,7 +230,7 @@ async function extractChatGPTContent() {
 
 // Gemini-specific content extraction
 async function extractGeminiTitle(): Promise<string> {
-  console.log('Extracting Gemini title...');
+  logger.info('Extracting Gemini title...');
   
   await new Promise(resolve => setTimeout(resolve, 500));
   
@@ -238,7 +239,7 @@ async function extractGeminiTitle(): Promise<string> {
   if (pageTitle && pageTitle !== 'Gemini' && !pageTitle.includes('New conversation')) {
     const cleaned = pageTitle.replace(' - Gemini', '').replace(' | Gemini', '').trim();
     if (cleaned && cleaned !== 'Gemini') {
-      console.log('Found Gemini title via page title:', cleaned);
+      logger.info('Found Gemini title via page title:', cleaned);
       return cleaned;
     }
   }
@@ -248,7 +249,7 @@ async function extractGeminiTitle(): Promise<string> {
   for (const el of possibleTitles) {
     const text = el.textContent?.trim();
     if (text && text.length > 5 && text.length < 100 && !text.includes('Gemini')) {
-      console.log('Found Gemini title via UI:', text);
+      logger.info('Found Gemini title via UI:', text);
       return text;
     }
   }
@@ -258,17 +259,17 @@ async function extractGeminiTitle(): Promise<string> {
   if (firstMessage?.textContent) {
     const text = firstMessage.textContent.trim().slice(0, 60);
     if (text.length > 10) {
-      console.log('Found Gemini title via first message:', text + '...');
+      logger.info('Found Gemini title via first message:', text + '...');
       return text + '...';
     }
   }
   
-  console.log('No Gemini title found, using fallback');
+  logger.info('No Gemini title found, using fallback');
   return '';
 }
 
 async function extractGeminiContent() {
-  console.log('Extracting Gemini content...');
+  logger.info('Extracting Gemini content...');
   
   await new Promise(resolve => setTimeout(resolve, 300));
   
@@ -280,7 +281,7 @@ async function extractGeminiContent() {
     lastMessage = lastEl.textContent?.slice(0, 150) || '';
   }
   
-  console.log(`Found ${messages.length} Gemini messages`);
+  logger.info(`Found ${messages.length} Gemini messages`);
   
   return {
     messageCount: messages.length,
@@ -291,7 +292,7 @@ async function extractGeminiContent() {
 
 // Claude-specific content extraction
 async function extractClaudeTitle(): Promise<string> {
-  console.log('Extracting Claude title...');
+  logger.info('Extracting Claude title...');
   
   await new Promise(resolve => setTimeout(resolve, 500));
   
@@ -299,7 +300,7 @@ async function extractClaudeTitle(): Promise<string> {
   if (pageTitle && pageTitle !== 'Claude' && !pageTitle.includes('New conversation')) {
     const cleaned = pageTitle.replace(' - Claude', '').replace(' | Claude', '').trim();
     if (cleaned && cleaned !== 'Claude') {
-      console.log('Found Claude title via page title:', cleaned);
+      logger.info('Found Claude title via page title:', cleaned);
       return cleaned;
     }
   }
@@ -308,7 +309,7 @@ async function extractClaudeTitle(): Promise<string> {
 }
 
 async function extractClaudeContent() {
-  console.log('Extracting Claude content...');
+  logger.info('Extracting Claude content...');
   
   const messages = document.querySelectorAll('.message, [data-testid="message"]');
   
@@ -318,7 +319,7 @@ async function extractClaudeContent() {
     lastMessage = lastEl.textContent?.slice(0, 150) || '';
   }
   
-  console.log(`Found ${messages.length} Claude messages`);
+  logger.info(`Found ${messages.length} Claude messages`);
   
   return {
     messageCount: messages.length,
@@ -328,16 +329,16 @@ async function extractClaudeContent() {
 }
 
 function pasteIntoActiveTextbox(text: string) {
-  console.log('Attempting to paste text:', text);
+  logger.info('Attempting to paste text:', text);
   
   // ChatGPT specific handling
   if (window.location.hostname.includes('chatgpt.com') || window.location.hostname.includes('chat.openai.com')) {
-    console.log('ChatGPT detected, looking for contenteditable');
+    logger.info('ChatGPT detected, looking for contenteditable');
     
     // Look for ChatGPT's input area (contenteditable div)
     const chatInput = document.querySelector('[contenteditable="true"]') as HTMLElement;
     if (chatInput) {
-      console.log('Found contenteditable element:', chatInput);
+      logger.info('Found contenteditable element:', chatInput);
       chatInput.focus();
       chatInput.innerText = text;
       
@@ -359,7 +360,7 @@ function pasteIntoActiveTextbox(text: string) {
     // Fallback: look for any textarea or input
     const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
     if (textarea) {
-      console.log('Found textarea fallback:', textarea);
+      logger.info('Found textarea fallback:', textarea);
       textarea.focus();
       textarea.value = text;
       textarea.dispatchEvent(new Event('input', { bubbles: true }));
@@ -370,7 +371,7 @@ function pasteIntoActiveTextbox(text: string) {
   // Try to find the active/focused textbox or textarea
   const active = document.activeElement as HTMLInputElement | HTMLTextAreaElement | null;
   if (active && (active.tagName === 'TEXTAREA' || (active.tagName === 'INPUT' && (active.type === 'text' || active.type === 'search')))) {
-    console.log('Found active input element:', active);
+    logger.info('Found active input element:', active);
     active.value = text;
     active.dispatchEvent(new Event('input', { bubbles: true }));
     active.focus();
@@ -380,7 +381,7 @@ function pasteIntoActiveTextbox(text: string) {
   // Try contenteditable elements (for other sites)
   const contentEditable = document.querySelector('[contenteditable="true"]') as HTMLElement;
   if (contentEditable) {
-    console.log('Found contenteditable element:', contentEditable);
+    logger.info('Found contenteditable element:', contentEditable);
     contentEditable.focus();
     contentEditable.innerText = text;
     contentEditable.dispatchEvent(new Event('input', { bubbles: true }));
@@ -390,14 +391,14 @@ function pasteIntoActiveTextbox(text: string) {
   // Try to find a visible textarea or input
   const el = document.querySelector('textarea, input[type="text"], input[type="search"]') as HTMLInputElement | HTMLTextAreaElement | null;
   if (el) {
-    console.log('Found generic input element:', el);
+    logger.info('Found generic input element:', el);
     el.value = text;
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.focus();
     return true;
   }
   
-  console.log('No suitable input element found');
+  logger.info('No suitable input element found');
   return false;
 }
 
@@ -409,7 +410,7 @@ export default defineContentScript({
     '*://gemini.google.com/*'
   ],
   main() {
-    console.log('DialogDrive content script loaded on:', window.location.hostname);
+    logger.info('DialogDrive content script loaded on:', window.location.hostname);
     
     // Add floating bookmark button for ChatGPT
     if (window.location.hostname.includes('chatgpt.com')) {
@@ -420,7 +421,7 @@ export default defineContentScript({
       const urlObserver = new MutationObserver(() => {
         if (window.location.href !== currentUrl) {
           currentUrl = window.location.href;
-          console.log('URL changed, re-adding bookmark button...');
+          logger.info('URL changed, re-adding bookmark button...');
           setTimeout(() => addFloatingBookmarkButton(), 1000); // Delay to let page load
         }
       });
@@ -432,32 +433,32 @@ export default defineContentScript({
     }
     
     browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-      console.log('Content script received message:', msg);
+      logger.info('Content script received message:', msg);
       
       if (msg && msg.type === 'PASTE_PROMPT') {
         if (isSupportedSite()) {
-          console.log('Site is supported, attempting to paste');
+          logger.info('Site is supported, attempting to paste');
           const success = pasteIntoActiveTextbox(msg.text);
-          console.log('Paste success:', success);
+          logger.info('Paste success:', success);
           sendResponse({ success });
         } else {
-          console.log('Site not supported');
+          logger.info('Site not supported');
           sendResponse({ success: false, error: 'Site not supported' });
         }
       }
       
       if (msg && msg.type === 'CAPTURE_CURRENT_CHAT') {
-        console.log('Capture request received');
+        logger.info('Capture request received');
         if (isSupportedSite()) {
           captureCurrentChat().then(result => {
-            console.log('Capture result:', result);
+            logger.info('Capture result:', result);
             sendResponse(result);
           }).catch(error => {
             console.error('Capture error:', error);
             sendResponse({ success: false, message: 'Capture failed: ' + error.message });
           });
         } else {
-          console.log('Site not supported for capture');
+          logger.info('Site not supported for capture');
           sendResponse({ success: false, message: 'Current site not supported for chat capture' });
         }
       }
@@ -479,7 +480,7 @@ function addFloatingBookmarkButton() {
     existingButton.remove();
   }
   
-  console.log('Adding DialogDrive bookmark button...');
+  logger.info('Adding DialogDrive bookmark button...');
   
   // Create the bookmark button
   const bookmarkButton = document.createElement('button');
@@ -528,7 +529,7 @@ function addFloatingBookmarkButton() {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('DialogDrive bookmark button clicked');
+    logger.info('DialogDrive bookmark button clicked');
     
     // Check if quick form is already open
     const existingForm = document.getElementById('dialogdrive-quick-form');
@@ -548,7 +549,7 @@ function addFloatingBookmarkButton() {
     if (shareButton) {
       const headerContainer = shareButton.parentElement;
       if (headerContainer) {
-        console.log('Found share button, inserting bookmark button nearby');
+        logger.info('Found share button, inserting bookmark button nearby');
         headerContainer.insertBefore(bookmarkButton, shareButton.nextSibling);
         return true;
       }
@@ -557,7 +558,7 @@ function addFloatingBookmarkButton() {
     // Fallback: look for the header actions container by structure
     const headerActions = document.querySelector('header div:last-child, main header div:last-child');
     if (headerActions) {
-      console.log('Found header actions container, appending bookmark button');
+      logger.info('Found header actions container, appending bookmark button');
       headerActions.appendChild(bookmarkButton);
       return true;
     }
@@ -565,7 +566,7 @@ function addFloatingBookmarkButton() {
     // Another fallback: look for any header with buttons
     const headerWithButtons = document.querySelector('header:has(button)');
     if (headerWithButtons) {
-      console.log('Found header with buttons, appending bookmark button');
+      logger.info('Found header with buttons, appending bookmark button');
       headerWithButtons.appendChild(bookmarkButton);
       return true;
     }
@@ -576,13 +577,13 @@ function addFloatingBookmarkButton() {
   // Try to insert immediately
   if (!insertBookmarkButton()) {
     // If not found, wait for page load and try again
-    console.log('Header not found, waiting for page load...');
+    logger.info('Header not found, waiting for page load...');
     
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
           if (insertBookmarkButton()) {
-            console.log('Bookmark button inserted after DOM change');
+            logger.info('Bookmark button inserted after DOM change');
             observer.disconnect();
             break;
           }
@@ -598,7 +599,7 @@ function addFloatingBookmarkButton() {
     // Stop trying after 10 seconds
     setTimeout(() => {
       observer.disconnect();
-      console.log('Stopped looking for header insertion point');
+      logger.info('Stopped looking for header insertion point');
     }, 10000);
   }
 }
@@ -611,7 +612,7 @@ async function showQuickBookmarkForm(triggerButton: HTMLElement) {
     existingForm.remove();
   }
   
-  console.log('Showing quick bookmark form...');
+  logger.info('Showing quick bookmark form...');
   
   // Get available workspaces and tags from storage
   let workspaces: string[] = ['General'];
@@ -625,7 +626,7 @@ async function showQuickBookmarkForm(triggerButton: HTMLElement) {
       allTags = response.tags || [];
     }
   } catch (error) {
-    console.log('Could not fetch workspaces/tags, using defaults');
+    logger.info('Could not fetch workspaces/tags, using defaults');
   }
   
   // Create the quick form
@@ -760,7 +761,7 @@ async function showQuickBookmarkForm(triggerButton: HTMLElement) {
     const tagsText = tagsInput.value.trim();
     const tags = tagsText ? tagsText.split(',').map(t => t.trim()).filter(Boolean) : [];
     
-    console.log('Saving chat with:', { workspace: selectedWorkspace, tags });
+    logger.info('Saving chat with:', { workspace: selectedWorkspace, tags });
     
     // Show loading state
     saveBtn.innerHTML = 'Saving...';
@@ -782,7 +783,7 @@ async function showQuickBookmarkForm(triggerButton: HTMLElement) {
           }
         });
         
-        console.log('Chat bookmarked successfully with workspace/tags');
+        logger.info('Chat bookmarked successfully with workspace/tags');
         
         // Show success
         showBookmarkToast(`Chat saved to "${selectedWorkspace}"${tags.length ? ` with tags: ${tags.join(', ')}` : ''}!`, 'success');

@@ -8,6 +8,6 @@ export default defineContentScript({
   matches: ['*://chatgpt.com/*', '*://claude.ai/*', '*://gemini.google.com/*'],
   main() {
     // Content capture functionality is now handled in the main content.ts file
-    logger.log('ChatCapture functionality moved to content.ts - this file is deprecated');
+    logger.info('ChatCapture functionality moved to content.ts - this file is deprecated');
   },
 });

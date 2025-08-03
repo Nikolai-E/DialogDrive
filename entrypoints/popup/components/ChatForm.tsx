@@ -162,13 +162,14 @@ export const ChatForm: React.FC = () => {
         response = await browser.tabs.sendMessage(activeTab.id, { 
           type: 'CAPTURE_CURRENT_CHAT' 
         });
-      } catch (err: any) {
-        if (err && err.message && err.message.includes('Could not establish connection')) {
+      } catch (err: unknown) {
+        const error = err as Error;
+        if (error && error.message && error.message.includes('Could not establish connection')) {
           toast.error('Could not connect to the tab. Make sure you have permission to access this tab and that the content script is loaded.');
-        } else if (err && err.message && err.message.includes('No tab with id')) {
+        } else if (error && error.message && error.message.includes('No tab with id')) {
           toast.error('The tab is no longer available or has been closed.');
         } else {
-          toast.error(`Failed to send message to tab: ${err?.message || err}`);
+          toast.error(`Failed to send message to tab: ${error?.message || error}`);
         }
         setIsCapturing(false);
         return;

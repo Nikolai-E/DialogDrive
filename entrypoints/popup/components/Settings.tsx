@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
+import type { Prompt } from '../../../types/prompt';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
@@ -56,8 +57,8 @@ export const Settings: React.FC = () => {
 
   const stats = {
     totalPrompts: prompts.length,
-    pinnedPrompts: prompts.filter((p: any) => p.isPinned).length,
-    totalUsage: prompts.reduce((sum: number, p: any) => sum + p.usageCount, 0),
+    pinnedPrompts: prompts.filter((p: Prompt) => p.isPinned).length,
+    totalUsage: prompts.reduce((sum: number, p: Prompt) => sum + p.usageCount, 0),
   };
 
   return (

@@ -1,11 +1,32 @@
-import type { Prompt } from '~/types/prompt';
+import type { Prompt } from '../types/prompt';
+import type { StorageResult } from '../types/app';
 import { v4 as uuidv4 } from 'uuid';
-import { logger, logStorageAction } from '~/lib/logger';
+import { logger, logStorageAction } from './logger';
 
 const PROMPTS_STORAGE_KEY = 'dialogdrive-prompts';
 
-// --- Initial Data and Initialization ---
+// Dual storage strategy: try browser.storage first, fallback to localStorage
+const safeStorageSet = async (key: string, value: any): Promise<void> => {
+  try {
+    await browser.storage.local.set({ [key]: value });
+  } catch (error) {
+    logger.warn('Browser storage failed, falling back to localStorage:', error);
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+};
 
+const safeStorageGet = async (key: string): Promise<any> => {
+  try {
+    const result = await browser.storage.local.get(key);
+    return result[key];
+  } catch (error) {
+    logger.warn('Browser storage failed, falling back to localStorage:', error);
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : undefined;
+  }
+};
+
+// Initial data creation
 const createInitialPrompts = (): Prompt[] => [
   {
     id: uuidv4(),
@@ -34,7 +55,7 @@ const createInitialPrompts = (): Prompt[] => [
   {
     id: uuidv4(),
     title: 'Code review request',
-    text: 'Please review the following code and provide feedback on:\n- Code quality and best practices\n- Potential bugs or issues\n- Performance improvements\n- Security considerations\n\n[paste code here]',
+    text: 'Please review the following code and provide feedback on:\\n- Code quality and best practices\\n- Potential bugs or issues\\n- Performance improvements\\n- Security considerations\\n\\n[paste code here]',
     workspace: 'Development',
     created: new Date().toISOString(),
     tags: ['code', 'review', 'feedback'],
@@ -47,33 +68,32 @@ const createInitialPrompts = (): Prompt[] => [
 
 /**
  * Initializes storage with default prompts if it's empty.
- * Should be called once when the extension starts.
  */
-export const initializeStorage = async () => {
+export const initializeStorage = async (): Promise<StorageResult<Prompt[]>> => {
   try {
-    const existingPrompts = await browser.storage.local.get(PROMPTS_STORAGE_KEY);
-    const prompts = existingPrompts[PROMPTS_STORAGE_KEY] as Prompt[] | undefined;
+    const existingPrompts = await safeStorageGet(PROMPTS_STORAGE_KEY);
     
-    if (!prompts || prompts.length === 0) {
+    if (!existingPrompts || existingPrompts.length === 0) {
       const initialPrompts = createInitialPrompts();
-      await browser.storage.local.set({ [PROMPTS_STORAGE_KEY]: initialPrompts });
+      await safeStorageSet(PROMPTS_STORAGE_KEY, initialPrompts);
       logStorageAction('Storage initialized with default prompts', true);
+      return { success: true, data: initialPrompts };
     } else {
       logStorageAction('Storage already initialized', true);
+      return { success: true, data: existingPrompts };
     }
   } catch (error) {
     logger.error('Failed to initialize storage:', error);
     logStorageAction('Initialize storage', false, error as Error);
+    return { success: false, error: (error as Error).message };
   }
 };
 
-// --- Storage API ---
-
+// Storage API
 export const promptStorage = {
   getAll: async (): Promise<Prompt[]> => {
     try {
-      const result = await browser.storage.local.get(PROMPTS_STORAGE_KEY);
-      const prompts = result[PROMPTS_STORAGE_KEY] as Prompt[] | undefined;
+      const prompts = await safeStorageGet(PROMPTS_STORAGE_KEY);
       return prompts || [];
     } catch (error) {
       logger.error('Failed to get all prompts:', error);
@@ -92,15 +112,14 @@ export const promptStorage = {
         workspace: prompt.workspace || 'General',
         tags: prompt.tags || [],
         usageCount: 0,
-        isPinned: false,
+        isPinned: prompt.isPinned ?? false,
         includeTimestamp: prompt.includeTimestamp ?? false,
         includeVoiceTag: prompt.includeVoiceTag ?? false,
       };
       
       const updatedPrompts = [...prompts, newPrompt];
-      await browser.storage.local.set({ [PROMPTS_STORAGE_KEY]: updatedPrompts });
-      
-      logStorageAction('Added prompt', true);
+      await safeStorageSet(PROMPTS_STORAGE_KEY, updatedPrompts);
+      logStorageAction('Add prompt', true);
       return newPrompt;
     } catch (error) {
       logger.error('Failed to add prompt:', error);
@@ -109,18 +128,18 @@ export const promptStorage = {
     }
   },
 
-  update: async (updatedPrompt: Prompt): Promise<Prompt> => {
+  update: async (prompt: Prompt): Promise<Prompt> => {
     try {
       const prompts = await promptStorage.getAll();
-      const promptIndex = prompts.findIndex((p) => p.id === updatedPrompt.id);
-      if (promptIndex === -1) throw new Error('Prompt not found');
+      const index = prompts.findIndex(p => p.id === prompt.id);
+      if (index === -1) {
+        throw new Error('Prompt not found');
+      }
       
-      const updatedPrompts = [...prompts];
-      updatedPrompts[promptIndex] = updatedPrompt;
-      await browser.storage.local.set({ [PROMPTS_STORAGE_KEY]: updatedPrompts });
-      
-      logStorageAction('Updated prompt', true);
-      return updatedPrompt;
+      prompts[index] = prompt;
+      await safeStorageSet(PROMPTS_STORAGE_KEY, prompts);
+      logStorageAction('Update prompt', true);
+      return prompt;
     } catch (error) {
       logger.error('Failed to update prompt:', error);
       logStorageAction('Update prompt', false, error as Error);
@@ -128,17 +147,31 @@ export const promptStorage = {
     }
   },
 
-  delete: async (id: string): Promise<void> => {
+  remove: async (id: string): Promise<void> => {
     try {
       const prompts = await promptStorage.getAll();
-      const updatedPrompts = prompts.filter((p) => p.id !== id);
-      await browser.storage.local.set({ [PROMPTS_STORAGE_KEY]: updatedPrompts });
-      
-      logStorageAction('Deleted prompt', true);
+      const filteredPrompts = prompts.filter(p => p.id !== id);
+      await safeStorageSet(PROMPTS_STORAGE_KEY, filteredPrompts);
+      logStorageAction('Delete prompt', true);
     } catch (error) {
       logger.error('Failed to delete prompt:', error);
       logStorageAction('Delete prompt', false, error as Error);
       throw error;
     }
   },
+
+  incrementUsage: async (id: string): Promise<void> => {
+    try {
+      const prompts = await promptStorage.getAll();
+      const prompt = prompts.find(p => p.id === id);
+      if (prompt) {
+        prompt.usageCount += 1;
+        prompt.lastUsed = new Date().toISOString();
+        await promptStorage.update(prompt);
+      }
+    } catch (error) {
+      logger.error('Failed to increment usage:', error);
+      logStorageAction('Increment usage', false, error as Error);
+    }
+  }
 };

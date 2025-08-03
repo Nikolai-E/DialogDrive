@@ -21,7 +21,7 @@ const App: React.FC = () => {
   } = useUnifiedStore();
 
   useEffect(() => {
-    logger.log('App mounted, loading all data...');
+    logger.info('App mounted, loading all data...');
     loadAll();
   }, [loadAll]);
 

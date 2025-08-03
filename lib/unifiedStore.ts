@@ -1,13 +1,13 @@
 import { create } from 'zustand';
 import type { Prompt } from '../types/prompt';
 import type { ChatBookmark, WorkspaceItem, AddChatBookmark } from '../types/chat';
+import type { ViewType, SortOption, SearchFilters, AppStats } from '../types/app';
 import { promptStorage } from './storage';
 import { chatStorage } from './chatStorage';
 import { logger, logPromptAction } from './logger';
+import { DEFAULT_WORKSPACES } from './constants';
 
 type AddPrompt = Omit<Prompt, 'id' | 'created'>;
-type SortByType = 'lastUsed' | 'title' | 'usageCount';
-type ViewType = 'list' | 'form' | 'settings' | 'chat-form';
 type ContentFilter = 'all' | 'prompts' | 'chats';
 
 interface UnifiedState {
@@ -19,7 +19,7 @@ interface UnifiedState {
   
   // Search and filter state
   searchTerm: string;
-  sortBy: SortByType;
+  sortBy: SortOption;
   filterTag: string;
   showPinned: boolean;
   contentFilter: ContentFilter; // New: filter by content type
@@ -35,6 +35,9 @@ interface UnifiedState {
   allTags: string[];
   filteredItems: WorkspaceItem[]; // Unified items
   filteredPrompts: Prompt[]; // Backwards compatibility
+  
+  // Statistics
+  stats: AppStats;
   
   // Prompt actions (existing)
   loadPrompts: () => Promise<void>;
@@ -54,7 +57,7 @@ interface UnifiedState {
   
   // Search and filter actions
   setSearchTerm: (term: string) => void;
-  setSortBy: (sortBy: SortByType) => void;
+  setSortBy: (sortBy: SortOption) => void;
   setFilterTag: (tag: string) => void;
   setShowPinned: (show: boolean) => void;
   setContentFilter: (filter: ContentFilter) => void; // New
@@ -104,7 +107,7 @@ const getFilteredAndSortedItems = (
   prompts: Prompt[],
   chats: ChatBookmark[],
   searchTerm: string,
-  sortBy: SortByType,
+  sortBy: SortOption,
   filterTag: string,
   showPinned: boolean,
   contentFilter: ContentFilter,
@@ -152,11 +155,13 @@ const getFilteredAndSortedItems = (
     if (!a.isPinned && b.isPinned) return 1;
 
     switch (sortBy) {
-      case 'title':
+      case 'alphabetical':
         return a.title.localeCompare(b.title);
-      case 'usageCount':
+      case 'usage':
         return b.usageCount - a.usageCount;
-      case 'lastUsed':
+      case 'pinned':
+        return Number(b.isPinned) - Number(a.isPinned);
+      case 'recent':
       default:
         const dateA = a.lastUsed ? new Date(a.lastUsed).getTime() : 0;
         const dateB = b.lastUsed ? new Date(b.lastUsed).getTime() : 0;
@@ -171,7 +176,7 @@ const getFilteredAndSortedItems = (
 const getFilteredAndSortedPrompts = (
   prompts: Prompt[],
   searchTerm: string,
-  sortBy: SortByType,
+  sortBy: SortOption,
   filterTag: string,
   showPinned: boolean
 ): Prompt[] => {
@@ -197,11 +202,13 @@ const getFilteredAndSortedPrompts = (
     if (!a.isPinned && b.isPinned) return 1;
 
     switch (sortBy) {
-      case 'title':
+      case 'alphabetical':
         return a.title.localeCompare(b.title);
-      case 'usageCount':
+      case 'usage':
         return b.usageCount - a.usageCount;
-      case 'lastUsed':
+      case 'pinned':
+        return Number(b.isPinned) - Number(a.isPinned);
+      case 'recent':
       default:
         const dateA = a.lastUsed ? new Date(a.lastUsed).getTime() : 0;
         const dateB = b.lastUsed ? new Date(b.lastUsed).getTime() : 0;
@@ -210,6 +217,20 @@ const getFilteredAndSortedPrompts = (
   });
 
   return result;
+};
+
+const calculateStats = (prompts: Prompt[], chats: ChatBookmark[]): AppStats => {
+  return {
+    totalPrompts: prompts.length,
+    totalChats: chats.length,
+    pinnedPrompts: prompts.filter(p => p.isPinned).length,
+    totalUsage: prompts.reduce((sum, p) => sum + p.usageCount, 0) + 
+                chats.reduce((sum, c) => sum + (c.accessCount || 0), 0),
+    activeWorkspaces: Array.from(new Set([
+      ...prompts.map(p => p.workspace),
+      ...chats.map(c => c.workspace)
+    ])).length,
+  };
 };
 
 const updateAndFilterState = (state: UnifiedState) => {
@@ -222,6 +243,9 @@ const updateAndFilterState = (state: UnifiedState) => {
   const promptTags = state.prompts.flatMap(p => p.tags || []);
   const chatTags = state.chats.flatMap(c => c.tags || []);
   const allTags = Array.from(new Set([...promptTags, ...chatTags]));
+  
+  // Calculate statistics
+  const stats = calculateStats(state.prompts, state.chats);
   
   // Get filtered items (unified)
   const filteredItems = getFilteredAndSortedItems(
@@ -244,7 +268,7 @@ const updateAndFilterState = (state: UnifiedState) => {
     state.showPinned
   );
   
-  return { ...state, workspaces, allTags, filteredItems, filteredPrompts };
+  return { ...state, workspaces, allTags, stats, filteredItems, filteredPrompts };
 };
 
 export const useUnifiedStore = create<UnifiedState>((set, get) => ({
@@ -255,7 +279,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   error: null,
   
   searchTerm: '',
-  sortBy: 'lastUsed',
+  sortBy: 'recent',
   filterTag: 'all',
   showPinned: false,
   contentFilter: 'all',
@@ -269,6 +293,14 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   allTags: [],
   filteredItems: [],
   filteredPrompts: [],
+  
+  stats: {
+    totalPrompts: 0,
+    totalChats: 0,
+    pinnedPrompts: 0,
+    totalUsage: 0,
+    activeWorkspaces: 0,
+  },
 
   // Load all data
   loadAll: async () => {

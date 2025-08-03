@@ -1,5 +1,6 @@
 import React from 'react';
 import { usePromptStore } from '../../../lib/promptStore';
+import type { Prompt } from '../../../types/prompt';
 import { PromptItem } from './PromptItem';
 import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert";
 import { Loader2, Info, Search, Plus } from 'lucide-react';
@@ -45,7 +46,7 @@ export const PromptList: React.FC = () => {
       <div className="flex-1 overflow-y-auto bg-white">
         {filteredPrompts.length > 0 ? (
           <div className="divide-y divide-gray-100">
-            {filteredPrompts.map((prompt: any) => (
+            {filteredPrompts.map((prompt: Prompt) => (
               <PromptItem key={prompt.id} prompt={prompt} />
             ))}
           </div>

@@ -7,6 +7,8 @@ import { ChatStorage } from '../../../lib/chatStorage';
 import { Pin, Edit2, Trash2, ExternalLink, MessageSquare, FileText } from 'lucide-react';
 import { useCopyToClipboard } from '../hooks/useCopyToClipboard';
 import { toast } from 'sonner';
+import { Button } from '../../../components/ui/button';
+import { cn } from '../../../lib/utils';
 
 interface UnifiedItemProps {
   item: WorkspaceItem;
@@ -246,20 +248,25 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
 
         {/* Action buttons - LOCKED SPECIFICATION: float above without affecting layout */}
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 ease-apple bg-card/95 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-lg border border-border z-10">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handlePin}
-            className={`p-1.5 rounded-md transition-all duration-200 ease-apple hover:scale-105 active:scale-95 ${
+            className={cn(
+              "h-8 w-8 p-0 transition-all duration-200 ease-apple hover:scale-105 active:scale-95",
               item.isPinned 
                 ? 'text-accent bg-accent/10 hover:bg-accent/20 border border-accent/20' 
                 : 'text-muted-foreground hover:text-accent hover:bg-accent/10'
-            }`}
+            )}
             title={item.isPinned ? `Unpin ${item.type}` : `Pin ${item.type}`}
           >
             <Pin className="w-3.5 h-3.5" />
-          </button>
+          </Button>
           
           {item.type === 'chat' && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={async (e) => {
                 e.stopPropagation();
                 const chat = item.data as ChatBookmark;
@@ -270,28 +277,32 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
                   toast.error('Failed to update chat access count');
                 }
               }}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-secondary hover:bg-secondary/10 transition-all duration-200 ease-apple hover:scale-105 active:scale-95"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-secondary hover:bg-secondary/10 transition-all duration-200 ease-apple hover:scale-105 active:scale-95"
               title="Open chat in new tab"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           )}
           
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleEdit}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-accent hover:bg-accent/10 transition-all duration-200 ease-apple hover:scale-105 active:scale-95"
+            className="h-8 w-8 p-0 text-muted-foreground hover:text-accent hover:bg-accent/10 transition-all duration-200 ease-apple hover:scale-105 active:scale-95"
             title={`Edit ${item.type}`}
           >
             <Edit2 className="w-3.5 h-3.5" />
-          </button>
+          </Button>
           
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleDelete}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 ease-apple hover:scale-105 active:scale-95"
+            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 ease-apple hover:scale-105 active:scale-95"
             title={`Delete ${item.type}`}
           >
             <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </div>
 
         {/* Processing overlay - LOCKED SPECIFICATION */}

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { ChevronDown, SortAsc, Building2, Tag, Pin } from 'lucide-react';
+import { Button } from '../../../components/ui/button';
+import { cn } from '../../../lib/utils';
 
 export const CompactControls: React.FC = () => {
   const [showSortDropdown, setShowSortDropdown] = useState(false);
@@ -57,92 +59,106 @@ export const CompactControls: React.FC = () => {
       <div className="flex items-center gap-2">
         {/* Sort Dropdown */}
         <div className="relative" ref={sortRef}>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setShowSortDropdown(!showSortDropdown)}
-            className="flex items-center gap-1 bg-card border border-border rounded text-xs px-2 py-1 hover:bg-muted focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring"
+            className="h-7 text-xs px-2 gap-1"
           >
             <SortAsc className="h-3 w-3 text-muted-foreground" />
             <span className="text-foreground">
               {sortOptions.find(opt => opt.value === sortBy)?.label}
             </span>
             <ChevronDown className="h-3 w-3 text-muted-foreground" />
-          </button>
+          </Button>
           
           {showSortDropdown && (
             <div className="absolute top-full left-0 mt-1 w-24 bg-card border border-border rounded shadow-lg z-50">
               {sortOptions.map((option) => (
-                <button
+                <Button
                   key={option.value}
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     setSortBy(option.value as any);
                     setShowSortDropdown(false);
                   }}
-                  className={`w-full text-left px-2 py-1.5 text-xs hover:bg-accent/10 ${
+                  className={cn(
+                    "w-full h-7 justify-start text-xs px-2 rounded-none",
                     sortBy === option.value ? 'bg-accent/10 text-accent' : 'text-foreground'
-                  }`}
+                  )}
                 >
                   {option.label}
-                </button>
+                </Button>
               ))}
             </div>
           )}
         </div>
 
         {/* Pinned Toggle */}
-        <button
+        <Button
+          variant={showPinned ? "secondary" : "outline"}
+          size="sm"
           onClick={() => setShowPinned(!showPinned)}
-          className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
-            showPinned 
-              ? 'bg-accent/10 text-accent border border-accent/20' 
-              : 'bg-card text-muted-foreground border border-border hover:bg-muted'
-          }`}
+          className={cn(
+            "h-7 text-xs px-2 gap-1",
+            showPinned && "bg-accent/10 text-accent border-accent/20"
+          )}
         >
           <Pin className="h-3 w-3" />
           {showPinned ? 'Pinned' : 'All'}
-        </button>
+        </Button>
       </div>
 
       {/* Right side: Workspace and Tags */}
       <div className="flex items-center gap-2">
         {/* Workspace Dropdown */}
         <div className="relative" ref={workspaceRef}>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
-            className="flex items-center gap-1 bg-card border border-border rounded text-xs px-2 py-1 hover:bg-muted focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring max-w-[80px]"
+            className="h-7 text-xs px-2 gap-1 max-w-[80px]"
           >
             <Building2 className="h-3 w-3 text-muted-foreground flex-shrink-0" />
             <span className="text-foreground truncate">
               {selectedWorkspace === 'all' ? 'All' : selectedWorkspace}
             </span>
             <ChevronDown className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-          </button>
+          </Button>
           
           {showWorkspaceDropdown && (
             <div className="absolute top-full right-0 mt-1 w-32 bg-card border border-border rounded shadow-lg z-50">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   setSelectedWorkspace('all');
                   setShowWorkspaceDropdown(false);
                 }}
-                className={`w-full text-left px-2 py-1.5 text-xs hover:bg-accent/10 ${
+                className={cn(
+                  "w-full h-7 justify-start text-xs px-2 rounded-none",
                   selectedWorkspace === 'all' ? 'bg-accent/10 text-accent' : 'text-foreground'
-                }`}
+                )}
               >
                 All Workspaces
-              </button>
+              </Button>
               {workspaces.map((workspace) => (
-                <button
+                <Button
                   key={workspace}
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     setSelectedWorkspace(workspace);
                     setShowWorkspaceDropdown(false);
                   }}
-                  className={`w-full text-left px-2 py-1.5 text-xs hover:bg-accent/10 truncate ${
+                  className={cn(
+                    "w-full h-7 justify-start text-xs px-2 rounded-none truncate",
                     selectedWorkspace === workspace ? 'bg-accent/10 text-accent' : 'text-foreground'
-                  }`}
+                  )}
                 >
                   {workspace}
-                </button>
+                </Button>
               ))}
             </div>
           )}
@@ -150,43 +166,51 @@ export const CompactControls: React.FC = () => {
 
         {/* Tags Dropdown */}
         <div className="relative" ref={tagsRef}>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setShowTagsDropdown(!showTagsDropdown)}
-            className="flex items-center gap-1 bg-card border border-border rounded text-xs px-2 py-1 hover:bg-muted focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring max-w-[80px]"
+            className="h-7 text-xs px-2 gap-1 max-w-[80px]"
           >
             <Tag className="h-3 w-3 text-muted-foreground flex-shrink-0" />
             <span className="text-foreground truncate">
               {filterTag === 'all' ? 'All' : filterTag}
             </span>
             <ChevronDown className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-          </button>
+          </Button>
           
           {showTagsDropdown && (
             <div className="absolute top-full right-0 mt-1 w-32 bg-card border border-border rounded shadow-lg z-50 max-h-32 overflow-y-auto">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   setFilterTag('all');
                   setShowTagsDropdown(false);
                 }}
-                className={`w-full text-left px-2 py-1.5 text-xs hover:bg-accent/10 ${
+                className={cn(
+                  "w-full h-7 justify-start text-xs px-2 rounded-none",
                   filterTag === 'all' ? 'bg-accent/10 text-accent' : 'text-foreground'
-                }`}
+                )}
               >
                 All Tags
-              </button>
+              </Button>
               {allTags.map((tag) => (
-                <button
+                <Button
                   key={tag}
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     setFilterTag(tag);
                     setShowTagsDropdown(false);
                   }}
-                  className={`w-full text-left px-2 py-1.5 text-xs hover:bg-accent/10 truncate ${
+                  className={cn(
+                    "w-full h-7 justify-start text-xs px-2 rounded-none truncate",
                     filterTag === tag ? 'bg-accent/10 text-accent' : 'text-foreground'
-                  }`}
+                  )}
                 >
                   {tag}
-                </button>
+                </Button>
               ))}
             </div>
           )}

@@ -3,7 +3,9 @@ import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { UnifiedItem } from './UnifiedItem';
 import { CompactControls } from './CompactControls';
 import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert";
+import { Button } from "../../../components/ui/button";
 import { Loader2, Info, Search, Plus, MessageSquare, FileText } from 'lucide-react';
+import { cn } from '../../../lib/utils';
 
 type TabType = 'prompts' | 'chats';
 
@@ -85,11 +87,12 @@ export const UnifiedList: React.FC = () => {
         <div className="flex">
           <button
             onClick={() => setActiveTab('prompts')}
-            className={`flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
+            className={cn(
+              "flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors",
               activeTab === 'prompts'
-                ? 'border-accent text-accent bg-accent/5'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
+                ? "border-accent text-accent bg-accent/5"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            )}
           >
             <div className="flex items-center justify-center gap-1.5">
               <FileText className="h-3 w-3" />
@@ -98,11 +101,12 @@ export const UnifiedList: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('chats')}
-            className={`flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
+            className={cn(
+              "flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors",
               activeTab === 'chats'
-                ? 'border-accent text-accent bg-accent/5'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
+                ? "border-accent text-accent bg-accent/5"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            )}
           >
             <div className="flex items-center justify-center gap-1.5">
               <MessageSquare className="h-3 w-3" />
