@@ -1,5 +1,8 @@
 import { initializeStorage, promptStorage } from '../lib/storage';
 import { chatStorage } from '../lib/chatStorage';
+import { secureStorage } from '../lib/secureStorage';
+import { logger } from '../lib/logger';
+import { initializeKeyboardShortcuts, initializeContextMenu } from '../lib/shortcuts';
 
 export default defineBackground(() => {
   console.log('DialogDrive background script loaded!', { id: browser.runtime.id });
@@ -10,18 +13,26 @@ export default defineBackground(() => {
       console.log('Extension installed, initializing storage...');
       await initializeStorage();
     }
+    
+    // Initialize keyboard shortcuts and context menu
+    initializeKeyboardShortcuts();
+    initializeContextMenu();
   });
+
+  // Initialize shortcuts and context menu on startup
+  initializeKeyboardShortcuts();
+  initializeContextMenu();
 
   // Listen for messages from popup and content scripts
   browser.runtime.onMessage.addListener((message: any, sender: any, sendResponse: any) => {
     if (message.type === 'IMPROVE_PROMPT') {
       (async () => {
         try {
-          const result = await browser.storage.sync.get('openai-api-key');
-          const apiKey = result['openai-api-key'];
+          // Use secure storage for API key
+          const apiKey = await secureStorage.getApiKey();
           
           if (!apiKey) {
-            sendResponse({ error: 'No API key found' });
+            sendResponse({ error: 'No API key found. Please set your OpenAI API key in settings.' });
             return;
           }
           

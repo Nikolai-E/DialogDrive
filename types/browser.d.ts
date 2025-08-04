@@ -28,6 +28,36 @@ declare global {
         addListener: (callback: (message: any, sender: any, sendResponse: (response: any) => void) => boolean | void) => void;
       };
     };
+    action?: {
+      openPopup: () => Promise<void>;
+    };
+    commands?: {
+      onCommand: {
+        addListener: (callback: (command: string) => void) => void;
+      };
+    };
+    contextMenus?: {
+      create: (properties: any) => void;
+      removeAll: () => void;
+      onClicked: {
+        addListener: (callback: (info: any, tab?: any) => void) => void;
+      };
+      OnClickData: any;
+    };
+    notifications?: {
+      create: (options: {
+        type: string;
+        iconUrl: string;
+        title: string;
+        message: string;
+      }) => void;
+    };
+    sidePanel?: {
+      open: (options: { windowId?: number }) => Promise<void>;
+    };
+    windows?: {
+      getCurrent: () => Promise<{ id?: number }>;
+    };
   };
 }
 

@@ -5,14 +5,34 @@ import { PromptItem } from './PromptItem';
 import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert";
 import { Loader2, Info, Search, Plus } from 'lucide-react';
 import { SearchControls } from './SearchControls';
+import { VirtualizedPromptList } from '../../../components/VirtualizedList';
 
 export const PromptList: React.FC = () => {
   const { 
     filteredPrompts,
     isLoading, 
     error,
-    setCurrentView
+    setCurrentView,
+    setEditingPrompt,
+    deletePrompt,
+    incrementUsage
   } = usePromptStore();
+
+  const handlePromptSelect = async (prompt: Prompt) => {
+    await incrementUsage(prompt.id);
+    // TODO: Implement paste to active tab
+  };
+
+  const handlePromptEdit = (prompt: Prompt) => {
+    setEditingPrompt(prompt);
+    setCurrentView('form');
+  };
+
+  const handlePromptDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this prompt?')) {
+      await deletePrompt(id);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -43,13 +63,16 @@ export const PromptList: React.FC = () => {
         <SearchControls />
       </div>
       
-      <div className="flex-1 overflow-y-auto bg-white">
+      <div className="flex-1 overflow-hidden bg-white">
         {filteredPrompts.length > 0 ? (
-          <div className="divide-y divide-gray-100">
-            {filteredPrompts.map((prompt: Prompt) => (
-              <PromptItem key={prompt.id} prompt={prompt} />
-            ))}
-          </div>
+          <VirtualizedPromptList
+            prompts={filteredPrompts}
+            onPromptSelect={handlePromptSelect}
+            onPromptEdit={handlePromptEdit}
+            onPromptDelete={handlePromptDelete}
+            height={320}
+            className="h-full"
+          />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-gray-50">
             <div className="bg-white rounded-full p-4 shadow-sm border border-gray-200 mb-4">
