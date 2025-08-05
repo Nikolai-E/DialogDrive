@@ -1,0 +1,10 @@
+{
+    "chat.mcp.serverSampling": {
+        "DialogDrive/.vscode/mcp.json: confirm": {
+            "allowedModels": [
+                "github.copilot-chat/gpt-4.1",
+                "github.copilot-chat/OpenRouter-openrouter/horizon-beta"
+            ]
+        }
+    }
+}
