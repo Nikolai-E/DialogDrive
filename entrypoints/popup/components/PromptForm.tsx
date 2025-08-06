@@ -336,7 +336,7 @@ export const PromptForm: React.FC = () => {
           <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting} className="h-8">
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting} className="min-w-[110px] h-8 bg-foreground text-white hover:opacity-90">
+          <Button type="submit" disabled={isSubmitting} className="h-8">
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {editingPrompt ? 'Update' : 'Create'}
           </Button>

@@ -181,7 +181,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
           <button
             ref={buttonRef}
             onClick={() => setShowDropdown((v) => !v)}
-            className="h-7 px-2 rounded-md border border-border bg-background text-foreground hover:bg-accent/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background inline-flex items-center justify-center gap-1 transition-colors relative z-[1]"
+            className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:bg-accent/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background inline-flex items-center justify-center transition-colors relative z-[1]"
             aria-haspopup="menu"
             aria-expanded={showDropdown}
             aria-controls="create-menu"
