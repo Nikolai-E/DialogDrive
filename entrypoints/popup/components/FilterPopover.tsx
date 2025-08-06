@@ -5,7 +5,7 @@ import { Button } from '../../../components/ui/button';
 import { cn } from '../../../lib/utils';
 import type { SortOption } from '../../../types/app';
 
-export const CompactControls: React.FC = () => {
+export const FilterPopover: React.FC = () => {
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [showTagsDropdown, setShowTagsDropdown] = useState(false);
@@ -46,26 +46,26 @@ export const CompactControls: React.FC = () => {
   ];
 
   return (
-    <div className="w-full flex items-center gap-0.5 justify-between">
-      {/* Left: Sort + Pinned */}
-      <div className="flex items-center gap-0.5 min-w-0">
+    <div className="bg-popover border border-border rounded-md shadow-lg p-2 w-72">
+      <div className="grid grid-cols-2 gap-2">
         {/* Sort Dropdown */}
         <div className="relative" ref={sortRef}>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowSortDropdown(!showSortDropdown)}
-            className="h-7 px-1.5 gap-1 w-[84px] border-border bg-card text-foreground hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="h-8 w-full justify-between px-2 gap-1 border-border bg-card text-foreground hover:bg-muted/60"
             aria-haspopup="menu"
             aria-expanded={showSortDropdown}
-            aria-controls="sort-menu"
           >
-            <SortAsc className="h-3 w-3 text-muted-foreground" />
-            <span className="truncate text-[11px]">{sortOptions.find(opt => opt.value === sortBy)?.label}</span>
-            <ChevronDown className="h-3 w-3 text-muted-foreground" />
+            <div className="flex items-center gap-1.5 truncate">
+              <SortAsc className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="truncate text-xs">{sortOptions.find(opt => opt.value === sortBy)?.label}</span>
+            </div>
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           {showSortDropdown && (
-            <div id="sort-menu" role="menu" className="absolute top-full left-0 mt-1 min-w-[120px] w-max bg-popover border border-border rounded-md shadow-lg z-[9999] overflow-auto max-h-56 p-1">
+            <div role="menu" className="absolute top-full left-0 mt-1 w-full bg-popover border border-border rounded-md shadow-lg z-10 p-1">
               {sortOptions.map((option) => (
                 <button
                   key={option.value}
@@ -85,34 +85,30 @@ export const CompactControls: React.FC = () => {
           variant={showPinned ? 'default' : 'outline'}
           size="sm"
           onClick={() => setShowPinned(!showPinned)}
-          className={cn('h-7 px-1.5 gap-1 w-[64px] justify-center', showPinned ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground border-border hover:bg-muted/60')}
+          className={cn('h-8 w-full gap-1.5', showPinned ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground border-border hover:bg-muted/60')}
           aria-pressed={showPinned}
-          aria-label="Toggle pinned"
         >
-          <Pin className="h-3 w-3" />
-          <span className="truncate text-[11px]">Pin</span>
+          <Pin className="h-3.5 w-3.5" />
+          <span className="text-xs">Pinned</span>
         </Button>
-      </div>
-
-      {/* Right: Workspace + Tags */}
-      <div className="flex items-center gap-0.5 min-w-0">
         {/* Workspace Dropdown */}
         <div className="relative" ref={workspaceRef}>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
-            className="h-7 px-1.5 gap-1 w-[94px] border-border bg-card text-foreground hover:bg-muted/60"
+            className="h-8 w-full justify-between px-2 gap-1 border-border bg-card text-foreground hover:bg-muted/60"
             aria-haspopup="menu"
             aria-expanded={showWorkspaceDropdown}
-            aria-controls="workspace-menu"
           >
-            <Building2 className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-            <span className="truncate text-[11px]">{selectedWorkspace === 'all' ? 'All' : selectedWorkspace}</span>
-            <ChevronDown className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-1.5 truncate">
+              <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="truncate text-xs">{selectedWorkspace === 'all' ? 'Workspace' : selectedWorkspace}</span>
+            </div>
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           {showWorkspaceDropdown && (
-            <div id="workspace-menu" role="menu" className="absolute top-full right-0 mt-1 min-w-[160px] bg-popover border border-border rounded-md shadow-lg z-[9999] max-h-56 overflow-y-auto p-1">
+            <div role="menu" className="absolute top-full left-0 mt-1 w-full bg-popover border border-border rounded-md shadow-lg z-10 max-h-48 overflow-y-auto p-1">
               <button role="menuitemradio" aria-checked={selectedWorkspace === 'all'} onClick={() => { setSelectedWorkspace('all'); setShowWorkspaceDropdown(false); }} className={cn('w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60', selectedWorkspace === 'all' ? 'bg-primary/10 text-primary' : 'text-foreground')}>All Workspaces</button>
               {workspaces.map((workspace) => (
                 <button key={workspace} role="menuitemradio" aria-checked={selectedWorkspace === workspace} onClick={() => { setSelectedWorkspace(workspace); setShowWorkspaceDropdown(false); }} className={cn('w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60 truncate', selectedWorkspace === workspace ? 'bg-primary/10 text-primary' : 'text-foreground')}>
@@ -128,17 +124,18 @@ export const CompactControls: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => setShowTagsDropdown(!showTagsDropdown)}
-            className="h-7 px-1.5 gap-1 w-[94px] border-border bg-card text-foreground hover:bg-muted/60"
+            className="h-8 w-full justify-between px-2 gap-1 border-border bg-card text-foreground hover:bg-muted/60"
             aria-haspopup="menu"
             aria-expanded={showTagsDropdown}
-            aria-controls="tags-menu"
           >
-            <Tag className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-            <span className="truncate text-[11px]">{filterTag === 'all' ? 'All' : filterTag}</span>
-            <ChevronDown className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <div className="flex items-center gap-1.5 truncate">
+              <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="truncate text-xs">{filterTag === 'all' ? 'Tag' : filterTag}</span>
+            </div>
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           {showTagsDropdown && (
-            <div id="tags-menu" role="menu" className="absolute top-full right-0 mt-1 min-w-[160px] bg-popover border border-border rounded-md shadow-lg z-[9999] max-h-56 overflow-y-auto p-1">
+            <div role="menu" className="absolute top-full left-0 mt-1 w-full bg-popover border border-border rounded-md shadow-lg z-10 max-h-48 overflow-y-auto p-1">
               <button role="menuitemradio" aria-checked={filterTag === 'all'} onClick={() => { setFilterTag('all'); setShowTagsDropdown(false); }} className={cn('w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60', filterTag === 'all' ? 'bg-primary/10 text-primary' : 'text-foreground')}>All Tags</button>
               {allTags.map((tag) => (
                 <button key={tag} role="menuitemradio" aria-checked={filterTag === tag} onClick={() => { setFilterTag(tag); setShowTagsDropdown(false); }} className={cn('w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60 truncate', filterTag === tag ? 'bg-primary/10 text-primary' : 'text-foreground')}>

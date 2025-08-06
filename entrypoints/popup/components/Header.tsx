@@ -1,11 +1,12 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, Plus, Settings as SettingsIcon, MessageSquare, Search, X, List, MessageSquareText, LayoutGrid } from 'lucide-react';
+import { Sparkles, Plus, Settings as SettingsIcon, MessageSquare, Search, X, List, MessageSquareText, LayoutGrid, Filter } from 'lucide-react';
 // Remove Button import usage in this file; we will use raw <button> for explicit styling
 // import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { cn } from '../../../lib/utils';
+import { FilterPopover } from './FilterPopover';
 
 interface HeaderProps {
   onNewPrompt: () => void;
@@ -16,6 +17,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettings }) => {
   const { searchTerm, setSearchTerm, contentFilter, setContentFilter } = useUnifiedStore();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showFilterPopover, setShowFilterPopover] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const portalElRef = useRef<HTMLDivElement | null>(null);
@@ -43,6 +45,9 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
 
   // Positioning for the dropdown relative to the button
   const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({ display: 'none' });
+  const [filterPopoverStyle, setFilterPopoverStyle] = useState<React.CSSProperties>({ display: 'none' });
+  const filterButtonRef = useRef<HTMLButtonElement | null>(null);
+
   useLayoutEffect(() => {
     if (!showDropdown || !buttonRef.current || !portalElRef.current) {
       setMenuStyle((s) => ({ ...s, display: 'none' }));
@@ -80,19 +85,61 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
     return () => window.removeEventListener('resize', updatePosition);
   }, [showDropdown]);
 
+  useLayoutEffect(() => {
+    if (!showFilterPopover || !filterButtonRef.current || !portalElRef.current) {
+      setFilterPopoverStyle((s) => ({ ...s, display: 'none' }));
+      return;
+    }
+
+    const updatePosition = () => {
+      const btn = filterButtonRef.current;
+      if (!btn) return;
+
+      const rect = btn.getBoundingClientRect();
+      const popoverWidth = 288; // w-72
+      const top = Math.round(rect.bottom + 4);
+      let left = Math.round(rect.right - popoverWidth);
+
+      if (left < 4) left = 4;
+
+      setFilterPopoverStyle({
+        position: 'fixed',
+        top,
+        left,
+        width: popoverWidth,
+        pointerEvents: 'auto',
+        display: 'block',
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    return () => window.removeEventListener('resize', updatePosition);
+  }, [showFilterPopover]);
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowDropdown(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowDropdown(false);
+        setShowFilterPopover(false);
+      }
+    };
     const onClick = (e: MouseEvent) => {
       const target = e.target as Node;
       if (dropdownRef.current && dropdownRef.current.contains(target)) return;
-      // If clicking inside the portal menu, ignore
+
       const portal = portalElRef.current;
-      if (portal && portal.querySelector('[data-dd-menu]')?.contains(target as Node)) return;
+      if (portal && portal.contains(target)) return;
+
       setShowDropdown(false);
+      setShowFilterPopover(false);
     };
     window.addEventListener('keydown', onKey);
     window.addEventListener('mousedown', onClick);
-    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('mousedown', onClick); };
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('mousedown', onClick);
+    };
   }, []);
 
   const setSearchTermDebounced = (val: string) => {
@@ -181,13 +228,24 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
           <button
             ref={buttonRef}
             onClick={() => setShowDropdown((v) => !v)}
-            className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:bg-accent/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background inline-flex items-center justify-center transition-colors relative z-[1]"
+            className="h-7 px-2 rounded-md border border-border bg-background text-foreground hover:bg-accent/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background inline-flex items-center justify-center gap-1 transition-colors relative z-[1]"
             aria-haspopup="menu"
             aria-expanded={showDropdown}
             aria-controls="create-menu"
             title="Create"
           >
             <Plus className="h-4 w-4" />
+          </button>
+          <button
+            ref={filterButtonRef}
+            onClick={() => setShowFilterPopover((v) => !v)}
+            className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:bg-accent/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background inline-flex items-center justify-center border border-transparent"
+            aria-haspopup="true"
+            aria-expanded={showFilterPopover}
+            aria-label="Sort and filter"
+            title="Sort and filter"
+          >
+            <Filter className="h-4 w-4" />
           </button>
           {/* Settings button with explicit light styling */}
           <button
@@ -211,6 +269,12 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
         </div>
       </div>
       {menu}
+      {showFilterPopover && portalElRef.current && createPortal(
+        <div style={filterPopoverStyle}>
+          <FilterPopover />
+        </div>,
+        portalElRef.current
+      )}
     </header>
   );
 };
