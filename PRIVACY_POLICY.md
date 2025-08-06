@@ -41,12 +41,6 @@ DialogDrive is a browser extension that helps you manage and organize AI prompts
 - Remember your preferences and settings
 - Enable export/import features for backup purposes
 
-### OpenAI API Integration
-- When using the prompt improvement feature, your prompt text is sent to OpenAI's API
-- This is done directly from your browser using your own API key
-- We do not intercept, log, or store this communication
-- Refer to [OpenAI's Privacy Policy](https://openai.com/privacy/) for their data handling
-
 ## Permissions Explained
 
 ### Required Permissions
@@ -87,12 +81,6 @@ DialogDrive is a browser extension that helps you manage and organize AI prompts
 - No hidden data collection or transmission
 
 ## Third-Party Services
-
-### OpenAI API (Optional)
-- Used only for prompt improvement feature when you provide an API key
-- Direct communication between your browser and OpenAI
-- Subject to OpenAI's privacy policy and terms of service
-- Can be disabled or removed at any time
 
 ### No Other Third Parties
 - No analytics services

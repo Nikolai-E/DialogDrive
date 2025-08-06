@@ -7,10 +7,7 @@ import { cn } from '../../../lib/utils';
 import { CompactControls } from './CompactControls';
 import { UnifiedItem } from './UnifiedItem';
 
-type TabType = 'prompts' | 'chats';
-
 export const UnifiedList: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('prompts');
   const parentRef = React.useRef<HTMLDivElement>(null);
   
   const { 
@@ -19,12 +16,7 @@ export const UnifiedList: React.FC = () => {
     error,
     setCurrentView,
     contentFilter,
-    setContentFilter
   } = useUnifiedStore();
-
-  React.useEffect(() => {
-    setContentFilter(activeTab);
-  }, [activeTab, setContentFilter]);
 
   // Virtual list setup
   const virtualizer = useVirtualizer({
@@ -92,39 +84,6 @@ export const UnifiedList: React.FC = () => {
     <div className="flex flex-col h-full bg-background overflow-hidden">
       <CompactControls />
       
-      <div className="bg-card border-b border-border shrink-0">
-        <div className="flex">
-          <button
-            onClick={() => setActiveTab('prompts')}
-            className={cn(
-              "flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors",
-              activeTab === 'prompts'
-                ? "border-accent text-accent bg-accent/5"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            )}
-          >
-            <div className="flex items-center justify-center gap-1.5">
-              <FileText className="h-3 w-3" />
-              Prompts
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('chats')}
-            className={cn(
-              "flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors",
-              activeTab === 'chats'
-                ? "border-accent text-accent bg-accent/5"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            )}
-          >
-            <div className="flex items-center justify-center gap-1.5">
-              <MessageSquare className="h-3 w-3" />
-              Chats
-            </div>
-          </button>
-        </div>
-      </div>
-      
       <div className="flex-1 overflow-y-auto bg-card" ref={parentRef}>
         {filteredItems.length > 0 ? (
           <div
@@ -162,24 +121,13 @@ export const UnifiedList: React.FC = () => {
               {getEmptyStateContent().description}
             </p>
             <div className="flex gap-3">
-              {activeTab === 'prompts' && (
-                <button
-                  onClick={() => setCurrentView('form')}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors font-medium shadow-sm"
-                >
-                  <FileText className="h-4 w-4" />
-                  Create Prompt
-                </button>
-              )}
-              {activeTab === 'chats' && (
-                <button
-                  onClick={() => setCurrentView('chat-form')}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors font-medium shadow-sm"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  Add Chat Bookmark
-                </button>
-              )}
+              <button
+                onClick={() => setCurrentView('form')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors font-medium shadow-sm"
+              >
+                <FileText className="h-4 w-4" />
+                Create Prompt
+              </button>
             </div>
           </div>
         )}

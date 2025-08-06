@@ -151,7 +151,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
   };
 
   return (
-    <div className="mx-2 my-0.5" role="button" tabIndex={0}
+    <div className="mx-2 my-1" role="button" tabIndex={0}
       onClick={handleCardClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -162,7 +162,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
     >
       <div
         className={cn(
-          'relative rounded-md px-2.5 py-2 select-none border border-border/60',
+          'relative rounded-md px-2.5 py-2.5 select-none border border-border/60',
           'bg-card hover:bg-card/80',
           'transition-colors'
         )}
