@@ -2,9 +2,9 @@
   "name": "dialogdrive",
   "description": "DialogDrive - Your AI Project Workspaces Extension",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
-"scripts": {
+  "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
     "build": "wxt build",
@@ -41,9 +41,11 @@
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0",
+    "zod": "^4.0.15",
     "zustand": "^5.0.6"
   },
   "devDependencies": {
+    "@types/node": "^24.2.0",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
     "@types/uuid": "^10.0.0",

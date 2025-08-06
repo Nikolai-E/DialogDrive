@@ -53,7 +53,9 @@ const commandHandlers = {
     try {
       if (browser.sidePanel && browser.windows) {
         const currentWindow = await browser.windows.getCurrent();
-        await browser.sidePanel.open({ windowId: currentWindow.id });
+        if (currentWindow.id) {
+          await browser.sidePanel.open({ windowId: currentWindow.id });
+        }
       } else if (browser.action) {
         // Fallback to popup if side panel not available
         await browser.action.openPopup();
@@ -143,7 +145,7 @@ export function initializeContextMenu() {
     // Create new items
     contextMenuItems.forEach(item => {
       if (browser.contextMenus) {
-        browser.contextMenus.create(item);
+        browser.contextMenus.create(item as any);
       }
     });
 
