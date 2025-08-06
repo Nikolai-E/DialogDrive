@@ -44,12 +44,28 @@ export const PromptForm: React.FC = () => {
   const tagInputRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
 
-  const snippets = [
-    { label: 'Act as an expert...', text: 'Act as an expert in [domain] with [number] years of experience.' },
-    { label: 'Provide a summary...', text: 'Provide a concise summary of the following text, highlighting the key points.' },
-    { label: 'Translate text...', text: 'Translate the following text from [source language] to [target language].' },
-    { label: 'Explain like I\'m 5...', text: 'Explain the following concept like I am 5 years old: [concept].' },
-  ];
+  const PROMPT_SNIPPETS = {
+    expertise: [
+      "You are an expert in [FIELD] with [NUMBER] years of experience.",
+      "As a seasoned [ROLE] specializing in [DOMAIN], you understand...",
+      "Drawing from extensive experience in [FIELD], you provide..."
+    ],
+    instructions: [
+      "Please provide a step-by-step analysis of...",
+      "Break down this complex topic into simple terms...",
+      "Analyze the following and provide actionable insights..."
+    ],
+    constraints: [
+      "Keep your response under [NUMBER] words.",
+      "Use bullet points for clarity.",
+      "Provide [NUMBER] specific examples."
+    ],
+    tone: [
+      "Maintain a professional yet approachable tone.",
+      "Be direct and concise, avoiding unnecessary jargon.",
+      "Use an educational tone suitable for beginners."
+    ]
+  };
 
   const handleInsertSnippet = (snippetText: string) => {
     if (!textRef.current) return;
@@ -228,16 +244,23 @@ export const PromptForm: React.FC = () => {
                     <ChevronDown className="h-3 w-3 ml-1" />
                   </Button>
                   {showSnippets && (
-                    <div className="absolute top-full right-0 mt-1 w-48 bg-popover border border-border rounded-md shadow-lg z-10 p-1">
-                      {snippets.map((snippet) => (
-                        <button
-                          key={snippet.label}
-                          type="button"
-                          onClick={() => handleInsertSnippet(snippet.text)}
-                          className="w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60"
-                        >
-                          {snippet.label}
-                        </button>
+                    <div className="absolute top-full right-0 mt-1 w-64 bg-background border border-border rounded-md shadow-lg z-10">
+                      {Object.entries(PROMPT_SNIPPETS).map(([category, snippets]) => (
+                        <div key={category}>
+                          <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase">
+                            {category}
+                          </div>
+                          {snippets.map((snippet, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => handleInsertSnippet(snippet)}
+                              className="w-full text-left px-3 py-2 text-xs hover:bg-muted/50"
+                            >
+                              {snippet.substring(0, 50)}...
+                            </button>
+                          ))}
+                        </div>
                       ))}
                     </div>
                   )}
