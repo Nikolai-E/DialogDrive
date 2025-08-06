@@ -4,9 +4,18 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { Header } from './components/Header';
 import { UnifiedList } from './components/UnifiedList';
 // Lazy-loaded heavy views
-const PromptForm = React.lazy(() => import('./components/PromptForm').then(m => ({ default: m.PromptForm })));
-const ChatForm = React.lazy(() => import('./components/ChatForm').then(m => ({ default: m.ChatForm })));
-const Settings = React.lazy(() => import('./components/Settings').then(m => ({ default: m.Settings })));
+const PromptForm = React.lazy(async () => {
+  const { PromptForm } = await import('./components/PromptForm');
+  return { default: PromptForm };
+});
+const ChatForm = React.lazy(async () => {
+  const { ChatForm } = await import('./components/ChatForm');
+  return { default: ChatForm };
+});
+const Settings = React.lazy(async () => {
+  const { Settings } = await import('./components/Settings');
+  return { default: Settings };
+});
 import { Toaster } from 'sonner';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 import { logger } from '../../lib/logger';
