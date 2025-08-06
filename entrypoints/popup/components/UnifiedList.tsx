@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert";
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { cn } from '../../../lib/utils';
-import { CompactControls } from './CompactControls';
 import { UnifiedItem } from './UnifiedItem';
 
 export const UnifiedList: React.FC = () => {
@@ -82,8 +81,6 @@ export const UnifiedList: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
-      <CompactControls />
-      
       <div className="flex-1 overflow-y-auto bg-card" ref={parentRef}>
         {filteredItems.length > 0 ? (
           <div
