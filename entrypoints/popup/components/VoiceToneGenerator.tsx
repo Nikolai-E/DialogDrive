@@ -11,7 +11,6 @@ import {
 } from '../../../components/ui/dialog';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-import { ScrollArea } from '../../../components/ui/scroll-area';
 
 interface VoiceToneGeneratorProps {
   open: boolean;
@@ -84,7 +83,7 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({ open, on
             Select options to generate a structured prompt for defining an AI's voice.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="h-72 pr-6">
+        <div className="h-72 overflow-y-auto pr-6">
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="comm-style">Communication Style</Label>
@@ -126,7 +125,7 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({ open, on
               </Select>
             </div>
           </div>
-        </ScrollArea>
+        </div>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             Cancel
