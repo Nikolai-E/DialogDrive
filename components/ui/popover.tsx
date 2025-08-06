@@ -1,31 +1,70 @@
 "use client"
 
 import * as React from "react"
-import * as PopoverPrimitive from "@radix-ui/react-popover"
-
 import { cn } from "@/lib/utils"
 
-const Popover = PopoverPrimitive.Root
+// Simple inline Popover (no portals)
 
-const PopoverTrigger = PopoverPrimitive.Trigger
+const PopoverContext = React.createContext<{
+  open: boolean
+  setOpen: (v: boolean) => void
+  triggerRef: React.MutableRefObject<HTMLButtonElement | null>
+} | null>(null)
 
-const PopoverContent = React.forwardRef<
-  React.ElementRef<typeof PopoverPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
->(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
-  <PopoverPrimitive.Portal>
-    <PopoverPrimitive.Content
-      ref={ref}
-      align={align}
-      sideOffset={sideOffset}
-      className={cn(
-        "z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-        className
-      )}
-      {...props}
-    />
-  </PopoverPrimitive.Portal>
-))
-PopoverContent.displayName = PopoverPrimitive.Content.displayName
+const Popover: React.FC<{ defaultOpen?: boolean; open?: boolean; onOpenChange?: (v: boolean) => void; children: React.ReactNode }>
+= ({ defaultOpen, open: controlled, onOpenChange, children }) => {
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(!!defaultOpen)
+  const open = controlled ?? uncontrolledOpen
+  const setOpen = (v: boolean) => { if (controlled === undefined) setUncontrolledOpen(v); onOpenChange?.(v) }
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null)
+  return (
+    <PopoverContext.Provider value={{ open, setOpen, triggerRef }}>
+      <div className="relative inline-block">{children}</div>
+    </PopoverContext.Provider>
+  )
+}
+
+const usePopover = () => {
+  const ctx = React.useContext(PopoverContext)
+  if (!ctx) throw new Error("Popover components must be used within <Popover>")
+  return ctx
+}
+
+const PopoverTrigger = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
+  function PopoverTrigger({ className, onClick, ...props }, ref) {
+    const { open, setOpen, triggerRef } = usePopover()
+    return (
+      <button
+        ref={(node) => { (ref as any)?.(node); triggerRef.current = node }}
+        className={className}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={(e) => { onClick?.(e); setOpen(!open) }}
+        {...props}
+      />
+    )
+  }
+)
+
+const PopoverContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  function PopoverContent({ className, style, children, ...props }, ref) {
+    const { open } = usePopover()
+    if (!open) return null
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "absolute z-50 rounded-md border bg-popover p-3 text-popover-foreground shadow-md outline-none",
+          "min-w-56 max-w-sm",
+          className
+        )}
+        style={{ marginTop: 6, ...style }}
+        {...props}
+      >
+        {children}
+      </div>
+    )
+  }
+)
 
 export { Popover, PopoverTrigger, PopoverContent }

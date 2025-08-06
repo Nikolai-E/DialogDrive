@@ -1,4 +1,8 @@
 declare global {
+  // WXT global functions
+  function defineBackground(fn: () => void): any;
+  function defineContentScript(config: any): any;
+  
   const browser: {
     storage: {
       local: {
@@ -61,4 +65,5 @@ declare global {
   };
 }
 
-export {};
+export { };
+

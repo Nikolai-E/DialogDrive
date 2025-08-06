@@ -1,55 +1,191 @@
 import * as React from "react"
-import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { X } from "lucide-react"
-
 import { cn } from "@/lib/utils"
 
-const Dialog = DialogPrimitive.Root
+// Simple inline Dialog implementation without portals
+// Keeps everything inside the popup DOM to avoid positioning glitches.
 
-const DialogTrigger = DialogPrimitive.Trigger
+type DialogRootProps = {
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  children: React.ReactNode
+}
 
-const DialogPortal = DialogPrimitive.Portal
+const DialogContext = React.createContext<{
+  open: boolean
+  setOpen: (v: boolean) => void
+  containerRef: React.RefObject<HTMLDivElement>
+} | null>(null)
 
-const DialogClose = DialogPrimitive.Close
+const Dialog: React.FC<DialogRootProps> = ({
+  open: controlled,
+  defaultOpen,
+  onOpenChange,
+  children,
+}) => {
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(!!defaultOpen)
+  const isControlled = controlled !== undefined
+  const open = isControlled ? !!controlled : uncontrolledOpen
+  const setOpen = (v: boolean) => {
+    if (!isControlled) setUncontrolledOpen(v)
+    onOpenChange?.(v)
+  }
+
+  // The local container that bounds overlay and content (prevents body portal issues)
+  const containerRef = React.useRef<HTMLDivElement>(null)
+
+  // Close on Escape when open and focus is within container
+  React.useEffect(() => {
+    if (!open) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation()
+        setOpen(false)
+      }
+    }
+    const node = containerRef.current
+    node?.addEventListener("keydown", onKeyDown as any)
+    return () => node?.removeEventListener("keydown", onKeyDown as any)
+  }, [open])
+
+  // Simple focus trap when dialog opens (cycles focus within dialog content)
+  const previouslyFocused = React.useRef<Element | null>(null)
+  React.useEffect(() => {
+    if (open) {
+      previouslyFocused.current = document.activeElement
+      // try focus first focusable inside content
+      const container = containerRef.current
+      const content = container?.querySelector<HTMLElement>("[data-dd-dialog-content]")
+      const focusables = content?.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      const first = focusables && focusables[0]
+      first?.focus()
+    } else {
+      if (previouslyFocused.current instanceof HTMLElement) {
+        previouslyFocused.current.focus()
+      }
+    }
+  }, [open])
+
+  // Prevent scroll on underlying container only (not document body)
+  React.useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    if (open) {
+      el.style.overflow = "hidden"
+    } else {
+      el.style.overflow = ""
+    }
+    return () => {
+      if (el) el.style.overflow = ""
+    }
+  }, [open])
+
+  return (
+    <div ref={containerRef} className="relative">
+      <DialogContext.Provider value={{ open, setOpen, containerRef }}>
+        {children}
+      </DialogContext.Provider>
+    </div>
+  )
+}
+
+const useDialogCtx = () => {
+  const ctx = React.useContext(DialogContext)
+  if (!ctx) throw new Error("Dialog components must be used within <Dialog>")
+  return ctx
+}
+
+const DialogTrigger = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
+>(
+  function DialogTrigger({ onClick, ...props }, ref) {
+    const { setOpen } = useDialogCtx()
+    return (
+      <button
+        ref={ref}
+        {...props}
+        onClick={(e) => {
+          onClick?.(e)
+          setOpen(true)
+        }}
+        aria-haspopup="dialog"
+      />
+    )
+  }
+)
+DialogTrigger.displayName = "DialogTrigger"
+
+const DialogClose = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
+>(
+  function DialogClose({ onClick, ...props }, ref) {
+    const { setOpen } = useDialogCtx()
+    return (
+      <button
+        ref={ref}
+        {...props}
+        onClick={(e) => {
+          onClick?.(e)
+          setOpen(false)
+        }}
+      />
+    )
+  }
+)
+DialogClose.displayName = "DialogClose"
 
 const DialogOverlay = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Overlay
-    ref={ref}
-    className={cn(
-      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-      className
-    )}
-    {...props}
-  />
-))
-DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(
+  function DialogOverlay({ className, ...props }, ref) {
+    const { open, setOpen } = useDialogCtx()
+    if (!open) return null
+    return (
+      <div
+        ref={ref}
+        className={cn("absolute inset-0 z-40 bg-black/40", className)}
+        onClick={() => setOpen(false)}
+        aria-hidden="true"
+        {...props}
+      />
+    )
+  }
+)
+DialogOverlay.displayName = "DialogOverlay"
 
 const DialogContent = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
-        className
-      )}
-      {...props}
-    >
-      {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
-    </DialogPrimitive.Content>
-  </DialogPortal>
-))
-DialogContent.displayName = DialogPrimitive.Content.displayName
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(
+  function DialogContent({ className, children, ...props }, ref) {
+    const { open } = useDialogCtx()
+    if (!open) return null
+    return (
+      <div className="relative z-50">
+        <DialogOverlay />
+        <div
+          ref={ref}
+          role="dialog"
+          aria-modal="true"
+          data-dd-dialog-content
+          className={cn(
+            "absolute left-1/2 top-1/2 w-[calc(100%-16px)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-md border bg-background p-4 shadow-lg",
+            className
+          )}
+          {...props}
+        >
+          {children}
+        </div>
+      </div>
+    )
+  }
+)
+DialogContent.displayName = "DialogContent"
 
 const DialogHeader = ({
   className,
@@ -80,35 +216,42 @@ const DialogFooter = ({
 DialogFooter.displayName = "DialogFooter"
 
 const DialogTitle = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Title>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Title
-    ref={ref}
-    className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
-      className
-    )}
-    {...props}
-  />
-))
-DialogTitle.displayName = DialogPrimitive.Title.displayName
+  HTMLHeadingElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(
+  function DialogTitle({ className, ...props }, ref) {
+    return (
+      <h2
+        ref={ref}
+        className={cn(
+          "text-lg font-semibold leading-none tracking-tight",
+          className
+        )}
+        {...props}
+      />
+    )
+  }
+)
+DialogTitle.displayName = "DialogTitle"
 
 const DialogDescription = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Description>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Description
-    ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
-    {...props}
-  />
-))
-DialogDescription.displayName = DialogPrimitive.Description.displayName
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(
+  function DialogDescription({ className, ...props }, ref) {
+    return (
+      <p
+        ref={ref}
+        className={cn("text-sm text-muted-foreground", className)}
+        {...props}
+      />
+    )
+  }
+)
+DialogDescription.displayName = "DialogDescription"
 
 export {
   Dialog,
-  DialogPortal,
   DialogOverlay,
   DialogClose,
   DialogTrigger,

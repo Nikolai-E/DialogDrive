@@ -1,5 +1,6 @@
 import type { ChatBookmark, AddChatBookmark } from '../types/chat';
 import { logger } from './logger';
+import { AppError, mapBrowserError } from './errors';
 
 export class ChatStorage {
   private readonly STORAGE_KEY = 'dialogdrive_chats';
@@ -11,7 +12,8 @@ export class ChatStorage {
         return result[this.STORAGE_KEY] || [];
       }
     } catch (error) {
-      logger.warn('Browser storage failed, falling back to localStorage:', error);
+      const mapped = mapBrowserError(error);
+      logger.warn('Browser storage failed, falling back to localStorage:', mapped);
     }
 
     // Fallback to localStorage
@@ -19,7 +21,8 @@ export class ChatStorage {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
-      logger.error('Failed to read from localStorage:', error);
+      const mapped = mapBrowserError(error);
+      logger.error('Failed to read from localStorage:', mapped);
       return [];
     }
   }
@@ -31,15 +34,17 @@ export class ChatStorage {
         return;
       }
     } catch (error) {
-      logger.warn('Browser storage failed, falling back to localStorage:', error);
+      const mapped = mapBrowserError(error);
+      logger.warn('Browser storage failed, falling back to localStorage:', mapped);
     }
 
     // Fallback to localStorage
     try {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(chats));
     } catch (error) {
-      logger.error('Failed to save to localStorage:', error);
-      throw error;
+      const mapped = mapBrowserError(error);
+      logger.error('Failed to save to localStorage:', mapped);
+      throw mapped;
     }
   }
 
@@ -296,6 +301,25 @@ export class ChatStorage {
       logger.error('Failed to get storage info:', error);
       return { used: 0, available: 0, percentage: 0 };
     }
+  }
+
+  async getPage({ limit, cursor }: { limit: number; cursor: string | null }): Promise<{ items: ChatBookmark[]; nextCursor: string | null }> {
+    const all = await this.getAll();
+    // Sort by lastAccessed desc then created desc
+    const sorted = [...all].sort((a, b) => {
+      const ad = a.lastAccessed ? new Date(a.lastAccessed).getTime() : new Date(a.created).getTime();
+      const bd = b.lastAccessed ? new Date(b.lastAccessed).getTime() : new Date(b.created).getTime();
+      return bd - ad;
+    });
+    let startIndex = 0;
+    if (cursor) {
+      const idx = sorted.findIndex(it => it.id === cursor);
+      startIndex = idx >= 0 ? idx + 1 : 0;
+    }
+    const items = sorted.slice(startIndex, startIndex + limit);
+    const last = items[items.length - 1] || null;
+    const nextCursor = last ? last.id : null;
+    return { items, nextCursor };
   }
 }
 

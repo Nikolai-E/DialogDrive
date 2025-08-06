@@ -16,7 +16,16 @@ interface UnifiedState {
   chats: ChatBookmark[];
   isLoading: boolean;
   error: string | null;
-  
+
+  // Pagination
+  pageSize: number;
+  promptsCursor: string | null; // opaque cursor or ISO date id
+  chatsCursor: string | null;
+  hasMorePrompts: boolean;
+  hasMoreChats: boolean;
+  isLoadingMorePrompts: boolean;
+  isLoadingMoreChats: boolean;
+
   // Search and filter state
   searchTerm: string;
   sortBy: SortOption;
@@ -24,37 +33,39 @@ interface UnifiedState {
   showPinned: boolean;
   contentFilter: ContentFilter; // New: filter by content type
   selectedWorkspace: string; // New: workspace filter
-  
+
   // View state
   currentView: ViewType;
   editingPrompt: Prompt | null;
   editingChat: ChatBookmark | null; // New: for editing chats
-  
+
   // Derived data
   workspaces: string[];
   allTags: string[];
   filteredItems: WorkspaceItem[]; // Unified items
   filteredPrompts: Prompt[]; // Backwards compatibility
-  
+
   // Statistics
   stats: AppStats;
-  
+
   // Prompt actions (existing)
-  loadPrompts: () => Promise<void>;
+  loadPrompts: (opts?: { reset?: boolean }) => Promise<void>;
+  fetchMorePrompts: () => Promise<void>;
   addPrompt: (prompt: AddPrompt) => Promise<void>;
   updatePrompt: (prompt: Prompt) => Promise<void>;
   deletePrompt: (id: string) => Promise<void>;
   togglePinPrompt: (id: string) => Promise<void>;
   incrementUsage: (id: string) => Promise<void>;
-  
+
   // Chat actions (new)
-  loadChats: () => Promise<void>;
+  loadChats: (opts?: { reset?: boolean }) => Promise<void>;
+  fetchMoreChats: () => Promise<void>;
   addChat: (chat: AddChatBookmark) => Promise<void>;
   updateChat: (chat: ChatBookmark) => Promise<void>;
   deleteChat: (id: string) => Promise<void>;
   togglePinChat: (id: string) => Promise<void>;
   incrementChatAccess: (id: string) => Promise<void>;
-  
+
   // Search and filter actions
   setSearchTerm: (term: string) => void;
   setSortBy: (sortBy: SortOption) => void;
@@ -63,14 +74,14 @@ interface UnifiedState {
   setContentFilter: (filter: ContentFilter) => void; // New
   setSelectedWorkspace: (workspace: string) => void; // New
   resetFilters: () => void;
-  
+
   // View actions
   setCurrentView: (view: ViewType) => void;
   setEditingPrompt: (prompt: Prompt | null) => void;
   setEditingChat: (chat: ChatBookmark | null) => void; // New
-  
+
   // Unified actions
-  loadAll: () => Promise<void>; // Load both prompts and chats
+  loadAll: () => Promise<void>; // Load both prompts and chats (first page)
   openItem: (item: WorkspaceItem) => void; // Open prompt for edit or chat in new tab
 }
 
@@ -277,7 +288,16 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   chats: [],
   isLoading: true,
   error: null,
-  
+
+  // Pagination defaults
+  pageSize: 50,
+  promptsCursor: null,
+  chatsCursor: null,
+  hasMorePrompts: true,
+  hasMoreChats: true,
+  isLoadingMorePrompts: false,
+  isLoadingMoreChats: false,
+
   searchTerm: '',
   sortBy: 'recent',
   filterTag: 'all',
@@ -302,28 +322,41 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
     activeWorkspaces: 0,
   },
 
-  // Load all data
+  // Load all data (first page only)
   loadAll: async () => {
     try {
-      set({ isLoading: true, error: null });
-      logger.log('Loading all data...');
-      
-      const [prompts, chats] = await Promise.all([
-        promptStorage.getAll(),
-        chatStorage.getAll()
-      ]);
-      
-      set(state => updateAndFilterState({ 
-        ...state, 
-        prompts, 
-        chats, 
-        isLoading: false 
+      set({ isLoading: true, error: null, promptsCursor: null, chatsCursor: null, hasMorePrompts: true, hasMoreChats: true });
+      logger.log('Loading first page of prompts and chats...');
+
+      const { pageSize } = get();
+      // Prefer paged APIs if available, fall back to getAll
+      const loadPromptsPaged = async () => {
+        if (typeof (promptStorage as any).getPage === 'function') {
+          return (promptStorage as any).getPage({ limit: pageSize, cursor: null });
+        }
+        const all = await promptStorage.getAll();
+        return { items: all.slice(0, pageSize), nextCursor: all.length > pageSize ? all[pageSize - 1]?.id ?? null : null };
+      };
+      const loadChatsPaged = async () => {
+        if (typeof (chatStorage as any).getPage === 'function') {
+          return (chatStorage as any).getPage({ limit: pageSize, cursor: null });
+        }
+        const all = await chatStorage.getAll();
+        return { items: all.slice(0, pageSize), nextCursor: all.length > pageSize ? all[pageSize - 1]?.id ?? null : null };
+      };
+
+      const [pRes, cRes] = await Promise.all([loadPromptsPaged(), loadChatsPaged()]);
+
+      set(state => updateAndFilterState({
+        ...state,
+        prompts: pRes.items,
+        chats: cRes.items,
+        promptsCursor: pRes.nextCursor ?? null,
+        chatsCursor: cRes.nextCursor ?? null,
+        hasMorePrompts: !!pRes.nextCursor,
+        hasMoreChats: !!cRes.nextCursor,
+        isLoading: false,
       }));
-      
-      logger.log('All data loaded successfully', { 
-        promptCount: prompts.length, 
-        chatCount: chats.length 
-      });
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Failed to load data';
       logger.error('Failed to load data:', err);
@@ -331,22 +364,58 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
     }
   },
 
-  // Prompt actions (existing)
-  loadPrompts: async () => {
+  // Prompt actions with pagination
+  loadPrompts: async ({ reset } = { reset: false }) => {
     try {
+      if (reset) set({ prompts: [], promptsCursor: null, hasMorePrompts: true });
       set({ isLoading: true, error: null });
-      const prompts = await promptStorage.getAll();
-      set(state => updateAndFilterState({ ...state, prompts, isLoading: false }));
+      const { pageSize, promptsCursor } = get();
+      if (typeof (promptStorage as any).getPage === 'function') {
+        const res = await (promptStorage as any).getPage({ limit: pageSize, cursor: reset ? null : promptsCursor });
+        set(state => updateAndFilterState({
+          ...state,
+          prompts: reset ? res.items : [...state.prompts, ...res.items],
+          promptsCursor: res.nextCursor ?? null,
+          hasMorePrompts: !!res.nextCursor,
+          isLoading: false,
+        }));
+      } else {
+        const all = await promptStorage.getAll();
+        set(state => updateAndFilterState({ ...state, prompts: all.slice(0, pageSize), promptsCursor: all.length > pageSize ? all[pageSize - 1]?.id ?? null : null, hasMorePrompts: all.length > pageSize, isLoading: false }));
+      }
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Failed to load prompts';
       set({ error, isLoading: false });
     }
   },
 
+  fetchMorePrompts: async () => {
+    const { hasMorePrompts, isLoadingMorePrompts, pageSize, promptsCursor } = get();
+    if (!hasMorePrompts || isLoadingMorePrompts) return;
+    try {
+      set({ isLoadingMorePrompts: true });
+      if (typeof (promptStorage as any).getPage === 'function') {
+        const res = await (promptStorage as any).getPage({ limit: pageSize, cursor: promptsCursor });
+        set(state => updateAndFilterState({
+          ...state,
+          prompts: [...state.prompts, ...res.items],
+          promptsCursor: res.nextCursor ?? null,
+          hasMorePrompts: !!res.nextCursor,
+          isLoadingMorePrompts: false,
+        }));
+      } else {
+        set({ isLoadingMorePrompts: false });
+      }
+    } catch (err) {
+      logger.error('Failed to fetch more prompts', err);
+      set({ isLoadingMorePrompts: false });
+    }
+  },
+
   addPrompt: async (prompt) => {
     try {
       const newPrompt = await promptStorage.add(prompt);
-      set(state => updateAndFilterState({ ...state, prompts: [...state.prompts, newPrompt] }));
+      set(state => updateAndFilterState({ ...state, prompts: [newPrompt, ...state.prompts] }));
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Failed to add prompt';
       set({ error });
@@ -368,7 +437,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
 
   deletePrompt: async (id) => {
     try {
-      await promptStorage.delete(id);
+      await promptStorage.remove(id);
       set(state => {
         const updatedPrompts = state.prompts.filter((p) => p.id !== id);
         return updateAndFilterState({ ...state, prompts: updatedPrompts });
@@ -384,7 +453,6 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
       const state = get();
       const prompt = state.prompts.find(p => p.id === id);
       if (!prompt) throw new Error('Prompt not found');
-      
       const updatedPrompt = { ...prompt, isPinned: !prompt.isPinned };
       await get().updatePrompt(updatedPrompt);
     } catch (err) {
@@ -397,9 +465,8 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
       const state = get();
       const prompt = state.prompts.find(p => p.id === id);
       if (!prompt) throw new Error('Prompt not found');
-      
-      const updatedPrompt = { 
-        ...prompt, 
+      const updatedPrompt = {
+        ...prompt,
         usageCount: (prompt.usageCount || 0) + 1,
         lastUsed: new Date().toISOString()
       };
@@ -409,21 +476,56 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
     }
   },
 
-  // Chat actions (new)
-  loadChats: async () => {
+  // Chat actions with pagination
+  loadChats: async ({ reset } = { reset: false }) => {
     try {
-      const chats = await chatStorage.getAll();
-      set(state => updateAndFilterState({ ...state, chats }));
+      if (reset) set({ chats: [], chatsCursor: null, hasMoreChats: true });
+      const { pageSize, chatsCursor } = get();
+      if (typeof (chatStorage as any).getPage === 'function') {
+        const res = await (chatStorage as any).getPage({ limit: pageSize, cursor: reset ? null : chatsCursor });
+        set(state => updateAndFilterState({
+          ...state,
+          chats: reset ? res.items : [...state.chats, ...res.items],
+          chatsCursor: res.nextCursor ?? null,
+          hasMoreChats: !!res.nextCursor,
+        }));
+      } else {
+        const all = await chatStorage.getAll();
+        set(state => updateAndFilterState({ ...state, chats: all.slice(0, pageSize), chatsCursor: all.length > pageSize ? all[pageSize - 1]?.id ?? null : null, hasMoreChats: all.length > pageSize }));
+      }
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Failed to load chats';
       set({ error });
     }
   },
 
+  fetchMoreChats: async () => {
+    const { hasMoreChats, isLoadingMoreChats, pageSize, chatsCursor } = get();
+    if (!hasMoreChats || isLoadingMoreChats) return;
+    try {
+      set({ isLoadingMoreChats: true });
+      if (typeof (chatStorage as any).getPage === 'function') {
+        const res = await (chatStorage as any).getPage({ limit: pageSize, cursor: chatsCursor });
+        set(state => updateAndFilterState({
+          ...state,
+          chats: [...state.chats, ...res.items],
+          chatsCursor: res.nextCursor ?? null,
+          hasMoreChats: !!res.nextCursor,
+          isLoadingMoreChats: false,
+        }));
+      } else {
+        set({ isLoadingMoreChats: false });
+      }
+    } catch (err) {
+      logger.error('Failed to fetch more chats', err);
+      set({ isLoadingMoreChats: false });
+    }
+  },
+
   addChat: async (chat) => {
     try {
       const newChat = await chatStorage.add(chat);
-      set(state => updateAndFilterState({ ...state, chats: [...state.chats, newChat] }));
+      set(state => updateAndFilterState({ ...state, chats: [newChat, ...state.chats] }));
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Failed to add chat';
       set({ error });
@@ -461,7 +563,6 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
       const state = get();
       const chat = state.chats.find(c => c.id === id);
       if (!chat) throw new Error('Chat not found');
-      
       const updatedChat = { ...chat, isPinned: !chat.isPinned };
       await get().updateChat(updatedChat);
     } catch (err) {
@@ -472,7 +573,6 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   incrementChatAccess: async (id) => {
     try {
       await chatStorage.incrementAccess(id);
-      // Update only the specific chat in the store
       set(state => {
         const updatedChats = state.chats.map(chat =>
           chat.id === id

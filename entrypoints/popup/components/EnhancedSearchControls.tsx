@@ -1,17 +1,17 @@
-import React, { useRef, useEffect } from 'react';
-import { useUnifiedStore } from '../../../lib/unifiedStore';
-import { Input } from '../../../components/ui/input';
+import { Building2, FileText, Filter, MessageSquare, Pin, Search, SortAsc, X } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
 import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Label } from '../../../components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '../../../components/ui/select';
 import { Switch } from '../../../components/ui/switch';
-import { Label } from '../../../components/ui/label';
-import { Search, Filter, SortAsc, X, Pin, FileText, MessageSquare, Building2 } from 'lucide-react';
+import { useUnifiedStore } from '../../../lib/unifiedStore';
 
 export const EnhancedSearchControls: React.FC = () => {
   const {
@@ -83,7 +83,7 @@ export const EnhancedSearchControls: React.FC = () => {
               <FileText className="h-3.5 w-3.5 text-gray-500" />
               <MessageSquare className="h-3.5 w-3.5 text-gray-500" />
             </div>
-            <Select value={contentFilter} onValueChange={setContentFilter}>
+            <Select value={contentFilter} onValueChange={(value) => setContentFilter(value as typeof contentFilter)}>
               <SelectTrigger className="h-8 px-3 bg-white border-gray-300 rounded-md text-sm flex-1">
                 <SelectValue />
               </SelectTrigger>

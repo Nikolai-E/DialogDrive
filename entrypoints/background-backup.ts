@@ -1,5 +1,3 @@
-/// <reference path="../.wxt/wxt.d.ts" />
-
 import { chatStorage } from '../lib/chatStorage';
 import { secureStorage } from '../lib/secureStorageV2';
 import { initializeContextMenu, initializeKeyboardShortcuts } from '../lib/shortcuts';

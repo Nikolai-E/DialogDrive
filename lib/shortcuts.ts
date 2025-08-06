@@ -3,8 +3,8 @@
  * Addresses UX improvements from expert review
  */
 
-import { promptStorage } from '../lib/storage';
 import { logger } from '../lib/logger';
+import { promptStorage } from '../lib/storage';
 
 // Command handlers
 const commandHandlers = {
@@ -51,9 +51,10 @@ const commandHandlers = {
 
   'open-side-panel': async () => {
     try {
-      if (browser.sidePanel) {
-        await browser.sidePanel.open({ windowId: (await browser.windows.getCurrent()).id });
-      } else {
+      if (browser.sidePanel && browser.windows) {
+        const currentWindow = await browser.windows.getCurrent();
+        await browser.sidePanel.open({ windowId: currentWindow.id });
+      } else if (browser.action) {
         // Fallback to popup if side panel not available
         await browser.action.openPopup();
       }
@@ -65,11 +66,13 @@ const commandHandlers = {
   'quick-search': async () => {
     try {
       // Open popup focused on search
-      await browser.action.openPopup();
-      // Send message to focus search
-      setTimeout(() => {
-        browser.runtime.sendMessage({ type: 'FOCUS_SEARCH' });
-      }, 100);
+      if (browser.action) {
+        await browser.action.openPopup();
+        // Send message to focus search
+        setTimeout(() => {
+          browser.runtime.sendMessage({ type: 'FOCUS_SEARCH' });
+        }, 100);
+      }
     } catch (error) {
       logger.error('Failed to open quick search:', error);
     }
@@ -139,7 +142,9 @@ export function initializeContextMenu() {
 
     // Create new items
     contextMenuItems.forEach(item => {
-      browser.contextMenus.create(item);
+      if (browser.contextMenus) {
+        browser.contextMenus.create(item);
+      }
     });
 
     // Handle context menu clicks
@@ -159,7 +164,9 @@ export function initializeContextMenu() {
             break;
             
           case 'open-dialogdrive':
-            await browser.action.openPopup();
+            if (browser.action) {
+              await browser.action.openPopup();
+            }
             break;
         }
       } catch (error) {

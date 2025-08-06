@@ -10,7 +10,26 @@
         "./*"
       ]
     },
+    "types": [],
     "allowImportingTsExtensions": true,
-    "jsx": "react-jsx"
-  }
+    "jsx": "react-jsx",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  },
+  "include": [
+    "entrypoints/**/*",
+    "lib/**/*",
+    "types/**/*",
+    "components/**/*"
+  ],
+  "exclude": ["node_modules", ".wxt"]
 }

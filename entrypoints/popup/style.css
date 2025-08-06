@@ -6,7 +6,7 @@
 /* Base styles for the extension popup */
 html, body, #root {
   width: 400px;
-  height: 580px;
+  height: 100%;
   min-width: 400px;
   min-height: 580px;
   max-width: 400px;
@@ -29,4 +29,8 @@ html, body, #root {
 
 .scrollbar-track-slate-800::-webkit-scrollbar-track {
   background-color: rgb(30 41 59);
+}
+
+/* Removed hard-coded background colors to respect theme tokens */
+:root {
 }

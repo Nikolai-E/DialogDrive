@@ -1,3 +1,5 @@
+import type { Prompt } from './prompt';
+
 // Chat bookmark types
 export interface ChatBookmark {
   id: string;

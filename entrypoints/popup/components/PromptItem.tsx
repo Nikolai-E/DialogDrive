@@ -1,30 +1,41 @@
+import { Edit2, Pin, Trash2 } from 'lucide-react';
 import React from 'react';
-import type { Prompt } from '../../../types/prompt';
-import { usePromptStore } from '../../../lib/promptStore';
-import { Pin, Edit2, Trash2 } from 'lucide-react';
-import { useCopyToClipboard } from '../hooks/useCopyToClipboard';
 import { toast } from 'sonner';
+import { useUnifiedStore } from '../../../lib/unifiedStore';
+import { cn } from '../../../lib/utils';
+import type { Prompt } from '../../../types/prompt';
+import { useCopyToClipboard } from '../hooks/useCopyToClipboard';
 
 interface PromptItemProps {
   prompt: Prompt;
 }
 
 export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => {
-  const { setEditingPrompt, setCurrentView, deletePrompt, togglePinPrompt, incrementUsage } = usePromptStore();
+  const { setEditingPrompt, setCurrentView, deletePrompt, togglePinPrompt, incrementUsage } = useUnifiedStore();
   const { copyToClipboard } = useCopyToClipboard();
   const [isProcessing, setIsProcessing] = React.useState(false);
 
   // Get color based on workspace/category - using professional theme-aligned colors
   const getCategoryColor = (workspace: string): string => {
     const colors = {
-      'General': 'hsl(215, 73%, 52%)',    // Primary blue
-      'Work': 'hsl(158, 61%, 40%)',       // Professional green  
-      'Personal': 'hsl(265, 73%, 52%)',   // Purple
-      'Development': 'hsl(25, 95%, 53%)', // Orange
-      'Research': 'hsl(173, 73%, 40%)',   // Teal
-      'Writing': 'hsl(330, 73%, 52%)',    // Pink
+      'General': 'hsl(215, 73%, 52%)',
+      'Work': 'hsl(158, 61%, 40%)',
+      'Personal': 'hsl(265, 73%, 52%)',
+      'Development': 'hsl(25, 95%, 53%)',
+      'Research': 'hsl(173, 73%, 40%)',
+      'Writing': 'hsl(330, 73%, 52%)',
     };
     return colors[workspace as keyof typeof colors] || 'hsl(var(--muted-foreground))';
+  };
+
+  const isSupportedChatUrl = (url: string) => {
+    try {
+      const u = new URL(url);
+      const host = u.hostname.replace(/^www\./, '');
+      return host.endsWith('chatgpt.com') || host.endsWith('claude.ai') || host.endsWith('gemini.google.com');
+    } catch {
+      return false;
+    }
   };
 
   const handleCardClick = async () => {
@@ -39,24 +50,24 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
       // Try to paste to active tab if on supported site
       try {
         const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-        if (tab?.id && tab.url) {
-          const isSupportedSite = tab.url.includes('chatgpt.com') || 
-                                  tab.url.includes('claude.ai') || 
-                                  tab.url.includes('gemini.google.com');
-          
-          if (isSupportedSite) {
-            const response = await browser.tabs.sendMessage(tab.id, { 
-              type: 'PASTE_PROMPT', 
-              text: prompt.text 
-            });
-            if (response?.success) {
-              toast.success('✨ Pasted');
-              return;
-            }
+        if (tab?.id && tab.url && isSupportedChatUrl(tab.url)) {
+          const response = await browser.tabs.sendMessage(tab.id, { 
+            type: 'PASTE_PROMPT', 
+            text: prompt.text 
+          }).catch((err) => {
+            // Content script may not be injected yet
+            console.warn('sendMessage failed, likely no content script', err);
+            return undefined;
+          });
+          if (response?.success) {
+            toast.success('✨ Pasted');
+            return;
           }
+          // Provide actionable guidance
+          toast.info('Copied. Open the input box and press Ctrl+V to paste.');
         }
       } catch (tabError) {
-        console.warn('Could not paste to tab, copied to clipboard');
+        console.warn('Could not paste to tab, copied to clipboard', tabError);
       }
       
       toast.success('📋 Copied');
@@ -96,102 +107,53 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
   };
 
   return (
-    <div className="group border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors duration-150">
-      <div 
-        className={`relative flex items-center min-h-[52px] px-4 py-3 cursor-pointer
-          ${isProcessing ? 'animate-pulse bg-blue-50' : ''}
-        `}
+    <div className="mx-3 my-2" role="listitem">
+      <button
         onClick={handleCardClick}
-        style={{
-          borderLeft: `4px solid ${getCategoryColor(prompt.workspace)}`
-        }}
+        className={cn(
+          'w-full text-left select-none',
+          'rounded-md px-4 py-3',
+          'bg-white hover:bg-gray-50',
+          'transition-colors focus:outline-none'
+        )}
+        aria-label={`Use prompt ${prompt.title}`}
       >
-        {/* Pin indicator */}
-        {prompt.isPinned && (
-          <div className="absolute top-2 left-1 w-2 h-2 bg-yellow-400 rounded-full shadow-sm"></div>
-        )}
-        
-        {/* Main content */}
-        <div className="flex-1 min-w-0 pr-3">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-base font-semibold text-gray-900 truncate flex-1">
-              {prompt.title}
-            </h3>
-            <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded shrink-0">
-              {prompt.workspace || 'General'}
-            </span>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-medium text-foreground truncate">{prompt.title}</div>
+            <div className="text-[11px] text-muted-foreground truncate">{prompt.workspace || 'General'}</div>
           </div>
-          
-          {/* Tags and stats */}
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-1 min-w-0 flex-1">
-              {prompt.tags && prompt.tags.length > 0 && (
-                <div className="flex gap-1 min-w-0">
-                  {prompt.tags.slice(0, 3).map((tag) => (
-                    <span key={tag} className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-xs font-medium shrink-0">
-                      {tag}
-                    </span>
-                  ))}
-                  {prompt.tags.length > 3 && (
-                    <span className="text-gray-400 font-medium shrink-0">+{prompt.tags.length - 3}</span>
-                  )}
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2 text-gray-500 shrink-0">
-              <span className="flex items-center gap-1 font-medium">
-                <div className="w-2 h-2 rounded-full bg-blue-200"></div>
-                {prompt.usageCount || 0}
-              </span>
-              {prompt.lastUsed && (
-                <span className="font-medium">{new Date(prompt.lastUsed).toLocaleDateString()}</span>
-              )}
-            </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Action buttons */}
+            <button
+              aria-label={prompt.isPinned ? 'Unpin prompt' : 'Pin prompt'}
+              onClick={handlePin}
+              className={`${prompt.isPinned ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200' : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'} p-1.5 rounded-md transition-all duration-150`}
+              title={prompt.isPinned ? 'Unpin prompt' : 'Pin prompt'}
+            >
+              <Pin className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              aria-label="Edit prompt"
+              onClick={handleEdit}
+              className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-150"
+              title="Edit prompt"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              aria-label="Delete prompt"
+              onClick={handleDelete}
+              className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all duration-150"
+              title="Delete prompt"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
-
-        {/* Action buttons - float above without affecting layout */}
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/95 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-lg border border-gray-200 z-10">
-          <button
-            onClick={handlePin}
-            className={`p-1.5 rounded-md transition-all duration-150 ${
-              prompt.isPinned 
-                ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200' 
-                : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
-            }`}
-            title={prompt.isPinned ? 'Unpin prompt' : 'Pin prompt'}
-          >
-            <Pin className="w-3.5 h-3.5" />
-          </button>
-          
-          <button
-            onClick={handleEdit}
-            className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-150"
-            title="Edit prompt"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-          </button>
-          
-          <button
-            onClick={handleDelete}
-            className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all duration-150"
-            title="Delete prompt"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {/* Processing overlay */}
-        {isProcessing && (
-          <div className="absolute inset-0 flex items-center justify-center bg-blue-50/90 rounded-lg backdrop-blur-sm">
-            <div className="flex items-center gap-2 text-blue-700 font-medium">
-              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              Processing...
-            </div>
-          </div>
-        )}
-      </div>
+      </button>
     </div>
   );
 });

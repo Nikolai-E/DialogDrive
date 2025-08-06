@@ -1,8 +1,8 @@
-import type { Prompt } from '../types/prompt';
-import type { StorageResult } from '../types/app';
 import { v4 as uuidv4 } from 'uuid';
+import type { StorageResult } from '../types/app';
+import type { Prompt } from '../types/prompt';
 import { logger, logStorageAction } from './logger';
-import { secureStorage } from './secureStorage';
+import { secureStorage } from './secureStorageV2';
 
 // Storage version for migrations
 const STORAGE_VERSION = '1.0.0';
@@ -246,6 +246,25 @@ export const promptStorage = {
       logger.error('Failed to import data:', error);
       throw error;
     }
+  },
+
+  // Pagination shim: returns items sorted by lastUsed desc then created desc
+  getPage: async ({ limit, cursor }: { limit: number; cursor: string | null }): Promise<{ items: Prompt[]; nextCursor: string | null }> => {
+    const all = await (promptStorage as any).getAll();
+    const sorted = [...all].sort((a, b) => {
+      const ad = a.lastUsed ? new Date(a.lastUsed).getTime() : new Date(a.created).getTime();
+      const bd = b.lastUsed ? new Date(b.lastUsed).getTime() : new Date(b.created).getTime();
+      return bd - ad;
+    });
+    let startIndex = 0;
+    if (cursor) {
+      const idx = sorted.findIndex(it => it.id === cursor);
+      startIndex = idx >= 0 ? idx + 1 : 0;
+    }
+    const items = sorted.slice(startIndex, startIndex + limit);
+    const last = items[items.length - 1] || null;
+    const nextCursor = last ? last.id : null;
+    return { items, nextCursor };
   }
 };
 

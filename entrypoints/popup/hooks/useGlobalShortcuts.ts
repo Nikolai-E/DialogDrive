@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { usePromptStore } from '~/lib/promptStore';
+import { useUnifiedStore } from '../../../lib/unifiedStore';
 
 export function useGlobalShortcuts() {
-  const { currentView, setCurrentView, setEditingPrompt } = usePromptStore();
+  const { currentView, setCurrentView, setEditingPrompt } = useUnifiedStore();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

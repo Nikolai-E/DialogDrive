@@ -4,7 +4,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "scripts": {
+"scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
     "build": "wxt build",
@@ -12,10 +12,14 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "clean": "rm -rf node_modules .wxt dist build",
+    "clean:files": "node -e \"require('fs').readdirSync('.').filter(f => f.startsWith('test-') && f.endsWith('.html')).forEach(f => require('fs').unlinkSync(f))\"",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "lint": "tsc --noEmit && echo 'TypeScript check passed'",
+    "prebuild": "npm run lint"
   },
   "dependencies": {
-    "@heroicons/react": "^2.2.0",
     "@radix-ui/react-dialog": "^1.1.1",
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-popover": "^1.1.1",
@@ -31,13 +35,10 @@
     "cmdk": "^1.0.0",
     "framer-motion": "^12.23.11",
     "lucide-react": "^0.417.0",
-    "next-themes": "^0.4.6",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "react-hot-toast": "^2.5.2",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.4.0",
-    "tailwind-scrollbar": "^3.0.0",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0",
     "zustand": "^5.0.6"

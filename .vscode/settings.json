@@ -1,10 +1,149 @@
 {
-    "chat.mcp.serverSampling": {
-        "DialogDrive/.vscode/mcp.json: confirm": {
-            "allowedModels": [
-                "github.copilot-chat/gpt-4.1",
-                "github.copilot-chat/OpenRouter-openrouter/horizon-beta"
-            ]
-        }
-    }
+  // Terminal command auto-approval settings
+  "chat.tools.autoApprove": false,
+  
+  // --- Modern VS Code (2025+) terminal allow/deny lists ---
+  "chat.tools.terminal.allowList": {
+    // File operations within DialogDrive folder
+    "/^Remove-Item\\s+.*DialogDrive.*\\.(ts|tsx|js|jsx|html|md).*$/": true,
+    "/^rm\\s+.*DialogDrive.*\\.(ts|tsx|js|jsx|html|md).*$/": true,
+    "/^del\\s+.*DialogDrive.*$/": true,
+    
+    // NPM commands
+    "/^npm\\s+(install|uninstall|run|test|build).*$/": true,
+    "/^npm\\s+rm.*$/": true,
+    "/^npx.*$/": true,
+    
+    // Git operations (safe since you have backup)
+    "/^git\\s+(add|commit|status|diff|log|branch|checkout|pull|push).*$/": true,
+    
+    // File creation and editing
+    "/^touch\\s+.*$/": true,
+    "/^mkdir\\s+.*$/": true,
+    "/^echo.*$/": true,
+    "/^cat\\s+.*$/": true,
+    "/^code\\s+.*$/": true,
+    
+    // TypeScript and build commands
+    "/^tsc.*$/": true,
+    "/^wxt.*$/": true,
+    
+    // Directory navigation
+    "/^cd\\s+.*$/": true,
+    "/^ls.*$/": true,
+    "/^dir.*$/": true,
+    "/^pwd$/": true,
+    
+    // Find and replace operations
+    "/^find\\s+\\.\\s+-type\\s+f.*$/": true,
+    "/^sed\\s+-i.*$/": true,
+    "/^grep.*$/": true
+  },
+  
+  "chat.tools.terminal.denyList": {
+    // Still deny system-level dangerous commands
+    "sudo": true,
+    "su": true,
+    "kill": true,
+    "killall": true,
+    "shutdown": true,
+    "reboot": true,
+    "format": true,
+    "fdisk": true,
+    "dd": true,
+    "curl.*\\|.*sh": true, // Prevent curl piped to shell
+    "wget.*\\|.*sh": true,
+    "eval": true,
+    "exec": true,
+    "> /dev/": true // Prevent writing to system devices
+  },
+
+  // --- Legacy Copilot settings (for older VS Code versions) ---
+  "github.copilot.chat.agent.terminal.allowList": {
+    "/^Remove-Item\\s+.*DialogDrive.*$/": true,
+    "/^rm\\s+.*DialogDrive.*$/": true,
+    "/^npm\\s+.*$/": true,
+    "/^git\\s+.*$/": true
+  },
+  
+  "github.copilot.chat.agent.terminal.denyList": {
+    "sudo": true,
+    "kill": true,
+    "shutdown": true,
+    "eval": true
+  },
+
+  // TypeScript settings for better error detection
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.preferences.includeInlayParameterNameHints": "all",
+  "typescript.preferences.includeInlayFunctionParameterTypeHints": true,
+  "typescript.preferences.includeInlayVariableTypeHints": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.suggest.autoImports": true,
+  "typescript.preferences.importModuleSpecifier": "relative",
+  
+  // Editor settings for consistency
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit",
+    "source.sortImports": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  
+  // File associations
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  
+  // Exclude files from search and watch
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/.wxt": true,
+    "**/dist": true,
+    "**/build": true
+  },
+  
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.wxt": true,
+    "**/package-lock.json": true
+  },
+  
+  // Tailwind CSS IntelliSense
+  "tailwindCSS.experimental.classRegex": [
+    ["cn\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+  ],
+  
+  // Auto-save settings
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+  
+  // Git settings
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+  
+  // Extension recommendations
+  "extensions.ignoreRecommendations": false,
+  
+  // Copilot settings for better suggestions
+  "github.copilot.enable": {
+    "*": true,
+    "yaml": true,
+    "plaintext": true,
+    "markdown": true
+  }
 }

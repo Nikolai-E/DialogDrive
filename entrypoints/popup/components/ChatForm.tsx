@@ -1,21 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { chatStorage, ChatStorage } from '../../../lib/chatStorage';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
 import { Label } from '../../../components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../../components/ui/select';
 import { Badge } from '../../../components/ui/badge';
 import { Switch } from '../../../components/ui/switch';
-import { ArrowLeft, Link, CheckCircle, AlertCircle, X, Hash, Loader2, Download, Save } from 'lucide-react';
+import { ArrowLeft, Link, CheckCircle, AlertCircle, X, Loader2, Download, Save, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '../../../lib/utils';
 import type { AddChatBookmark } from '../../../types/chat';
 
 export const ChatForm: React.FC = () => {
@@ -45,6 +39,10 @@ export const ChatForm: React.FC = () => {
     message: string;
   }>({ isValid: false, platform: null, message: '' });
   const [isCapturing, setIsCapturing] = useState(false);
+  const [showPlatformDropdown, setShowPlatformDropdown] = useState(false);
+  const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
+  const platformRef = useRef<HTMLDivElement>(null);
+  const workspaceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (editingChat) {
@@ -99,7 +97,7 @@ export const ChatForm: React.FC = () => {
         setUrlValidation({
           isValid: false,
           platform: null,
-          message: 'Please enter a valid ChatGPT or Gemini URL (conversation or share link)'
+          message: 'Please enter a valid ChatGPT, Gemini or Claude URL'
         });
       }
     } else {
@@ -134,15 +132,12 @@ export const ChatForm: React.FC = () => {
       
       setCurrentView('list');
       setEditingChat(null);
-    } catch (error) {
+    } catch {
       toast.error('Failed to save chat bookmark');
     }
   };
 
-  const handleCancel = () => {
-    setCurrentView('list');
-    setEditingChat(null);
-  };
+  const handleCancel = () => { setCurrentView('list'); setEditingChat(null); };
 
   const handleCaptureCurrentChat = async () => {
     setIsCapturing(true);
@@ -151,10 +146,7 @@ export const ChatForm: React.FC = () => {
       const tabs = await browser.tabs.query({ active: true, currentWindow: true });
       const activeTab = tabs[0];
       
-      if (!activeTab?.id) {
-        toast.error('No active tab found');
-        return;
-      }
+      if (!activeTab?.id) { toast.error('No active tab found'); return; }
 
       // Send message to content script to capture current chat
       let response;
@@ -164,12 +156,12 @@ export const ChatForm: React.FC = () => {
         });
       } catch (err: unknown) {
         const error = err as Error;
-        if (error && error.message && error.message.includes('Could not establish connection')) {
-          toast.error('Could not connect to the tab. Make sure you have permission to access this tab and that the content script is loaded.');
-        } else if (error && error.message && error.message.includes('No tab with id')) {
-          toast.error('The tab is no longer available or has been closed.');
+        if (error?.message?.includes('Could not establish connection')) {
+          toast.error('Could not connect to the tab. Ensure permissions and content script.');
+        } else if (error?.message?.includes('No tab with id')) {
+          toast.error('The tab is no longer available.');
         } else {
-          toast.error(`Failed to send message to tab: ${error?.message || error}`);
+          toast.error(`Failed to send message: ${error?.message || error}`);
         }
         setIsCapturing(false);
         return;
@@ -186,7 +178,7 @@ export const ChatForm: React.FC = () => {
           platform: capturedData.platform,
           // Add description with captured content info
           description: capturedData.scrapedContent 
-            ? `Captured: ${capturedData.scrapedContent.summary}. Last message: ${capturedData.scrapedContent.lastMessage?.slice(0, 100)}...`
+            ? `Captured: ${capturedData.scrapedContent.summary}. Last: ${capturedData.scrapedContent.lastMessage?.slice(0, 90)}…`
             : prev.description
         }));
         
@@ -194,11 +186,11 @@ export const ChatForm: React.FC = () => {
         const contentInfo = capturedData.scrapedContent 
           ? ` (${capturedData.scrapedContent.messageCount || 0} messages)`
           : '';
-        toast.success(`Chat captured successfully!${contentInfo}`);
+        toast.success(`Chat captured!${contentInfo}`);
       } else {
         toast.error(response?.message || 'Failed to capture chat');
       }
-    } catch (error) {
+    } catch {
       // Fallback: get current tab URL
       try {
         const tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -220,7 +212,7 @@ export const ChatForm: React.FC = () => {
         } else {
           toast.error('Cannot access current tab URL');
         }
-      } catch (fallbackError) {
+      } catch {
         toast.error('Failed to capture current chat');
       }
     } finally {
@@ -230,101 +222,98 @@ export const ChatForm: React.FC = () => {
 
   const handleAddTag = () => {
     if (currentTag.trim() && !(formData.tags || []).includes(currentTag.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...(prev.tags || []), currentTag.trim()]
-      }));
+      setFormData(prev => ({ ...prev, tags: [...(prev.tags || []), currentTag.trim()] }));
       setCurrentTag('');
     }
   };
+  const handleRemoveTag = (tagToRemove: string) => { setFormData(prev => ({ ...prev, tags: (prev.tags || []).filter(tag => tag !== tagToRemove) })); };
+  const handleKeyPress = (e: React.KeyboardEvent) => { if (e.key === 'Enter') { e.preventDefault(); handleAddTag(); } };
 
-  const handleRemoveTag = (tagToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: (prev.tags || []).filter(tag => tag !== tagToRemove)
-    }));
+  const handlePlatformSelect = (platform: 'chatgpt' | 'gemini' | 'claude') => {
+    setFormData(prev => ({ ...prev, platform }));
+    setShowPlatformDropdown(false);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddTag();
-    }
+  const handleWorkspaceSelect = (workspace: string) => {
+    setFormData(prev => ({ ...prev, workspace }));
+    setShowWorkspaceDropdown(false);
   };
+
+  // Handle clicks outside dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (platformRef.current && !platformRef.current.contains(event.target as Node)) {
+        setShowPlatformDropdown(false);
+      }
+      if (workspaceRef.current && !workspaceRef.current.contains(event.target as Node)) {
+        setShowWorkspaceDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
-    <div className="flex flex-col h-full bg-card">
+    <div className="flex flex-col h-full bg-background text-[12px]">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-gray-50">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleCancel}
-          className="h-8 w-8 p-0 hover:bg-gray-100"
-        >
+      <div className="flex items-center gap-2 px-2.5 py-2 border-b bg-background/80 backdrop-blur-sm">
+        <Button variant="ghost" size="icon" onClick={handleCancel} className="h-7 w-7 p-0">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-sm font-semibold">
           {editingChat ? 'Edit Chat Bookmark' : 'Add Chat Bookmark'}
         </h2>
       </div>
 
       {/* Form */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="flex-1 overflow-y-auto p-3">
+        <form onSubmit={handleSubmit} className="space-y-3">
           {/* URL Input */}
-          <div className="space-y-2">
-            <Label htmlFor="url" className="text-sm font-medium text-gray-700">
+          <div className="space-y-1.5">
+            <Label htmlFor="url" className="text-[12px] font-medium">
               Chat URL *
             </Label>
             <div className="relative">
-              <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Link className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 id="url"
                 type="url"
                 placeholder="https://chatgpt.com/share/... or g.co/gemini/share/..."
                 value={formData.url}
                 onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-                className="pl-10 pr-4"
+                className="pl-8 pr-3 h-8 text-[12px]"
                 required
               />
             </div>
-            {/* URL Validation */}
             {formData.url && (
-              <div className={`flex items-center gap-2 text-sm ${
-                urlValidation.isValid ? 'text-green-600' : 'text-red-600'
-              }`}>
+              <div className={`flex items-center gap-1.5 text-[12px] ${urlValidation.isValid ? 'text-green-600' : 'text-red-600'}`}>
                 {urlValidation.isValid ? (
-                  <CheckCircle className="h-4 w-4" />
+                  <CheckCircle className="h-3.5 w-3.5" />
                 ) : (
-                  <AlertCircle className="h-4 w-4" />
+                  <AlertCircle className="h-3.5 w-3.5" />
                 )}
                 {urlValidation.message}
               </div>
             )}
-            
-            {/* URL Types Info */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-600">
-              <div className="font-medium text-gray-800 mb-2">Supported URL formats:</div>
-              <div className="space-y-1">
-                <div><strong>ChatGPT:</strong></div>
-                <div className="ml-2">• Direct: <code>chatgpt.com/c/xxx</code> (private, requires login)</div>
-                <div className="ml-2">• Share: <code>chatgpt.com/share/xxx</code> (public, shareable)</div>
-                <div><strong>Gemini:</strong></div>
-                <div className="ml-2">• Direct: <code>gemini.google.com/app/xxx</code> (private)</div>
-                <div className="ml-2">• Share: <code>g.co/gemini/share/xxx</code> (public)</div>
+            <div className="bg-muted/40 border border-border rounded-md p-2 text-[11px] text-muted-foreground">
+              <div className="font-medium text-foreground mb-1">Supported URL formats:</div>
+              <div className="space-y-0.5">
+                <div>ChatGPT: direct or share</div>
+                <div>Gemini: direct or share</div>
+                <div>Claude: direct or share</div>
               </div>
             </div>
           </div>
 
           {/* Quick Capture Button */}
           {!editingChat && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="border rounded-md p-2 bg-secondary/10 border-secondary/20">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-medium text-blue-900">Auto-capture current chat</h4>
-                  <p className="text-xs text-blue-700 mt-1">
-                    Automatically fill in the URL and title from your current ChatGPT or Gemini tab
+                  <h4 className="text-[12px] font-medium">Auto-capture current chat</h4>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Fill URL and title from your current chat tab
                   </p>
                 </div>
                 <Button
@@ -333,16 +322,16 @@ export const ChatForm: React.FC = () => {
                   size="sm"
                   onClick={handleCaptureCurrentChat}
                   disabled={isCapturing}
-                  className="border-blue-300 text-blue-700 hover:bg-blue-100 ml-3"
+                  className="h-8 px-2"
                 >
                   {isCapturing ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Capturing...
+                      <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                      Capturing…
                     </>
                   ) : (
                     <>
-                      <Download className="h-4 w-4 mr-2" />
+                      <Download className="h-4 w-4 mr-1.5" />
                       Capture
                     </>
                   )}
@@ -352,8 +341,8 @@ export const ChatForm: React.FC = () => {
           )}
 
           {/* Title Input */}
-          <div className="space-y-2">
-            <Label htmlFor="title" className="text-sm font-medium text-gray-700">
+          <div className="space-y-1.5">
+            <Label htmlFor="title" className="text-[12px] font-medium">
               Title *
             </Label>
             <Input
@@ -362,79 +351,112 @@ export const ChatForm: React.FC = () => {
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               required
+              className="h-8 text-[12px]"
             />
           </div>
 
           {/* Platform and Workspace Row */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="platform" className="text-sm font-medium text-gray-700">
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="space-y-1.5">
+              <Label htmlFor="platform" className="text-[12px] font-medium">
                 Platform
               </Label>
-              <Select 
-                value={formData.platform} 
-                onValueChange={(value) => setFormData(prev => ({ 
-                  ...prev, 
-                  platform: value as 'chatgpt' | 'gemini' | 'claude' 
-                }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="chatgpt">🤖 ChatGPT</SelectItem>
-                  <SelectItem value="gemini">💎 Gemini</SelectItem>
-                  <SelectItem value="claude">🧠 Claude</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="relative" ref={platformRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowPlatformDropdown(prev => !prev)}
+                  className="w-full h-8 text-[12px] px-3 border border-border bg-background text-foreground rounded-md flex items-center justify-between hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <span>
+                    {formData.platform === 'chatgpt' && '🤖 ChatGPT'}
+                    {formData.platform === 'gemini' && '💎 Gemini'}
+                    {formData.platform === 'claude' && '🧠 Claude'}
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                </button>
+                {showPlatformDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-[9999] overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => handlePlatformSelect('chatgpt')}
+                      className="w-full h-8 text-left text-xs px-3 hover:bg-accent/10 flex items-center gap-2"
+                    >
+                      🤖 ChatGPT
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePlatformSelect('gemini')}
+                      className="w-full h-8 text-left text-xs px-3 hover:bg-accent/10 flex items-center gap-2"
+                    >
+                      💎 Gemini
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePlatformSelect('claude')}
+                      className="w-full h-8 text-left text-xs px-3 hover:bg-accent/10 flex items-center gap-2"
+                    >
+                      🧠 Claude
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="workspace" className="text-sm font-medium text-gray-700">
+            <div className="space-y-1.5">
+              <Label htmlFor="workspace" className="text-[12px] font-medium">
                 Workspace
               </Label>
-              <Select 
-                value={formData.workspace} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, workspace: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {workspaces.map((workspace) => (
-                    <SelectItem key={workspace} value={workspace}>
-                      {workspace}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative" ref={workspaceRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowWorkspaceDropdown(prev => !prev)}
+                  className="w-full h-8 text-[12px] px-3 border border-border bg-background text-foreground rounded-md flex items-center justify-between hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <span>{formData.workspace}</span>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                </button>
+                {showWorkspaceDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-[9999] overflow-hidden max-h-48 overflow-y-auto">
+                    {workspaces.map((workspace) => (
+                      <button
+                        key={workspace}
+                        type="button"
+                        onClick={() => handleWorkspaceSelect(workspace)}
+                        className="w-full h-8 text-left text-xs px-3 hover:bg-accent/10"
+                      >
+                        {workspace}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description" className="text-sm font-medium text-gray-700">
+          <div className="space-y-1.5">
+            <Label htmlFor="description" className="text-[12px] font-medium">
               Description
             </Label>
             <Textarea
               id="description"
-              placeholder="Optional description or notes about this chat..."
+              placeholder="Optional description or notes..."
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              className="min-h-[80px] resize-none"
+              className="min-h-[80px] resize-none text-[12px]"
             />
           </div>
 
           {/* Tags */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">Tags</Label>
-            <div className="flex gap-2">
+          <div className="space-y-1.5">
+            <Label className="text-[12px] font-medium">Tags</Label>
+            <div className="flex gap-1.5">
               <Input
                 placeholder="Add a tag..."
                 value={currentTag}
                 onChange={(e) => setCurrentTag(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="flex-1"
+                className="flex-1 h-8 text-[12px]"
               />
               <Button
                 type="button"
@@ -442,21 +464,17 @@ export const ChatForm: React.FC = () => {
                 size="sm"
                 onClick={handleAddTag}
                 disabled={!currentTag.trim()}
+                className="h-8"
               >
                 Add
               </Button>
             </div>
-            
-            {/* Tag List */}
             {(formData.tags || []).length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex flex-wrap gap-1.5 mt-1">
                 {(formData.tags || []).map((tag) => (
-                  <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                  <Badge key={tag} variant="secondary" className="flex items-center gap-1 h-6 text-[11px]">
                     {tag}
-                    <X 
-                      className="h-3 w-3 cursor-pointer hover:text-red-500" 
-                      onClick={() => handleRemoveTag(tag)}
-                    />
+                    <X className="h-3 w-3 cursor-pointer" onClick={() => handleRemoveTag(tag)} />
                   </Badge>
                 ))}
               </div>
@@ -465,7 +483,7 @@ export const ChatForm: React.FC = () => {
 
           {/* Pin Toggle */}
           <div className="flex items-center justify-between">
-            <Label htmlFor="pin" className="text-sm font-medium text-gray-700">
+            <Label htmlFor="pin" className="text-[12px] font-medium">
               Pin this chat bookmark
             </Label>
             <Switch
@@ -478,22 +496,13 @@ export const ChatForm: React.FC = () => {
       </div>
 
       {/* Footer Actions */}
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-gray-200 bg-gray-50">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleCancel}
-          className="flex-1"
-        >
+      <div className="flex items-center justify-between gap-2.5 px-3 py-2 border-t bg-background/80 backdrop-blur-sm">
+        <Button type="button" variant="outline" onClick={handleCancel} className="h-8 px-3">
           Cancel
         </Button>
-        <Button
-          onClick={handleSubmit}
-          disabled={!urlValidation.isValid || !formData.title.trim()}
-          className="flex-1 bg-blue-600 hover:bg-blue-700"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          {editingChat ? 'Update' : 'Save'} Chat
+        <Button onClick={handleSubmit} disabled={!urlValidation.isValid || !formData.title.trim()} className="h-8 px-3 bg-foreground text-white hover:opacity-90">
+          <Save className="h-4 w-4 mr-1.5" />
+          {editingChat ? 'Update' : 'Save'}
         </Button>
       </div>
     </div>

@@ -2,9 +2,8 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { VirtualizedPromptList } from '../../components/VirtualizedList';
 import { promptStorage } from '../../lib/storage';
-import { secureStorage } from '../../lib/secureStorage';
-import { useCopyToClipboard } from '../popup/hooks/useCopyToClipboard';
 import type { Prompt } from '../../types/prompt';
+import { useCopyToClipboard } from '../popup/hooks/useCopyToClipboard';
 
 interface SidePanelState {
   prompts: Prompt[];
@@ -107,7 +106,9 @@ function SidePanel() {
 
   const handlePromptEdit = (prompt: Prompt) => {
     // Open popup for editing
-    browser.action.openPopup();
+    if (browser.action) {
+      browser.action.openPopup();
+    }
     // Could also send message to popup to open edit form
     browser.runtime.sendMessage({
       type: 'EDIT_PROMPT',
@@ -229,7 +230,11 @@ function SidePanel() {
       <div className="p-4 border-t border-gray-200 bg-gray-50">
         <div className="flex gap-2">
           <button
-            onClick={() => browser.action.openPopup()}
+            onClick={() => {
+              if (browser.action) {
+                browser.action.openPopup();
+              }
+            }}
             className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
           >
             Add Prompt

@@ -84,52 +84,50 @@ export function VirtualizedPromptList({
   className = '',
   height = 400
 }: VirtualizedPromptListProps) {
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+
+  const handleSelect = (p: any) => {
+    setSelectedId(p.id);
+    onPromptSelect(p);
+  };
+
   const renderPromptItem = (prompt: any, index: number) => (
     <div 
       key={prompt.id}
-      className="p-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
+      className="mx-3 my-2"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex-1 min-w-0" onClick={() => onPromptSelect(prompt)}>
-          <h3 className="text-sm font-medium text-gray-900 truncate">
-            {prompt.title}
-          </h3>
-          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-            {prompt.text}
-          </p>
-          <div className="flex items-center gap-2 mt-2">
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+      <div
+        className={
+          `flex items-start justify-between gap-3 rounded-md px-4 py-3 select-none ` +
+          `${selectedId === prompt.id ? 'bg-blue-100 text-gray-900' : 'bg-white hover:bg-gray-50'}`
+        }
+        onClick={() => handleSelect(prompt)}
+      >
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-medium text-gray-900 truncate">{prompt.title}</h3>
+          <p className="text-xs text-gray-600 mt-1 line-clamp-2">{prompt.text}</p>
+          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-blue-100 text-blue-800">
               {prompt.workspace}
             </span>
             {prompt.tags.map((tag: string) => (
-              <span 
-                key={tag}
-                className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700"
-              >
-                {tag}
-              </span>
+              <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-gray-100 text-gray-700">{tag}</span>
             ))}
-            {prompt.isPinned && (
-              <span className="text-yellow-500 text-xs">📌</span>
-            )}
+            {prompt.isPinned && <span className="text-yellow-500 text-xs">📌</span>}
           </div>
         </div>
-        <div className="flex items-center gap-2 ml-4">
+        <div className="flex items-center gap-1 shrink-0">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onPromptEdit(prompt);
-            }}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            onClick={(e) => { e.stopPropagation(); onPromptEdit(prompt); }}
+            className="text-gray-400 hover:text-gray-700 rounded-md px-2 py-1"
+            aria-label="Edit"
           >
             ✏️
           </button>
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onPromptDelete(prompt.id);
-            }}
-            className="text-gray-400 hover:text-red-600 transition-colors"
+            onClick={(e) => { e.stopPropagation(); onPromptDelete(prompt.id); }}
+            className="text-gray-400 hover:text-red-600 rounded-md px-2 py-1"
+            aria-label="Delete"
           >
             🗑️
           </button>
@@ -141,7 +139,7 @@ export function VirtualizedPromptList({
   return (
     <VirtualizedList
       items={prompts}
-      estimateSize={120} // Estimated height per prompt item
+      estimateSize={104}
       renderItem={renderPromptItem}
       className={className}
       height={height}

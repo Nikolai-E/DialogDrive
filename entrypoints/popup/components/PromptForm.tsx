@@ -1,22 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useUnifiedStore } from '../../../lib/unifiedStore';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Clock, Hash, Loader2, Mic, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import { toast } from "sonner";
-import type { Prompt } from '../../../types/prompt';
+import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
-import { Textarea } from '../../../components/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "../../../components/ui/select";
 import { Switch } from '../../../components/ui/switch';
-import { Badge } from '../../../components/ui/badge';
-import { ArrowLeft, Loader2, X, Clock, Mic, Hash } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Textarea } from '../../../components/ui/textarea';
+import { useUnifiedStore } from '../../../lib/unifiedStore';
+import type { Prompt } from '../../../types/prompt';
 
 export const PromptForm: React.FC = () => {
   const { 
@@ -126,17 +126,17 @@ export const PromptForm: React.FC = () => {
     : [];
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full text-[12px]">
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.15 }}
-        className="flex items-center p-3 border-b bg-background/80 backdrop-blur-sm"
+        className="flex items-center p-2 border-b bg-background/80 backdrop-blur-sm"
       >
-        <Button variant="ghost" size="icon" className="h-8 w-8 mr-2" onClick={handleClose}>
+        <Button variant="ghost" size="icon" className="h-7 w-7 mr-1.5" onClick={handleClose}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-lg font-semibold">
+        <h2 className="text-sm font-semibold">
           {editingPrompt ? 'Edit Prompt' : 'Create New Prompt'}
         </h2>
       </motion.div>
@@ -148,14 +148,14 @@ export const PromptForm: React.FC = () => {
         onSubmit={handleSubmit} 
         className="flex flex-col flex-1 overflow-hidden"
       >
-        <div className="flex-1 p-4 space-y-4 overflow-y-auto scrollbar-thin">
+        <div className="flex-1 p-3 space-y-3 overflow-y-auto scrollbar-thin">
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.15 }}
-            className="space-y-2"
+            className="space-y-1.5"
           >
-            <Label htmlFor="title" className="text-sm font-medium">Title</Label>
+            <Label htmlFor="title" className="text-[12px] font-medium">Title</Label>
             <Input
               id="title"
               value={title}
@@ -163,7 +163,7 @@ export const PromptForm: React.FC = () => {
               placeholder="e.g., 'Summarize Article'"
               required
               disabled={isSubmitting}
-              className="shadow-sm"
+              className="shadow-sm h-8 text-[12px]"
             />
           </motion.div>
           
@@ -171,16 +171,16 @@ export const PromptForm: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.15 }}
-            className="space-y-2"
+            className="space-y-1.5"
           >
-            <Label htmlFor="text" className="text-sm font-medium">Prompt Text</Label>
+            <Label htmlFor="text" className="text-[12px] font-medium">Prompt Text</Label>
             <Textarea
               id="text"
               value={text}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
               placeholder="Enter your prompt here..."
               required
-              className="min-h-[120px] resize-y shadow-sm"
+              className="min-h-[100px] resize-y shadow-sm text-[12px]"
               disabled={isSubmitting}
             />
           </motion.div>
@@ -189,11 +189,11 @@ export const PromptForm: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.15 }}
-            className="space-y-2"
+            className="space-y-1.5"
           >
-            <Label htmlFor="workspace" className="text-sm font-medium">Workspace</Label>
-            <Select value={workspace} onValueChange={setWorkspace} disabled={isSubmitting}>
-              <SelectTrigger id="workspace" className="shadow-sm">
+            <Label htmlFor="workspace" className="text-[12px] font-medium">Workspace</Label>
+            <Select value={workspace} onValueChange={setWorkspace}>
+              <SelectTrigger id="workspace" className="shadow-sm h-8 text-[12px]">
                 <SelectValue placeholder="Select a workspace" />
               </SelectTrigger>
               <SelectContent>
@@ -208,10 +208,10 @@ export const PromptForm: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.15 }}
-            className="space-y-2"
+            className="space-y-1.5"
           >
-            <Label htmlFor="tags" className="text-sm font-medium flex items-center gap-2">
-              <Hash className="h-4 w-4" />
+            <Label htmlFor="tags" className="text-[12px] font-medium flex items-center gap-2">
+              <Hash className="h-3.5 w-3.5" />
               Tags
             </Label>
             <div className="relative">
@@ -223,7 +223,7 @@ export const PromptForm: React.FC = () => {
                 onKeyDown={handleTagKeyDown}
                 placeholder="Add tags (press Enter to add)"
                 disabled={isSubmitting}
-                className="shadow-sm"
+                className="shadow-sm h-8 text-[12px]"
               />
             </div>
             {suggestedTags.length > 0 && (
@@ -250,16 +250,16 @@ export const PromptForm: React.FC = () => {
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex flex-wrap gap-1 mt-2"
+                className="flex flex-wrap gap-1 mt-1.5"
               >
                 {tags.map((tag, index) => (
                   <motion.div
                     key={tag}
-                    initial={{ opacity: 0, scale: 0.8 }}
+                    initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
+                    transition={{ delay: index * 0.04 }}
                   >
-                    <Badge variant="secondary" className="flex items-center gap-1">
+                    <Badge variant="secondary" className="flex items-center gap-1 h-6 text-[11px]">
                       {tag}
                       <button
                         type="button"
@@ -280,12 +280,12 @@ export const PromptForm: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.15 }}
-            className="space-y-3 pt-2"
+            className="space-y-2 pt-1.5"
           >
-            <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+            <div className="flex items-center justify-between p-2.5 rounded-md border bg-card">
               <Label htmlFor="timestamp-switch" className="flex items-center gap-2 cursor-pointer">
-                <Clock className="h-4 w-4 text-accent" />
-                <span className="text-sm font-medium">Include Timestamp</span>
+                <Clock className="h-3.5 w-3.5 text-accent" />
+                <span className="text-[12px] font-medium">Include Timestamp</span>
               </Label>
               <Switch
                 id="timestamp-switch"
@@ -294,10 +294,10 @@ export const PromptForm: React.FC = () => {
                 disabled={isSubmitting}
               />
             </div>
-            <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+            <div className="flex items-center justify-between p-2.5 rounded-md border bg-card">
               <Label htmlFor="voice-switch" className="flex items-center gap-2 cursor-pointer">
-                <Mic className="h-4 w-4 text-green-500" />
-                <span className="text-sm font-medium">Voice-friendly Tone</span>
+                <Mic className="h-3.5 w-3.5 text-green-500" />
+                <span className="text-[12px] font-medium">Voice-friendly Tone</span>
               </Label>
               <Switch
                 id="voice-switch"
@@ -313,14 +313,14 @@ export const PromptForm: React.FC = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.15 }}
-          className="flex justify-end gap-3 p-3 border-t bg-background/80 backdrop-blur-sm"
+          className="flex justify-end gap-2.5 p-2 border-t bg-background/80 backdrop-blur-sm"
         >
-          <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
+          <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting} className="h-8">
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting} className="min-w-[120px]">
+          <Button type="submit" disabled={isSubmitting} className="min-w-[110px] h-8 bg-foreground text-white hover:opacity-90">
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {editingPrompt ? 'Update Prompt' : 'Create Prompt'}
+            {editingPrompt ? 'Update' : 'Create'}
           </Button>
         </motion.div>
       </motion.form>
