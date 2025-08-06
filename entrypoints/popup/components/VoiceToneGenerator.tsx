@@ -10,7 +10,7 @@ import {
 } from '../../../components/ui/dialog';
 import { Label } from '../../../components/ui/label';
 import { Checkbox } from '../../../components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { ChevronLeft, ChevronRight, Wand2 } from 'lucide-react';
 
 interface VoiceToneGeneratorProps {
@@ -307,20 +307,24 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Response Length</Label>
-              <RadioGroup
+              <Select
                 value={selections.constraints.maxLength}
                 onValueChange={(value) => setSelections({
                   ...selections,
                   constraints: {...selections.constraints, maxLength: value}
                 })}
               >
-                {WRITING_CONSTRAINTS.length.map(length => (
-                  <div key={length.value} className="flex items-center space-x-2">
-                    <RadioGroupItem value={length.value} />
-                    <Label className="text-xs">{length.label}</Label>
-                  </div>
-                ))}
-              </RadioGroup>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select length constraint" />
+                </SelectTrigger>
+                <SelectContent>
+                  {WRITING_CONSTRAINTS.length.map(length => (
+                    <SelectItem key={length.value} value={length.value}>
+                      {length.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -444,64 +448,68 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
     }
   };
 
+  if (!open) {
+    return null;
+  }
+  
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <div className="absolute inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-background border rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-4">
             <Wand2 className="h-5 w-5" />
-            Voice & Tone Generator
-          </DialogTitle>
-          <DialogDescription>
+            <h2 className="text-lg font-semibold">Voice & Tone Generator</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
             Step {currentStep + 1} of {steps.length}: {steps[currentStep].title}
-          </DialogDescription>
-        </DialogHeader>
+          </p>
+          
+          <div className="py-4">
+            {renderStepContent()}
+          </div>
 
-        <div className="py-4">
-          {renderStepContent()}
-        </div>
-
-        <DialogFooter className="flex justify-between">
-          <div className="flex gap-2">
+          <div className="flex justify-between border-t pt-4">
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                disabled={currentStep === 0}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+              {currentStep < steps.length - 1 ? (
+                <Button
+                  type="button"
+                  onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={handleGenerate}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Generate Prompt
+                </Button>
+              )}
+            </div>
             <Button
               type="button"
-              variant="outline"
-              onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-              disabled={currentStep === 0}
+              variant="ghost"
+              onClick={() => {
+                onOpenChange(false);
+                setCurrentStep(0);
+              }}
             >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Previous
+              Cancel
             </Button>
-            {currentStep < steps.length - 1 ? (
-              <Button
-                type="button"
-                onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
-              >
-                Next
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                onClick={handleGenerate}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Generate Prompt
-              </Button>
-            )}
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              onOpenChange(false);
-              setCurrentStep(0);
-            }}
-          >
-            Cancel
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   );
 };

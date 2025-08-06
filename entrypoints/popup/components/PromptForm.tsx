@@ -172,7 +172,7 @@ export const PromptForm: React.FC = () => {
     : [];
 
   return (
-    <div className="flex flex-col h-full text-[12px]">
+    <div className="relative flex flex-col h-full text-[12px]">
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
