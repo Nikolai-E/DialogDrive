@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, Clock, Hash, Loader2, Mic, X } from 'lucide-react';
+import { ArrowLeft, Clock, Hash, Loader2, Mic, X, ChevronDown, Wand2 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from "sonner";
-import * as z from 'zod';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
+import { VoiceToneGenerator } from './VoiceToneGenerator';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import {
@@ -18,11 +18,6 @@ import { Switch } from '../../../components/ui/switch';
 import { Textarea } from '../../../components/ui/textarea';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import type { Prompt } from '../../../types/prompt';
-
-const promptSchema = z.object({
-  title: z.string().min(1, 'Title is required.'),
-  text: z.string().min(1, 'Prompt text is required.'),
-});
 
 export const PromptForm: React.FC = () => {
   const {
@@ -43,9 +38,37 @@ export const PromptForm: React.FC = () => {
   const [includeTimestamp, setIncludeTimestamp] = useState(false);
   const [includeVoiceTag, setIncludeVoiceTag] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [showSnippets, setShowSnippets] = useState(false);
+  const [showVoiceToneGenerator, setShowVoiceToneGenerator] = useState(false);
 
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
+
+  const snippets = [
+    { label: 'Act as an expert...', text: 'Act as an expert in [domain] with [number] years of experience.' },
+    { label: 'Provide a summary...', text: 'Provide a concise summary of the following text, highlighting the key points.' },
+    { label: 'Translate text...', text: 'Translate the following text from [source language] to [target language].' },
+    { label: 'Explain like I\'m 5...', text: 'Explain the following concept like I am 5 years old: [concept].' },
+  ];
+
+  const handleInsertSnippet = (snippetText: string) => {
+    if (!textRef.current) return;
+
+    const textarea = textRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentText = text;
+    const newText = currentText.substring(0, start) + snippetText + currentText.substring(end);
+
+    setText(newText);
+    setShowSnippets(false);
+
+    // Set cursor position after inserted text
+    setTimeout(() => {
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + snippetText.length;
+    }, 0);
+  };
 
   useEffect(() => {
     if (editingPrompt) {
@@ -67,17 +90,8 @@ export const PromptForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrors({}); // Clear previous errors
-
-    const validationResult = promptSchema.safeParse({ title, text });
-
-    if (!validationResult.success) {
-      const fieldErrors = validationResult.error.flatten().fieldErrors;
-      setErrors({
-        title: fieldErrors.title?.[0] ?? '',
-        text: fieldErrors.text?.[0] ?? '',
-      });
-      toast.error('Please fix the errors before submitting.');
+    if (!title.trim() || !text.trim()) {
+      toast.error('Title and prompt text are required.');
       return;
     }
 
@@ -181,7 +195,6 @@ export const PromptForm: React.FC = () => {
               disabled={isSubmitting}
               className="shadow-sm h-8 text-[12px]"
             />
-            {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
           </motion.div>
           
           <motion.div 
@@ -190,9 +203,50 @@ export const PromptForm: React.FC = () => {
             transition={{ duration: 0.15 }}
             className="space-y-1.5"
           >
-            <Label htmlFor="text" className="text-[12px] font-medium">Prompt Text</Label>
+            <div className="flex justify-between items-center">
+              <Label htmlFor="text" className="text-[12px] font-medium">Prompt Text</Label>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowVoiceToneGenerator(true)}
+                  className="h-6 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <Wand2 className="h-3 w-3 mr-1" />
+                  Generator
+                </Button>
+                <div className="relative">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowSnippets(!showSnippets)}
+                    className="h-6 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Insert Snippet
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
+                  {showSnippets && (
+                    <div className="absolute top-full right-0 mt-1 w-48 bg-popover border border-border rounded-md shadow-lg z-10 p-1">
+                      {snippets.map((snippet) => (
+                        <button
+                          key={snippet.label}
+                          type="button"
+                          onClick={() => handleInsertSnippet(snippet.text)}
+                          className="w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60"
+                        >
+                          {snippet.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
             <Textarea
               id="text"
+              ref={textRef}
               value={text}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
               placeholder="Enter your prompt here..."
@@ -200,7 +254,6 @@ export const PromptForm: React.FC = () => {
               className="min-h-[100px] resize-y shadow-sm text-[12px]"
               disabled={isSubmitting}
             />
-            {errors.text && <p className="text-red-500 text-xs mt-1">{errors.text}</p>}
           </motion.div>
 
           <motion.div 
@@ -336,12 +389,19 @@ export const PromptForm: React.FC = () => {
           <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting} className="h-8">
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting} className="h-8">
+          <Button type="submit" disabled={isSubmitting} className="min-w-[110px] h-8 bg-foreground text-white hover:opacity-90">
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {editingPrompt ? 'Update' : 'Create'}
           </Button>
         </motion.div>
       </motion.form>
+      <VoiceToneGenerator
+        open={showVoiceToneGenerator}
+        onOpenChange={setShowVoiceToneGenerator}
+        onGenerate={(prompt) => {
+          setText((currentText) => currentText + '\n\n' + prompt);
+        }}
+      />
     </div>
   );
 };
