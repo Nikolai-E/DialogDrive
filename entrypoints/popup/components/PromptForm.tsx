@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, Hash, Loader2, Mic, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from "sonner";
+import * as z from 'zod';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
@@ -18,17 +19,22 @@ import { Textarea } from '../../../components/ui/textarea';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import type { Prompt } from '../../../types/prompt';
 
+const promptSchema = z.object({
+  title: z.string().min(1, 'Title is required.'),
+  text: z.string().min(1, 'Prompt text is required.'),
+});
+
 export const PromptForm: React.FC = () => {
-  const { 
+  const {
     editingPrompt,
     workspaces,
     allTags,
-    addPrompt, 
-    updatePrompt, 
+    addPrompt,
+    updatePrompt,
     setCurrentView,
     setEditingPrompt,
   } = useUnifiedStore();
-  
+
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
   const [workspace, setWorkspace] = useState('General');
@@ -37,6 +43,7 @@ export const PromptForm: React.FC = () => {
   const [includeTimestamp, setIncludeTimestamp] = useState(false);
   const [includeVoiceTag, setIncludeVoiceTag] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const tagInputRef = useRef<HTMLInputElement>(null);
 
@@ -60,8 +67,17 @@ export const PromptForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !text.trim()) {
-      toast.error('Title and prompt text are required.');
+    setErrors({}); // Clear previous errors
+
+    const validationResult = promptSchema.safeParse({ title, text });
+
+    if (!validationResult.success) {
+      const fieldErrors = validationResult.error.flatten().fieldErrors;
+      setErrors({
+        title: fieldErrors.title?.[0] ?? '',
+        text: fieldErrors.text?.[0] ?? '',
+      });
+      toast.error('Please fix the errors before submitting.');
       return;
     }
 
@@ -165,6 +181,7 @@ export const PromptForm: React.FC = () => {
               disabled={isSubmitting}
               className="shadow-sm h-8 text-[12px]"
             />
+            {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
           </motion.div>
           
           <motion.div 
@@ -183,6 +200,7 @@ export const PromptForm: React.FC = () => {
               className="min-h-[100px] resize-y shadow-sm text-[12px]"
               disabled={isSubmitting}
             />
+            {errors.text && <p className="text-red-500 text-xs mt-1">{errors.text}</p>}
           </motion.div>
 
           <motion.div 
