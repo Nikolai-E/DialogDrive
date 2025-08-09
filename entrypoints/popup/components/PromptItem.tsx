@@ -38,13 +38,23 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
     }
   };
 
+  const buildPromptText = (p: Prompt): string => {
+    let base = p.text;
+    if (p.includeTimestamp) {
+      const now = new Date();
+      const ts = now.toISOString().replace('T', ' ').replace(/\..+/, '');
+      base += `\n\n[Timestamp: ${ts}]`;
+    }
+    return base;
+  };
+
   const handleCardClick = async () => {
     if (isProcessing) return;
     
     setIsProcessing(true);
     try {
       // Copy to clipboard first
-      await copyToClipboard(prompt.text);
+  await copyToClipboard(buildPromptText(prompt));
       await incrementUsage(prompt.id);
       
       // Try to paste to active tab if on supported site
@@ -53,7 +63,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
         if (tab?.id && tab.url && isSupportedChatUrl(tab.url)) {
           const response = await browser.tabs.sendMessage(tab.id, { 
             type: 'PASTE_PROMPT', 
-            text: prompt.text 
+            text: buildPromptText(prompt) 
           }).catch((err) => {
             // Content script may not be injected yet
             console.warn('sendMessage failed, likely no content script', err);

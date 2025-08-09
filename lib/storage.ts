@@ -32,8 +32,7 @@ const createInitialPrompts = (): Prompt[] => [
     tags: ['summary', 'article'],
     usageCount: 0,
     isPinned: false,
-    includeTimestamp: false,
-    includeVoiceTag: false,
+  includeTimestamp: false,
   },
   {
     id: uuidv4(),
@@ -44,8 +43,7 @@ const createInitialPrompts = (): Prompt[] => [
     tags: ['simple', 'explanation'],
     usageCount: 0,
     isPinned: false,
-    includeTimestamp: false,
-    includeVoiceTag: false,
+  includeTimestamp: false,
   },
   {
     id: uuidv4(),
@@ -56,8 +54,7 @@ const createInitialPrompts = (): Prompt[] => [
     tags: ['code', 'review'],
     usageCount: 0,
     isPinned: false,
-    includeTimestamp: false,
-    includeVoiceTag: false,
+  includeTimestamp: false,
   }
 ];
 
@@ -118,8 +115,7 @@ export const promptStorage = {
         tags: prompt.tags || [],
         usageCount: 0,
         isPinned: prompt.isPinned ?? false,
-        includeTimestamp: prompt.includeTimestamp ?? false,
-        includeVoiceTag: prompt.includeVoiceTag ?? false,
+  includeTimestamp: prompt.includeTimestamp ?? false,
       };
       
       const updatedPrompts = [...prompts, newPrompt];

@@ -1,15 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, ExternalLink, Info, Shield } from 'lucide-react';
+import React from 'react';
+import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import type { Prompt } from '../../../types/prompt';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
-import { Badge } from '../../../components/ui/badge';
-import { Separator } from '../../../components/ui/separator';
-import { toast } from "sonner";
-import { ArrowLeft, Loader2, Key, Shield, Info, ExternalLink, Zap } from 'lucide-react';
-import { logger } from '../../../lib/logger';
-import { motion } from 'framer-motion';
 
 export const Settings: React.FC = () => {
   const { setCurrentView, prompts } = useUnifiedStore();
@@ -83,6 +78,30 @@ export const Settings: React.FC = () => {
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">ChatGPT</span>
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700">Claude</span>
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">Gemini</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Privacy & Support */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.4 }}
+          className="space-y-3"
+        >
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Shield className="h-4 w-4" /> Privacy & Support</h3>
+          <div className="space-y-2 text-sm">
+            <p className="text-muted-foreground">DialogDrive stores all data locally. No analytics, tracking, or external data transfer.</p>
+            <div className="flex flex-col gap-2">
+              <Button variant="outline" className="justify-start h-8 text-xs" onClick={() => browser.tabs.create({ url: 'https://github.com/Nikolai-E/DialogDrive/blob/main/PRIVACY_POLICY.md' })}>
+                <Shield className="h-3.5 w-3.5 mr-2" /> Privacy Policy
+              </Button>
+              <Button variant="outline" className="justify-start h-8 text-xs" onClick={() => browser.tabs.create({ url: 'https://github.com/Nikolai-E/DialogDrive/issues' })}>
+                <Info className="h-3.5 w-3.5 mr-2" /> Support & Issues
+              </Button>
+              <Button variant="outline" className="justify-start h-8 text-xs" onClick={() => browser.tabs.create({ url: 'https://github.com/Nikolai-E/DialogDrive' })}>
+                <ExternalLink className="h-3.5 w-3.5 mr-2" /> Source Code
+              </Button>
             </div>
           </div>
         </motion.div>

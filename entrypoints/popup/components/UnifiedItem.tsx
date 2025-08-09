@@ -2,15 +2,14 @@ import React from 'react';
 // Use whichever tabs API is available (browser or chrome)
 const api = (window as any).browser ?? (window as any).chrome;
 
-import type { WorkspaceItem } from '../../../types/chat';
-import type { Prompt } from '../../../types/prompt';
-import type { ChatBookmark } from '../../../types/chat';
-import { useUnifiedStore } from '../../../lib/unifiedStore';
-import { ChatStorage } from '../../../lib/chatStorage';
-import { Pin, Edit2, Trash2, ExternalLink, MessageSquare, FileText } from 'lucide-react';
+import { Edit2, ExternalLink, FileText, MessageSquare, Pin, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../../components/ui/button';
+import { ChatStorage } from '../../../lib/chatStorage';
+import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { cn } from '../../../lib/utils';
+import type { ChatBookmark, WorkspaceItem } from '../../../types/chat';
+import type { Prompt } from '../../../types/prompt';
 
 interface UnifiedItemProps {
   item: WorkspaceItem;
@@ -58,17 +57,26 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
     
     if (item.type === 'prompt') {
       const prompt = item.data as Prompt;
-      console.log('Copying text:', prompt.text);
-      
+      const buildText = () => {
+        let txt = prompt.text;
+        if (prompt.includeTimestamp) {
+          const now = new Date();
+            const ts = now.toISOString().replace('T', ' ').replace(/\..+/, '');
+          txt += `\n\n[Timestamp: ${ts}]`;
+        }
+        return txt;
+      };
+      const finalText = buildText();
+      console.log('Copying text:', finalText);
       try {
-        await navigator.clipboard.writeText(prompt.text);
+        await navigator.clipboard.writeText(finalText);
         toast.success('📋 Copied!');
         await incrementUsage(prompt.id);
       } catch (err) {
         console.error('Copy failed:', err);
         // Fallback method
         const textArea = document.createElement('textarea');
-        textArea.value = prompt.text;
+        textArea.value = finalText;
         document.body.appendChild(textArea);
         textArea.select();
         document.execCommand('copy');
@@ -133,13 +141,13 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
       return <FileText className="w-3 h-3 text-accent" />;
     } else {
       const chat = item.data as ChatBookmark;
-      const platformIcons: Record<string, string> = { chatgpt: '🤖', gemini: '💎', claude: '🧠' };
+  const platformNames: Record<string, string> = { chatgpt: 'ChatGPT', gemini: 'Gemini', claude: 'Claude', deepseek: 'DeepSeek' };
       const { urlType, isOwnerOnly } = ChatStorage.parseUrl(chat.url);
       const isShareLink = !isOwnerOnly;
       return (
         <div className="flex items-center gap-1">
           <MessageSquare className="w-3 h-3 text-secondary" />
-          <span className="text-[11px] leading-4">{platformIcons[chat.platform]}</span>
+          <span className="text-[11px] leading-4 text-muted-foreground">{platformNames[chat.platform] || chat.platform}</span>
           {isShareLink ? (
             <span className="text-[10px] leading-4 text-accent bg-accent/10 px-1 rounded" title="Public share link - works without login">🔗</span>
           ) : (

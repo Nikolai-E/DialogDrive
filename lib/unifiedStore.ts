@@ -1,11 +1,10 @@
 import { create } from 'zustand';
+import type { AppStats, SortOption, ViewType } from '../types/app';
+import type { AddChatBookmark, ChatBookmark, WorkspaceItem } from '../types/chat';
 import type { Prompt } from '../types/prompt';
-import type { ChatBookmark, WorkspaceItem, AddChatBookmark } from '../types/chat';
-import type { ViewType, SortOption, SearchFilters, AppStats } from '../types/app';
-import { promptStorage } from './storage';
 import { chatStorage } from './chatStorage';
-import { logger, logPromptAction } from './logger';
-import { DEFAULT_WORKSPACES } from './constants';
+import { logger } from './logger';
+import { promptStorage } from './storage';
 
 type AddPrompt = Omit<Prompt, 'id' | 'created'>;
 type ContentFilter = 'all' | 'prompts' | 'chats';
@@ -83,6 +82,9 @@ interface UnifiedState {
   // Unified actions
   loadAll: () => Promise<void>; // Load both prompts and chats (first page)
   openItem: (item: WorkspaceItem) => void; // Open prompt for edit or chat in new tab
+  addWorkspace: (name: string) => void; // Add workspace label
+  deleteWorkspace: (name: string) => Promise<void>; // Delete workspace and migrate items
+  deleteTag: (tag: string) => Promise<void>; // Delete a tag from all items
 }
 
 // Convert prompt to WorkspaceItem
@@ -622,6 +624,79 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
       // Open chat in new tab and increment access
       window.open(chat.url, '_blank');
       get().incrementChatAccess(chat.id);
+    }
+  },
+  addWorkspace: (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    set(state => state.workspaces.includes(trimmed) ? state : { ...state, workspaces: [...state.workspaces, trimmed].sort((a,b)=>a.localeCompare(b)) });
+  },
+  deleteWorkspace: async (name: string) => {
+    if (!name || name === 'General') return; // prevent deleting General
+    try {
+      const state = get();
+      // Update prompts
+      const updatedPrompts = state.prompts.map(p => p.workspace === name ? { ...p, workspace: 'General' } : p);
+      // Persist prompts (bulk if available)
+      try {
+        if (typeof (promptStorage as any).bulkUpdate === 'function') {
+          await (promptStorage as any).bulkUpdate(updatedPrompts);
+        } else {
+          for (const p of updatedPrompts) {
+            await promptStorage.update(p);
+          }
+        }
+      } catch (e) {
+        logger.warn('Failed bulk prompt update during workspace delete, attempting per-item', e);
+        for (const p of updatedPrompts) {
+          await promptStorage.update(p);
+        }
+      }
+      // Update chats
+      const updatedChats: any[] = [];
+      for (const c of state.chats) {
+        if (c.workspace === name) {
+          const updated = { ...c, workspace: 'General' };
+            try { await chatStorage.update(updated); } catch {}
+          updatedChats.push(updated);
+        } else {
+          updatedChats.push(c);
+        }
+      }
+      set(s => updateAndFilterState({ ...s, prompts: updatedPrompts, chats: updatedChats }));
+    } catch (err) {
+      logger.error('Failed to delete workspace', err);
+    }
+  },
+  deleteTag: async (tag: string) => {
+    if (!tag) return;
+    try {
+      const state = get();
+      const updatedPrompts = state.prompts.map(p => p.tags?.includes(tag) ? { ...p, tags: p.tags.filter(t => t !== tag) } : p);
+      // Persist prompts
+      try {
+        if (typeof (promptStorage as any).bulkUpdate === 'function') {
+          await (promptStorage as any).bulkUpdate(updatedPrompts);
+        } else {
+          for (const p of updatedPrompts) { await promptStorage.update(p); }
+        }
+      } catch (e) {
+        logger.warn('Failed bulk prompt update during tag delete, attempting per-item', e);
+        for (const p of updatedPrompts) { await promptStorage.update(p); }
+      }
+      const updatedChats: any[] = [];
+      for (const c of state.chats) {
+        if (c.tags?.includes(tag)) {
+          const updated = { ...c, tags: c.tags.filter(t => t !== tag) };
+          try { await chatStorage.update(updated); } catch {}
+          updatedChats.push(updated);
+        } else {
+          updatedChats.push(c);
+        }
+      }
+      set(s => updateAndFilterState({ ...s, prompts: updatedPrompts, chats: updatedChats }));
+    } catch (err) {
+      logger.error('Failed to delete tag', err);
     }
   },
 }));

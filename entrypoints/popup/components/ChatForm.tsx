@@ -1,16 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useUnifiedStore } from '../../../lib/unifiedStore';
-import { chatStorage, ChatStorage } from '../../../lib/chatStorage';
+import { ArrowLeft, Check, ChevronDown, Link, Save, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
-import { Textarea } from '../../../components/ui/textarea';
 import { Label } from '../../../components/ui/label';
-import { Badge } from '../../../components/ui/badge';
 import { Switch } from '../../../components/ui/switch';
-import { ArrowLeft, Link, CheckCircle, AlertCircle, X, Loader2, Download, Save, ChevronDown } from 'lucide-react';
-import { toast } from 'sonner';
-import { cn } from '../../../lib/utils';
-import type { AddChatBookmark } from '../../../types/chat';
+import { useUnifiedStore } from '../../../lib/unifiedStore';
+import { AddChatBookmark } from '../../../types/chat';
 
 export const ChatForm: React.FC = () => {
   const { 
@@ -19,7 +16,9 @@ export const ChatForm: React.FC = () => {
     setCurrentView, 
     addChat, 
     updateChat,
-    workspaces 
+  workspaces,
+  allTags,
+  deleteTag
   } = useUnifiedStore();
 
   const [formData, setFormData] = useState<AddChatBookmark>({
@@ -27,20 +26,17 @@ export const ChatForm: React.FC = () => {
     url: '',
     platform: 'chatgpt',
     workspace: 'General',
-    description: '',
+  // description removed
     tags: [],
     isPinned: false
   });
 
   const [currentTag, setCurrentTag] = useState('');
-  const [urlValidation, setUrlValidation] = useState<{
-    isValid: boolean;
-    platform: string | null;
-    message: string;
-  }>({ isValid: false, platform: null, message: '' });
-  const [isCapturing, setIsCapturing] = useState(false);
   const [showPlatformDropdown, setShowPlatformDropdown] = useState(false);
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
+  const [newWorkspace, setNewWorkspace] = useState('');
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const tagDropdownRef = useRef<HTMLDivElement>(null);
   const platformRef = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +47,7 @@ export const ChatForm: React.FC = () => {
         url: editingChat.url,
         platform: editingChat.platform,
         workspace: editingChat.workspace,
-        description: editingChat.description || '',
+  // description retained if previously present but not editable
         tags: editingChat.tags || [],
         isPinned: editingChat.isPinned
       });
@@ -62,163 +58,55 @@ export const ChatForm: React.FC = () => {
         url: '',
         platform: 'chatgpt',
         workspace: 'General',
-        description: '',
+  // description removed
         tags: [],
         isPinned: false
       });
     }
   }, [editingChat]);
 
-  // Validate URL and auto-detect platform
-  useEffect(() => {
-    if (formData.url) {
-      const parsed = ChatStorage.parseUrl(formData.url);
-      
-      if (parsed.platform) {
-        const urlTypeMessage = parsed.urlType === 'conversation' 
-          ? '(Private - requires login)' 
-          : '(Shareable - works without login)';
-          
-        setUrlValidation({
-          isValid: true,
-          platform: parsed.platform,
-          message: `Valid ${parsed.platform} ${parsed.urlType} URL ${urlTypeMessage}`
-        });
-        
-        // Auto-update platform and generate title if not editing
-        if (!editingChat) {
-          setFormData(prev => ({
-            ...prev,
-            platform: parsed.platform!,
-            title: prev.title || ChatStorage.generateTitle(formData.url, parsed.platform!)
-          }));
-        }
-      } else {
-        setUrlValidation({
-          isValid: false,
-          platform: null,
-          message: 'Please enter a valid ChatGPT, Gemini or Claude URL'
-        });
-      }
-    } else {
-      setUrlValidation({ isValid: false, platform: null, message: '' });
-    }
-  }, [formData.url, editingChat]);
+  // Auto-detect platform instead of manual selection
+  const detectPlatform = (url: string): 'chatgpt' | 'gemini' | 'claude' | 'deepseek' => {
+    try {
+      const host = new URL(url).hostname;
+      if (host.includes('chatgpt') || host.includes('openai')) return 'chatgpt';
+      if (host.includes('gemini') || host.includes('google')) return 'gemini';
+      if (host.includes('claude') || host.includes('anthropic')) return 'claude';
+      if (host.includes('deepseek')) return 'deepseek';
+    } catch {}
+    return 'chatgpt';
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!urlValidation.isValid) {
-      toast.error('Please enter a valid chat URL');
-      return;
-    }
-
     if (!formData.title.trim()) {
       toast.error('Please enter a title');
       return;
     }
 
     try {
+      const platform = detectPlatform(formData.url || editingChat?.url || '');
       if (editingChat) {
         await updateChat({
           ...editingChat,
-          ...formData
+          ...formData,
+          platform
         });
-        toast.success('Chat bookmark updated!');
+        toast.success('Bookmark updated!');
       } else {
-        await addChat(formData);
-        toast.success('Chat bookmark added!');
+        await addChat({ ...formData, platform });
+        toast.success('Bookmark added!');
       }
       
       setCurrentView('list');
       setEditingChat(null);
     } catch {
-      toast.error('Failed to save chat bookmark');
+      toast.error('Failed to save bookmark');
     }
   };
 
   const handleCancel = () => { setCurrentView('list'); setEditingChat(null); };
-
-  const handleCaptureCurrentChat = async () => {
-    setIsCapturing(true);
-    try {
-      // Get the current active tab
-      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-      const activeTab = tabs[0];
-      
-      if (!activeTab?.id) { toast.error('No active tab found'); return; }
-
-      // Send message to content script to capture current chat
-      let response;
-      try {
-        response = await browser.tabs.sendMessage(activeTab.id, { 
-          type: 'CAPTURE_CURRENT_CHAT' 
-        });
-      } catch (err: unknown) {
-        const error = err as Error;
-        if (error?.message?.includes('Could not establish connection')) {
-          toast.error('Could not connect to the tab. Ensure permissions and content script.');
-        } else if (error?.message?.includes('No tab with id')) {
-          toast.error('The tab is no longer available.');
-        } else {
-          toast.error(`Failed to send message: ${error?.message || error}`);
-        }
-        setIsCapturing(false);
-        return;
-      }
-
-      if (response?.success) {
-        const capturedData = response.data;
-        
-        // Update form with captured data
-        setFormData(prev => ({
-          ...prev,
-          title: capturedData.title,
-          url: capturedData.url,
-          platform: capturedData.platform,
-          // Add description with captured content info
-          description: capturedData.scrapedContent 
-            ? `Captured: ${capturedData.scrapedContent.summary}. Last: ${capturedData.scrapedContent.lastMessage?.slice(0, 90)}…`
-            : prev.description
-        }));
-        
-        // Show detailed success message
-        const contentInfo = capturedData.scrapedContent 
-          ? ` (${capturedData.scrapedContent.messageCount || 0} messages)`
-          : '';
-        toast.success(`Chat captured!${contentInfo}`);
-      } else {
-        toast.error(response?.message || 'Failed to capture chat');
-      }
-    } catch {
-      // Fallback: get current tab URL
-      try {
-        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-        const activeTab = tabs[0];
-        
-        if (activeTab?.url) {
-          const parsed = ChatStorage.parseUrl(activeTab.url);
-          if (parsed.platform) {
-            setFormData(prev => ({
-              ...prev,
-              url: activeTab.url!,
-              platform: parsed.platform!,
-              title: prev.title || ChatStorage.generateTitle(activeTab.url!, parsed.platform!)
-            }));
-            toast.success('URL captured - please add a title');
-          } else {
-            toast.error('Current tab is not a supported chat platform');
-          }
-        } else {
-          toast.error('Cannot access current tab URL');
-        }
-      } catch {
-        toast.error('Failed to capture current chat');
-      }
-    } finally {
-      setIsCapturing(false);
-    }
-  };
 
   const handleAddTag = () => {
     if (currentTag.trim() && !(formData.tags || []).includes(currentTag.trim())) {
@@ -226,8 +114,14 @@ export const ChatForm: React.FC = () => {
       setCurrentTag('');
     }
   };
-  const handleRemoveTag = (tagToRemove: string) => { setFormData(prev => ({ ...prev, tags: (prev.tags || []).filter(tag => tag !== tagToRemove) })); };
-  const handleKeyPress = (e: React.KeyboardEvent) => { if (e.key === 'Enter') { e.preventDefault(); handleAddTag(); } };
+  
+  const handleRemoveTag = (tagToRemove: string) => { 
+    setFormData(prev => ({ ...prev, tags: (prev.tags || []).filter(tag => tag !== tagToRemove) })); 
+  };
+  
+  const handleKeyPress = (e: React.KeyboardEvent) => { 
+    if (e.key === 'Enter') { e.preventDefault(); handleAddTag(); } 
+  };
 
   const handlePlatformSelect = (platform: 'chatgpt' | 'gemini' | 'claude') => {
     setFormData(prev => ({ ...prev, platform }));
@@ -248,6 +142,9 @@ export const ChatForm: React.FC = () => {
       if (workspaceRef.current && !workspaceRef.current.contains(event.target as Node)) {
         setShowWorkspaceDropdown(false);
       }
+      if (tagDropdownRef.current && !tagDropdownRef.current.contains(event.target as Node)) {
+        setShowTagDropdown(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -262,7 +159,7 @@ export const ChatForm: React.FC = () => {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h2 className="text-sm font-semibold">
-          {editingChat ? 'Edit Chat Bookmark' : 'Add Chat Bookmark'}
+          {editingChat ? 'Edit Bookmark' : 'Add Bookmark'}
         </h2>
       </div>
 
@@ -272,73 +169,20 @@ export const ChatForm: React.FC = () => {
           {/* URL Input */}
           <div className="space-y-1.5">
             <Label htmlFor="url" className="text-[12px] font-medium">
-              Chat URL *
+              URL
             </Label>
             <div className="relative">
               <Link className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 id="url"
                 type="url"
-                placeholder="https://chatgpt.com/share/... or g.co/gemini/share/..."
+                placeholder="https://..."
                 value={formData.url}
                 onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
                 className="pl-8 pr-3 h-8 text-[12px]"
-                required
               />
             </div>
-            {formData.url && (
-              <div className={`flex items-center gap-1.5 text-[12px] ${urlValidation.isValid ? 'text-green-600' : 'text-red-600'}`}>
-                {urlValidation.isValid ? (
-                  <CheckCircle className="h-3.5 w-3.5" />
-                ) : (
-                  <AlertCircle className="h-3.5 w-3.5" />
-                )}
-                {urlValidation.message}
-              </div>
-            )}
-            <div className="bg-muted/40 border border-border rounded-md p-2 text-[11px] text-muted-foreground">
-              <div className="font-medium text-foreground mb-1">Supported URL formats:</div>
-              <div className="space-y-0.5">
-                <div>ChatGPT: direct or share</div>
-                <div>Gemini: direct or share</div>
-                <div>Claude: direct or share</div>
-              </div>
-            </div>
           </div>
-
-          {/* Quick Capture Button */}
-          {!editingChat && (
-            <div className="border rounded-md p-2 bg-secondary/10 border-secondary/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-[12px] font-medium">Auto-capture current chat</h4>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Fill URL and title from your current chat tab
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCaptureCurrentChat}
-                  disabled={isCapturing}
-                  className="h-8 px-2"
-                >
-                  {isCapturing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                      Capturing…
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-4 w-4 mr-1.5" />
-                      Capture
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
 
           {/* Title Input */}
           <div className="space-y-1.5">
@@ -355,68 +199,21 @@ export const ChatForm: React.FC = () => {
             />
           </div>
 
-          {/* Platform and Workspace Row */}
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="space-y-1.5">
-              <Label htmlFor="platform" className="text-[12px] font-medium">
-                Platform
-              </Label>
-              <div className="relative" ref={platformRef}>
-                <button
-                  type="button"
-                  onClick={() => setShowPlatformDropdown(prev => !prev)}
-                  className="w-full h-8 text-[12px] px-3 border border-border bg-background text-foreground rounded-md flex items-center justify-between hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                >
-                  <span>
-                    {formData.platform === 'chatgpt' && '🤖 ChatGPT'}
-                    {formData.platform === 'gemini' && '💎 Gemini'}
-                    {formData.platform === 'claude' && '🧠 Claude'}
-                  </span>
-                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                </button>
-                {showPlatformDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-[9999] overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => handlePlatformSelect('chatgpt')}
-                      className="w-full h-8 text-left text-xs px-3 hover:bg-accent/10 flex items-center gap-2"
-                    >
-                      🤖 ChatGPT
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handlePlatformSelect('gemini')}
-                      className="w-full h-8 text-left text-xs px-3 hover:bg-accent/10 flex items-center gap-2"
-                    >
-                      💎 Gemini
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handlePlatformSelect('claude')}
-                      className="w-full h-8 text-left text-xs px-3 hover:bg-accent/10 flex items-center gap-2"
-                    >
-                      🧠 Claude
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="workspace" className="text-[12px] font-medium">
-                Workspace
-              </Label>
-              <div className="relative" ref={workspaceRef}>
-                <button
-                  type="button"
-                  onClick={() => setShowWorkspaceDropdown(prev => !prev)}
-                  className="w-full h-8 text-[12px] px-3 border border-border bg-background text-foreground rounded-md flex items-center justify-between hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                >
-                  <span>{formData.workspace}</span>
-                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                </button>
-                {showWorkspaceDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-[9999] overflow-hidden max-h-48 overflow-y-auto">
+          {/* Workspace (platform selection removed) */}
+          <div className="space-y-1.5">
+            <Label htmlFor="workspace" className="text-[12px] font-medium">Workspace</Label>
+            <div className="relative" ref={workspaceRef}>
+              <button
+                type="button"
+                onClick={() => setShowWorkspaceDropdown(prev => !prev)}
+                className="w-full h-8 text-[12px] px-3 border border-border bg-background text-foreground rounded-md flex items-center justify-between hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                <span>{formData.workspace}</span>
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              </button>
+              {showWorkspaceDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-[9999] overflow-hidden">
+                  <div className="max-h-40 overflow-y-auto">
                     {workspaces.map((workspace) => (
                       <button
                         key={workspace}
@@ -428,28 +225,110 @@ export const ChatForm: React.FC = () => {
                       </button>
                     ))}
                   </div>
-                )}
-              </div>
+                  <div className="p-2 border-t border-border bg-background/50 space-y-2">
+                    <input
+                      type="text"
+                      value={newWorkspace}
+                      onChange={(e) => setNewWorkspace(e.target.value)}
+                      placeholder="New workspace name"
+                      className="w-full h-7 px-2 text-[11px] border rounded"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={!newWorkspace.trim()}
+                      className="w-full h-7 text-[11px]"
+                      onClick={() => {
+                        const ws = newWorkspace.trim();
+                        if (ws && !workspaces.includes(ws)) {
+                          // Add to store and select it
+                          // use store action
+                          (useUnifiedStore.getState().addWorkspace)(ws);
+                          handleWorkspaceSelect(ws);
+                        } else if (ws) {
+                          handleWorkspaceSelect(ws);
+                        }
+                        setNewWorkspace('');
+                        setShowWorkspaceDropdown(false);
+                      }}
+                    >Add Workspace</Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Description */}
-          <div className="space-y-1.5">
-            <Label htmlFor="description" className="text-[12px] font-medium">
-              Description
-            </Label>
-            <Textarea
-              id="description"
-              placeholder="Optional description or notes..."
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              className="min-h-[80px] resize-none text-[12px]"
-            />
-          </div>
+          {/* Description removed (optional) */}
 
           {/* Tags */}
           <div className="space-y-1.5">
-            <Label className="text-[12px] font-medium">Tags</Label>
+            <div className="flex items-center justify-between relative" ref={tagDropdownRef}>
+              <Label className="text-[12px] font-medium">Tags</Label>
+              {allTags.length > 0 && (
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowTagDropdown(v=>!v)} className="h-6 px-2 text-[10px]">
+                  Browse
+                  <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              )}
+              {showTagDropdown && (
+                <div className="absolute top-full right-0 mt-1 w-48 max-h-60 overflow-y-auto bg-popover border border-border rounded-md shadow-lg z-50 p-1">
+                  {allTags.length === 0 && (
+                    <div className="text-[11px] text-muted-foreground p-2">No tags</div>
+                  )}
+                  {allTags.map(tag => {
+                    const selected = (formData.tags||[]).includes(tag);
+                    return (
+                      <div key={tag} className="group flex items-center gap-1 px-2 h-7 text-[11px] rounded hover:bg-accent/10">
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, tags: selected ? (prev.tags||[]).filter(t=>t!==tag) : [...(prev.tags||[]), tag] }))}
+                          className="flex-1 text-left truncate"
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            {selected && <Check className="h-3 w-3 text-green-600" />}{tag}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Delete tag ${tag}`}
+                          className="opacity-60 hover:opacity-100 text-red-600 p-0.5"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Delete tag "${tag}" from all items?`)) {
+                              deleteTag(tag);
+                              setFormData(prev => ({ ...prev, tags: (prev.tags||[]).filter(t=>t!==tag) }));
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {['chatgpt','gemini','claude','deepseek'].map(p => {
+                const active = (formData.tags || []).includes(p);
+                return (
+                  <Button
+                    key={p}
+                    type="button"
+                    size="sm"
+                    variant={active ? 'default' : 'outline'}
+                    className="h-6 px-2 text-[10px]"
+                    onClick={() => setFormData(prev => {
+                      const existing = prev.tags || [];
+                      return ({ ...prev, tags: active ? existing.filter(t=>t!==p) : [...existing, p] });
+                    })}
+                  >
+                    {p}
+                  </Button>
+                );
+              })}
+            </div>
             <div className="flex gap-1.5">
               <Input
                 placeholder="Add a tag..."
@@ -484,7 +363,7 @@ export const ChatForm: React.FC = () => {
           {/* Pin Toggle */}
           <div className="flex items-center justify-between">
             <Label htmlFor="pin" className="text-[12px] font-medium">
-              Pin this chat bookmark
+              Pin this bookmark
             </Label>
             <Switch
               id="pin"
@@ -500,7 +379,7 @@ export const ChatForm: React.FC = () => {
         <Button type="button" variant="outline" onClick={handleCancel} className="h-8 px-3">
           Cancel
         </Button>
-        <Button onClick={handleSubmit} disabled={!urlValidation.isValid || !formData.title.trim()} className="h-8 px-3 bg-foreground text-white hover:opacity-90">
+        <Button onClick={handleSubmit} disabled={!formData.title.trim()} className="h-8 px-3 bg-black text-white hover:bg-black/90 border border-black">
           <Save className="h-4 w-4 mr-1.5" />
           {editingChat ? 'Update' : 'Save'}
         </Button>

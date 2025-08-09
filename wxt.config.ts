@@ -12,17 +12,21 @@ export default defineConfig({
     description: 'Your AI Project Workspaces Extension',
     version: '1.0.0',
     permissions: [
+      // Data persistence
       'storage',
-      'activeTab',
-      'scripting',
+      // Tab querying & messaging to active tab (replaces previous activeTab usage)
+      'tabs',
+      // Clipboard copy fallback for prompt pasting
       'clipboardWrite',
+      // User interaction surfaces
       'contextMenus',
       'notifications',
       'sidePanel'
     ],
+    // Restrict host permissions to only AI chat domains actually integrated.
+    // Previously used <all_urls> (over-broad, store review risk).
     host_permissions: [
       'https://chatgpt.com/*',
-      'https://chat.openai.com/*',
       'https://claude.ai/*',
       'https://gemini.google.com/*'
     ],
@@ -59,12 +63,15 @@ export default defineConfig({
     side_panel: {
       default_path: 'sidepanel/index.html'
     },
+    // Updated to use icon_* assets (consistent blue D artwork)
     icons: {
-      16: 'icon/16.png',
-      32: 'icon/32.png',
-      48: 'icon/48.png',
-      96: 'icon/96.png',
-      128: 'icon/128.png'
+      16: 'icon/icon_16.png',
+      19: 'icon/icon_19.png', // toolbar @2x for some browsers  
+      32: 'icon/icon_32.png',
+      38: 'icon/icon_38.png', // toolbar @2x for some browsers
+      48: 'icon/icon_48.png',
+      128: 'icon/icon_128.png',
+      256: 'icon/icon_256.png'
     }
   },
 });

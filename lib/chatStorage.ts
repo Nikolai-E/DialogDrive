@@ -1,6 +1,6 @@
-import type { ChatBookmark, AddChatBookmark } from '../types/chat';
+import type { AddChatBookmark, ChatBookmark } from '../types/chat';
+import { mapBrowserError } from './errors';
 import { logger } from './logger';
-import { AppError, mapBrowserError } from './errors';
 
 export class ChatStorage {
   private readonly STORAGE_KEY = 'dialogdrive_chats';
@@ -207,11 +207,12 @@ export class ChatStorage {
     }
   }
 
-  static generateTitle(url: string, platform: 'chatgpt' | 'gemini' | 'claude'): string {
+  static generateTitle(url: string, platform: 'chatgpt' | 'gemini' | 'claude' | 'deepseek'): string {
     const platformNames = {
       chatgpt: 'ChatGPT',
       gemini: 'Gemini',
-      claude: 'Claude'
+      claude: 'Claude',
+      deepseek: 'DeepSeek'
     };
     
     const date = new Date().toLocaleDateString();

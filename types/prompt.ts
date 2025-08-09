@@ -8,9 +8,9 @@ export interface Prompt {
   tags: string[]; // Required array - used throughout app
   usageCount: number; // Required - used for tracking
   isPinned: boolean; // Required - used for pinning
-  // Phase 1: UI Toggles
+  // UI Toggles
   includeTimestamp: boolean;
-  includeVoiceTag: boolean;
+  // includeVoiceTag removed (legacy)
   // Phase 2: Future features
   isFavorite?: boolean;
   folderId?: string;

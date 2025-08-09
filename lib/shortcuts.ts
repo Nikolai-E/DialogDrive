@@ -191,8 +191,7 @@ async function handleSaveSelectionAsPrompt(info: any, tab?: any) {
       tags: ['selection', 'captured'],
       usageCount: 0,
       isPinned: false,
-      includeTimestamp: true,
-      includeVoiceTag: false
+      includeTimestamp: true
     });
 
     // Show notification

@@ -1,6 +1,6 @@
+import { Filter, LayoutGrid, List, MessageSquare, MessageSquareText, Plus, Search, Settings as SettingsIcon, X } from 'lucide-react';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, Plus, Settings as SettingsIcon, MessageSquare, Search, X, List, MessageSquareText, LayoutGrid, Filter } from 'lucide-react';
 // Remove Button import usage in this file; we will use raw <button> for explicit styling
 // import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
@@ -192,10 +192,13 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
     <header className="shrink-0 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="px-2 py-1.5 flex items-center">
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-md bg-gradient-to-br from-primary/90 to-accent/80 shadow-sm ring-1 ring-primary/20 flex items-center justify-center">
-            <Sparkles className="h-3 w-3 text-primary-foreground" />
-          </div>
-          <h1 className="text-[12px] font-semibold tracking-tight text-foreground">DialogDrive</h1>
+          <img
+            src="/icon/icon_32.png"
+            alt="DialogDrive Icon"
+            className="w-5 h-5 rounded-md shadow-sm ring-1 ring-border object-contain bg-background"
+            draggable={false}
+          />
+          <h1 className="text-[12px] font-semibold tracking-tight text-foreground select-none">DialogDrive</h1>
         </div>
         {/* Compact Search */}
         <div className="flex-1 mx-2 max-w-[240px]">

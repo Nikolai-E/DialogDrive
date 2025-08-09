@@ -6,7 +6,7 @@ export interface ChatBookmark {
   title: string;
   url: string;
   shareUrl?: string; // Optional share link for cross-device access
-  platform: 'chatgpt' | 'gemini' | 'claude';
+  platform: 'chatgpt' | 'gemini' | 'claude' | 'deepseek';
   workspace: string;
   tags?: string[];
   description?: string;

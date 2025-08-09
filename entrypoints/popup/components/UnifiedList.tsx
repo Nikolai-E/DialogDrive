@@ -1,6 +1,6 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { FileText, Info, Loader2, MessageSquare, Search } from 'lucide-react';
-import React, { useState } from 'react';
+import React from 'react';
 import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert";
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { cn } from '../../../lib/utils';
@@ -15,7 +15,44 @@ export const UnifiedList: React.FC = () => {
     error,
     setCurrentView,
     contentFilter,
+    prompts,
+    chats,
+    setFilterTag,
+    filterTag,
+    setSelectedWorkspace,
+    selectedWorkspace,
+    workspaces
   } = useUnifiedStore();
+
+  // Local multi-select state for tags (store still holds single filterTag for legacy compatibility)
+  const [activeTags, setActiveTags] = React.useState<string[]>(filterTag !== 'all' ? [filterTag] : []);
+  const toggleTag = (tag: string) => {
+    setActiveTags(prev => {
+      const exists = prev.includes(tag);
+      const next = exists ? prev.filter(t => t !== tag) : [...prev, tag];
+      // Update primary filterTag for now: if 0 then 'all', if 1 use that tag, if >1 keep last selected for backend
+      if (next.length === 0) setFilterTag('all');
+      else setFilterTag(next[next.length - 1]);
+      return next;
+    });
+  };
+
+  // Derive frequency metrics (combined prompts & chats)
+  const tagFrequency: Record<string, number> = {};
+  prompts.forEach(p => (p.tags || []).forEach(t => { tagFrequency[t] = (tagFrequency[t] || 0) + 1; }));
+  chats.forEach(c => (c.tags || []).forEach(t => { tagFrequency[t] = (tagFrequency[t] || 0) + 1; }));
+  const topTags = Object.entries(tagFrequency)
+    .sort((a,b) => b[1]-a[1])
+    .slice(0,10)
+    .map(([tag]) => tag);
+
+  const workspaceFrequency: Record<string, number> = {};
+  prompts.forEach(p => { workspaceFrequency[p.workspace] = (workspaceFrequency[p.workspace] || 0) + 1; });
+  chats.forEach(c => { workspaceFrequency[c.workspace] = (workspaceFrequency[c.workspace] || 0) + 1; });
+  const topWorkspaces = Object.entries(workspaceFrequency)
+    .sort((a,b) => b[1]-a[1])
+    .slice(0,4)
+    .map(([ws]) => ws);
 
   // Virtual list setup
   const virtualizer = useVirtualizer({
@@ -81,6 +118,30 @@ export const UnifiedList: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
+      {/* Quick Filters */}
+      <div className="px-2 pt-1.5 pb-1 border-b bg-background/80 backdrop-blur-sm">
+        <div className="flex gap-1.5 items-center overflow-x-auto whitespace-nowrap scrollbar-thin pb-1">
+          {topWorkspaces.map(ws => (
+            <button
+              key={ws}
+              onClick={() => setSelectedWorkspace(selectedWorkspace === ws ? 'all' : ws)}
+              className={cn('px-2.5 py-1 rounded-full text-[10px] border transition-colors shrink-0',
+                selectedWorkspace === ws ? 'bg-black text-white border-black' : 'bg-muted/50 hover:bg-muted border-border')}
+            >{ws}</button>
+          ))}
+          {topTags.map(tag => (
+            <button
+              key={tag}
+              onClick={() => toggleTag(tag)}
+              className={cn('px-2.5 py-1 rounded-full text-[10px] border transition-colors shrink-0',
+                activeTags.includes(tag) ? 'bg-black text-white border-black' : 'bg-muted/50 hover:bg-muted border-border')}
+            >#{tag}</button>
+          ))}
+          {(topTags.length === 0 && topWorkspaces.length === 0) && (
+            <span className="text-[10px] text-muted-foreground">Add tags & workspaces to enable quick filters</span>
+          )}
+        </div>
+      </div>
       <div className="flex-1 overflow-y-auto bg-card" ref={parentRef}>
         {filteredItems.length > 0 ? (
           <div
@@ -118,13 +179,18 @@ export const UnifiedList: React.FC = () => {
               {getEmptyStateContent().description}
             </p>
             <div className="flex gap-3">
-              <button
-                onClick={() => setCurrentView('form')}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors font-medium shadow-sm"
-              >
-                <FileText className="h-4 w-4" />
-                Create Prompt
-              </button>
+              {(() => {
+                const empty = getEmptyStateContent();
+                return (
+                  <button
+                    onClick={() => setCurrentView(empty.actionView)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors font-medium shadow-sm"
+                  >
+                    {contentFilter === 'chats' ? <MessageSquare className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                    {empty.actionLabel}
+                  </button>
+                );
+              })()}
             </div>
           </div>
         )}

@@ -10,7 +10,6 @@ export interface PromptFormData {
   workspace: string;
   tags: string[];
   includeTimestamp: boolean;
-  includeVoiceTag: boolean;
   isPinned: boolean;
 }
 

@@ -44,14 +44,16 @@ DialogDrive is a browser extension that helps you manage and organize AI prompts
 ## Permissions Explained
 
 ### Required Permissions
-- **Storage**: Save your prompts, bookmarks, and settings locally
-- **ActiveTab**: Access the current tab to paste prompts into AI chat interfaces
-- **Scripting**: Inject content scripts to enable pasting functionality
-- **ClipboardWrite**: Copy prompts to your clipboard
+- **storage**: Save your prompts, bookmarks, and settings locally
+- **tabs**: Query the active tab to send paste/capture messages (no broad page access)
+- **clipboardWrite**: Copy prompts to your clipboard
+- **contextMenus**: Provide right‑click capture & paste actions
+- **notifications**: Show confirmations after save actions
+- **sidePanel**: Offer persistent workspace panel
 
 ### Limited Host Permissions
-- **chatgpt.com, claude.ai, gemini.google.com**: Only to enable prompt pasting
-- We do not access any other websites or gather data from these sites
+- **chatgpt.com, claude.ai, gemini.google.com**: Only to enable prompt pasting and chat capture
+- We do not access or inject into any other domains
 
 ## Data Security
 
@@ -110,7 +112,7 @@ We may update this privacy policy to reflect changes in our practices or for leg
 If you have questions about this privacy policy or our data practices:
 
 - **GitHub Issues**: [DialogDrive Repository](https://github.com/Nikolai-E/DialogDrive/issues)
-- **Email**: [Your contact email]
+- **Email**: support@dialogdrive.app
 
 ## Legal Compliance
 

@@ -1,7 +1,6 @@
 /// <reference path="../.wxt/wxt.d.ts" />
 
 import { chatStorage } from '../lib/chatStorage';
-import { secureStorage } from '../lib/secureStorageV2';
 import { initializeContextMenu, initializeKeyboardShortcuts } from '../lib/shortcuts';
 import { initializeStorage, promptStorage } from '../lib/storage';
 
@@ -26,6 +25,28 @@ export default defineBackground(() => {
 
   // Listen for messages from popup and content scripts
   browser.runtime.onMessage.addListener((message: any, sender: any, sendResponse: any) => {
+    if (message.type === 'SAVE_BOOKMARK') {
+      (async () => {
+        try {
+          const data = message.data || {};
+          const newBookmark = await chatStorage.add({
+            title: data.title,
+            url: data.url,
+            platform: data.platform || 'chatgpt',
+            workspace: data.workspace || 'General',
+            tags: data.tags || [],
+            description: data.description || undefined,
+            isPinned: !!data.isPinned,
+            scrapedContent: data.scrapedContent
+          });
+          sendResponse({ success: true, bookmark: newBookmark });
+        } catch (error) {
+          console.error('Error saving bookmark:', error);
+          sendResponse({ success: false, error: 'Failed to save bookmark' });
+        }
+      })();
+      return true;
+    }
     if (message.type === 'SAVE_CHAT_BOOKMARK') {
       (async () => {
         try {
@@ -85,6 +106,67 @@ export default defineBackground(() => {
       })();
       
       return true; // Keep message channel open for async response
+    }
+
+    if (message.type === 'DELETE_WORKSPACE') {
+      (async () => {
+        try {
+          const name = (message.name || '').trim();
+          if (!name || name === 'General') {
+            sendResponse({ success: false, error: 'Invalid workspace name' });
+            return;
+          }
+          const [prompts, chats] = await Promise.all([
+            promptStorage.getAll(),
+            chatStorage.getAll()
+          ]);
+          const updatedPrompts = prompts.map(p => p.workspace === name ? { ...p, workspace: 'General' } : p);
+          for (const p of updatedPrompts) {
+            await promptStorage.update(p);
+          }
+          const updatedChats = [] as any[];
+          for (const c of chats) {
+            if (c.workspace === name) {
+              const updated = { ...c, workspace: 'General' };
+              await chatStorage.update(updated);
+              updatedChats.push(updated);
+            } else updatedChats.push(c);
+          }
+          sendResponse({ success: true });
+        } catch (error) {
+          console.error('Error deleting workspace:', error);
+          sendResponse({ success: false, error: 'Failed to delete workspace' });
+        }
+      })();
+      return true;
+    }
+
+    if (message.type === 'DELETE_TAG') {
+      (async () => {
+        try {
+          const tag = (message.tag || '').trim();
+          if (!tag) { sendResponse({ success: false, error: 'Invalid tag' }); return; }
+          const [prompts, chats] = await Promise.all([
+            promptStorage.getAll(),
+            chatStorage.getAll()
+          ]);
+          const updatedPrompts = prompts.map(p => p.tags?.includes(tag) ? { ...p, tags: p.tags.filter(t => t !== tag) } : p);
+          for (const p of updatedPrompts) {
+            await promptStorage.update(p);
+          }
+          for (const c of chats) {
+            if (c.tags?.includes(tag)) {
+              const updated = { ...c, tags: c.tags.filter(t => t !== tag) };
+              await chatStorage.update(updated);
+            }
+          }
+          sendResponse({ success: true });
+        } catch (error) {
+          console.error('Error deleting tag:', error);
+          sendResponse({ success: false, error: 'Failed to delete tag' });
+        }
+      })();
+      return true;
     }
     
     // Return false for unknown message types

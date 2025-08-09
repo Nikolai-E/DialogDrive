@@ -1,17 +1,9 @@
+import { ChevronLeft, ChevronRight, Wand2 } from 'lucide-react';
 import React, { useState } from 'react';
 import { Button } from '../../../components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '../../../components/ui/dialog';
-import { Label } from '../../../components/ui/label';
 import { Checkbox } from '../../../components/ui/checkbox';
+import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-import { ChevronLeft, ChevronRight, Wand2 } from 'lucide-react';
 
 interface VoiceToneGeneratorProps {
   open: boolean;
@@ -454,59 +446,72 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
   
   return (
     <div className="absolute inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-background border rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Wand2 className="h-5 w-5" />
+      <div className="bg-background border rounded-lg shadow-lg w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col" role="dialog" aria-modal="true" aria-label="Voice & Tone Generator">
+        <div className="p-4 pb-2 border-b flex items-center gap-2">
+            <Wand2 className="h-5 w-5 text-blue-600" />
             <h2 className="text-lg font-semibold">Voice & Tone Generator</h2>
+        </div>
+        {/* Progress */}
+        <div className="px-4 pt-2">
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-2">
+            <span>Step {currentStep + 1} / {steps.length}</span>
+            <span className="font-medium">{steps[currentStep].title}</span>
           </div>
-          <p className="text-sm text-muted-foreground mb-4">
-            Step {currentStep + 1} of {steps.length}: {steps[currentStep].title}
-          </p>
-          
-          <div className="py-4">
-            {renderStepContent()}
+          <div className="h-1 w-full bg-muted rounded overflow-hidden mb-2">
+            <div
+              className="h-full bg-blue-600 transition-all"
+              style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+            />
           </div>
-
-          <div className="flex justify-between border-t pt-4">
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-                disabled={currentStep === 0}
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Previous
-              </Button>
-              {currentStep < steps.length - 1 ? (
-                <Button
-                  type="button"
-                  onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  onClick={handleGenerate}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  Generate Prompt
-                </Button>
-              )}
-            </div>
+        </div>
+        <div className="px-4 pb-2 text-xs text-muted-foreground hidden md:block">
+          {steps[currentStep].description}
+        </div>
+        <div className="px-4 py-3 flex-1 overflow-y-auto">
+          {renderStepContent()}
+        </div>
+        <div className="px-4 py-3 border-t bg-muted/30 flex items-center justify-between gap-3">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              onOpenChange(false);
+              setCurrentStep(0);
+            }}
+            className="text-xs"
+          >
+            Cancel
+          </Button>
+          <div className="flex items-center gap-2">
             <Button
               type="button"
-              variant="ghost"
-              onClick={() => {
-                onOpenChange(false);
-                setCurrentStep(0);
-              }}
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+              disabled={currentStep === 0}
+              className="text-xs"
             >
-              Cancel
+              <ChevronLeft className="h-4 w-4 mr-1" /> Prev
             </Button>
+            {currentStep < steps.length - 1 ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
+                className="text-xs bg-black text-white hover:bg-black/90 border border-black"
+              >
+                Next <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleGenerate}
+                className="text-xs bg-black text-white hover:bg-black/90 border border-black"
+              >
+                Generate Prompt
+              </Button>
+            )}
           </div>
         </div>
       </div>

@@ -1,10 +1,9 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, Clock, Hash, Loader2, Mic, X, ChevronDown, Wand2 } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Clock, Hash, Loader2, Wand2, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from "sonner";
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
-import { VoiceToneGenerator } from './VoiceToneGenerator';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import {
@@ -18,6 +17,7 @@ import { Switch } from '../../../components/ui/switch';
 import { Textarea } from '../../../components/ui/textarea';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import type { Prompt } from '../../../types/prompt';
+import { VoiceToneGenerator } from './VoiceToneGenerator';
 
 export const PromptForm: React.FC = () => {
   const {
@@ -28,18 +28,22 @@ export const PromptForm: React.FC = () => {
     updatePrompt,
     setCurrentView,
     setEditingPrompt,
+  deleteTag,
   } = useUnifiedStore();
 
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
   const [workspace, setWorkspace] = useState('General');
+  const [newWorkspace, setNewWorkspace] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [includeTimestamp, setIncludeTimestamp] = useState(false);
-  const [includeVoiceTag, setIncludeVoiceTag] = useState(false);
+  // Removed includeVoiceTag per product decision
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSnippets, setShowSnippets] = useState(false);
   const [showVoiceToneGenerator, setShowVoiceToneGenerator] = useState(false);
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const tagDropdownRef = useRef<HTMLDivElement>(null);
 
   const tagInputRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
@@ -93,14 +97,14 @@ export const PromptForm: React.FC = () => {
       setWorkspace(editingPrompt.workspace);
       setTags(editingPrompt.tags || []);
       setIncludeTimestamp(editingPrompt.includeTimestamp);
-      setIncludeVoiceTag(editingPrompt.includeVoiceTag);
+  // ignore legacy includeVoiceTag
     } else {
       setTitle('');
       setText('');
       setWorkspace('General');
       setTags([]);
       setIncludeTimestamp(false);
-      setIncludeVoiceTag(false);
+  // legacy removed
     }
   }, [editingPrompt]);
 
@@ -119,7 +123,7 @@ export const PromptForm: React.FC = () => {
         workspace,
         tags,
         includeTimestamp,
-        includeVoiceTag,
+  // includeVoiceTag removed
         usageCount: editingPrompt?.usageCount || 0,
         isPinned: editingPrompt?.isPinned || false,
         lastUsed: editingPrompt?.lastUsed,
@@ -296,6 +300,30 @@ export const PromptForm: React.FC = () => {
                 ))}
               </SelectContent>
             </Select>
+            <div className="flex mt-2 gap-1">
+              <Input
+                placeholder="New workspace name"
+                value={newWorkspace}
+                onChange={(e) => setNewWorkspace(e.target.value)}
+                className="h-8 text-[12px]"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={!newWorkspace.trim()}
+                onClick={() => {
+                  const ws = newWorkspace.trim();
+                  if (ws && !workspaces.includes(ws)) {
+                    setWorkspace(ws);
+                  } else if (ws) {
+                    setWorkspace(ws);
+                  }
+                  setNewWorkspace('');
+                }}
+                className="h-8 text-xs"
+              >Add</Button>
+            </div>
           </motion.div>
 
           <motion.div 
@@ -308,6 +336,47 @@ export const PromptForm: React.FC = () => {
               <Hash className="h-3.5 w-3.5" />
               Tags
             </Label>
+              <div className="flex items-center justify-between relative" ref={tagDropdownRef}>
+                <Label htmlFor="tags" className="text-[12px] font-medium">Tags</Label>
+                {allTags.length > 0 && (
+                  <Button type="button" variant="outline" size="sm" onClick={() => setShowTagDropdown(v=>!v)} className="h-6 px-2 text-[10px]">
+                    Browse <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
+                )}
+                {showTagDropdown && (
+                  <div className="absolute top-full right-0 mt-1 w-52 max-h-60 overflow-y-auto bg-popover border border-border rounded-md shadow-lg z-50 p-1">
+                    {allTags.length === 0 && <div className="text-[11px] text-muted-foreground p-2">No tags</div>}
+                    {allTags.map(tag => {
+                      const selected = tags.includes(tag);
+                      return (
+                        <div key={tag} className="group flex items-center gap-1 px-2 h-7 text-[11px] rounded hover:bg-accent/10">
+                          <button
+                            type="button"
+                            onClick={() => setTags(prev => selected ? prev.filter(t=>t!==tag) : [...prev, tag])}
+                            className="flex-1 text-left truncate"
+                          >
+                            <span className="inline-flex items-center gap-1">{selected && <Check className="h-3 w-3 text-green-600" />}{tag}</span>
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Delete tag ${tag}`}
+                            className="opacity-60 hover:opacity-100 text-red-600 p-0.5"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`Delete tag \"${tag}\" from all items?`)) {
+                                deleteTag(tag);
+                                setTags(prev => prev.filter(t=>t!==tag));
+                              }
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             <div className="relative">
               <Input
                 id="tags"
@@ -388,35 +457,24 @@ export const PromptForm: React.FC = () => {
                 disabled={isSubmitting}
               />
             </div>
-            <div className="flex items-center justify-between p-2.5 rounded-md border bg-card">
-              <Label htmlFor="voice-switch" className="flex items-center gap-2 cursor-pointer">
-                <Mic className="h-3.5 w-3.5 text-green-500" />
-                <span className="text-[12px] font-medium">Voice-friendly Tone</span>
-              </Label>
-              <Switch
-                id="voice-switch"
-                checked={includeVoiceTag}
-                onCheckedChange={setIncludeVoiceTag}
-                disabled={isSubmitting}
-              />
-            </div>
+            {/* Voice-friendly toggle removed */}
           </motion.div>
         </div>
         
         <motion.div 
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.15 }}
-          className="flex justify-end gap-2.5 p-2 border-t bg-background/80 backdrop-blur-sm"
-        >
-          <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting} className="h-8">
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting} className="min-w-[110px] h-8 bg-foreground text-white hover:opacity-90">
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {editingPrompt ? 'Update' : 'Create'}
-          </Button>
-        </motion.div>
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15 }}
+            className="flex items-center justify-between gap-2.5 p-2 border-t bg-background/80 backdrop-blur-sm"
+          >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting} className="h-8 px-3">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting} className="min-w-[110px] h-8 bg-black text-white hover:bg-black/90 border border-black">
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editingPrompt ? 'Update' : 'Create'}
+            </Button>
+          </motion.div>
       </motion.form>
       <VoiceToneGenerator
         open={showVoiceToneGenerator}
