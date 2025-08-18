@@ -1,9 +1,5 @@
-// This file is intended for defining unlisted scripts.
-// It is currently empty but will be populated in the future.
-// Please do not remove this comment until the script is defined.
-
+// Deprecated simple content script placeholder.
+// Keep as a no-op unlisted script so it doesn't register in the manifest.
 export default defineUnlistedScript(() => {
-	// Minimal placeholder for legacy simple content script; kept to satisfy build tooling.
-	// Can be removed once references are eliminated from configuration.
-	// Intentionally does nothing.
+  // Intentionally no-op
 });

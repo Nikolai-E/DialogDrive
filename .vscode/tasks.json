@@ -26,24 +26,7 @@
       },
       "problemMatcher": []
     },
-    {
-      "label": "Delete Redundant Files",
-      "type": "shell",
-      "windows": {
-        "command": "powershell",
-        "args": [
-          "-Command",
-          "Remove-Item -Path @('lib/storageNew.ts', 'entrypoints/contentEnhanced.ts', 'entrypoints/popup/components/ToastProvider.tsx', 'lib/platforms/base.ts', 'lib/platforms/chatgpt.ts', 'lib/platforms/claude.ts', 'lib/platforms/gemini.ts', 'lib/platforms/index.ts', 'lib/chainExecutionService.ts', 'lib/promptChainStorage.ts', 'entrypoints/popup/components/ChainExecution.tsx', 'entrypoints/popup/components/ChainsTab.tsx', 'entrypoints/popup/components/PromptChainList.tsx', 'types/promptChain.ts', 'test-*.html', 'entrypoints/chatCapture.content.ts', 'lib/promptStore.ts', 'lib/secureStorage.ts') -Force -ErrorAction SilentlyContinue"
-        ]
-      },
-      "osx": {
-        "command": "rm -f lib/storageNew.ts entrypoints/contentEnhanced.ts entrypoints/popup/components/ToastProvider.tsx lib/platforms/*.ts lib/chainExecutionService.ts lib/promptChainStorage.ts entrypoints/popup/components/ChainExecution.tsx entrypoints/popup/components/ChainsTab.tsx entrypoints/popup/components/PromptChainList.tsx types/promptChain.ts test-*.html entrypoints/chatCapture.content.ts lib/promptStore.ts lib/secureStorage.ts"
-      },
-      "linux": {
-        "command": "rm -f lib/storageNew.ts entrypoints/contentEnhanced.ts entrypoints/popup/components/ToastProvider.tsx lib/platforms/*.ts lib/chainExecutionService.ts lib/promptChainStorage.ts entrypoints/popup/components/ChainExecution.tsx entrypoints/popup/components/ChainsTab.tsx entrypoints/popup/components/PromptChainList.tsx types/promptChain.ts test-*.html entrypoints/chatCapture.content.ts lib/promptStore.ts lib/secureStorage.ts"
-      },
-      "problemMatcher": []
-    },
+    
     {
       "label": "Fix All TypeScript Errors",
       "type": "npm",

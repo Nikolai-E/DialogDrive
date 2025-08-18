@@ -1,5 +1,4 @@
-// Deprecated duplicate background script retained as inert stub for transitional cleanup.
-// All functionality consolidated into background.ts.
+// Deprecated backup background script. Keep as no-op to avoid extra bundle outputs.
 export default defineBackground(() => {
-  // Intentionally no-op.
+  // No operations. This file remains only for historical reference.
 });

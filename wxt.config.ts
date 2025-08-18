@@ -1,6 +1,5 @@
 import { defineConfig } from 'wxt';
 
-// See https://wxt.dev/api/config.html
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   alias: {
@@ -10,23 +9,18 @@ export default defineConfig({
   manifest: {
     name: 'DialogDrive',
     description: 'Your AI Project Workspaces Extension',
-  version: '1.0.1',
+    version: '1.0.1',
     permissions: [
-      // Data persistence
       'storage',
-      // Tab querying & messaging to active tab (replaces previous activeTab usage)
       'tabs',
-      // Clipboard copy fallback for prompt pasting
       'clipboardWrite',
-      // User interaction surfaces
       'contextMenus',
       'notifications',
       'sidePanel'
     ],
-    // Restrict host permissions to only AI chat domains actually integrated.
-    // Previously used <all_urls> (over-broad, store review risk).
     host_permissions: [
       'https://chatgpt.com/*',
+      'https://chat.openai.com/*',
       'https://claude.ai/*',
       'https://gemini.google.com/*'
     ],
@@ -63,27 +57,24 @@ export default defineConfig({
     side_panel: {
       default_path: 'sidepanel/index.html'
     },
-    // Ensure the toolbar/action icon uses our branded assets
-  action: {
+    action: {
       default_title: 'DialogDrive',
       default_popup: 'popup.html',
       default_icon: {
-    16: 'icon/icon-16.png',
-    19: 'icon/icon-19.png',
-    32: 'icon/icon-32.png',
-    38: 'icon/icon-38.png'
+        16: 'icon/icon-16.png',
+        19: 'icon/icon-19.png',
+        32: 'icon/icon-32.png',
+        38: 'icon/icon-38.png'
       }
     },
-  // Use provided dd-icons PNGs for all manifest icons
     icons: {
-    16: 'icon/icon-16.png',
-    19: 'icon/icon-19.png',
-    32: 'icon/icon-32.png',
-    38: 'icon/icon-38.png',
-    48: 'icon/icon-48.png',
-    96: 'icon/icon_96.png',
-    128: 'icon/icon-128.png',
-    256: 'icon/icon-256.png'
+      16: 'icon/icon-16.png',
+      19: 'icon/icon-19.png',
+      32: 'icon/icon-32.png',
+      38: 'icon/icon-38.png',
+      48: 'icon/icon-48.png',
+      128: 'icon/icon-128.png',
+      256: 'icon/icon-256.png'
     }
   },
 });

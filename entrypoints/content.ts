@@ -9,9 +9,8 @@ export default defineContentScript({
     '*://gemini.google.com/*'
   ],
   main() {
-    logger.info('DialogDrive content script loaded');
-    
-    // Listen for messages from extension
+  logger.info('DialogDrive content script loaded');
+
     browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       (async () => {
         switch (message.type) {
@@ -36,8 +35,8 @@ export default defineContentScript({
             sendResponse({ success: false, error: 'Unknown message type' });
         }
       })();
-      
-      return true; // Keep channel open for async response
+
+  return true; // keep channel open for async response
     });
   }
 });

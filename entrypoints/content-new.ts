@@ -1,7 +1,4 @@
-// Deprecated duplicate content script (content-new). Use content.ts instead.
-export default defineContentScript({
-  matches: [],
-  main() {
-    // Intentionally no-op.
-  }
+// Deprecated experimental content script. Keep as a no-op unlisted script.
+export default defineUnlistedScript(() => {
+  // Intentionally no-op
 });
