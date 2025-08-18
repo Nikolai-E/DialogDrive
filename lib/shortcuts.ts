@@ -198,7 +198,7 @@ async function handleSaveSelectionAsPrompt(info: any, tab?: any) {
     if (browser.notifications) {
       browser.notifications.create({
         type: 'basic',
-  iconUrl: '/icon/icon-48.png',
+        iconUrl: 'icon/icon-48.png',
         title: 'DialogDrive',
         message: 'Selection saved as prompt'
       });
@@ -224,7 +224,7 @@ async function handleSaveChatBookmark(tab?: any) {
       if (browser.notifications) {
         browser.notifications.create({
           type: 'basic',
-          iconUrl: '/icon/icon-48.png',
+          iconUrl: 'icon/icon-48.png',
           title: 'DialogDrive',
           message: 'Chat saved as bookmark'
         });

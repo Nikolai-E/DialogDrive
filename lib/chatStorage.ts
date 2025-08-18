@@ -1,49 +1,49 @@
 import type { AddChatBookmark, ChatBookmark } from '../types/chat';
 import { mapBrowserError } from './errors';
 import { logger } from './logger';
+import { secureStorage } from './secureStorageV2';
 
 export class ChatStorage {
-  private readonly STORAGE_KEY = 'dialogdrive_chats';
+  // Legacy key used before SecureStorageV2 adoption; retained for one-time migration
+  private readonly LEGACY_STORAGE_KEY = 'dialogdrive_chats';
 
   private async getFromStorage(): Promise<ChatBookmark[]> {
+    // Prefer centralized secure storage
     try {
-      if (typeof browser !== 'undefined' && browser.storage) {
-        const result = await browser.storage.local.get(this.STORAGE_KEY);
-        return result[this.STORAGE_KEY] || [];
+      const chats = await secureStorage.getChats<ChatBookmark[]>();
+      if (Array.isArray(chats)) return chats;
+    } catch (error) {
+      const mapped = mapBrowserError(error);
+      logger.warn('Secure storage getChats failed; attempting legacy migration.', mapped);
+    }
+
+    // Attempt one-time migration from legacy key if present
+    try {
+      if (typeof browser !== 'undefined' && browser.storage?.local) {
+        const result = await browser.storage.local.get(this.LEGACY_STORAGE_KEY);
+        const legacy = result[this.LEGACY_STORAGE_KEY] as ChatBookmark[] | undefined;
+        if (Array.isArray(legacy) && legacy.length) {
+          await secureStorage.setChats(legacy);
+          // Best-effort cleanup of legacy key
+          try { await browser.storage.local.remove(this.LEGACY_STORAGE_KEY); } catch {}
+          logger.info('Migrated chat bookmarks from legacy storage to SecureStorageV2');
+          return legacy;
+        }
       }
     } catch (error) {
       const mapped = mapBrowserError(error);
-      logger.warn('Browser storage failed, falling back to localStorage:', mapped);
+      logger.warn('Legacy storage migration failed', mapped);
     }
 
-    // Fallback to localStorage
-    try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-      const mapped = mapBrowserError(error);
-      logger.error('Failed to read from localStorage:', mapped);
-      return [];
-    }
+    return [];
   }
 
   private async saveToStorage(chats: ChatBookmark[]): Promise<void> {
     try {
-      if (typeof browser !== 'undefined' && browser.storage) {
-        await browser.storage.local.set({ [this.STORAGE_KEY]: chats });
-        return;
-      }
+      await secureStorage.setChats(chats);
     } catch (error) {
       const mapped = mapBrowserError(error);
-      logger.warn('Browser storage failed, falling back to localStorage:', mapped);
-    }
-
-    // Fallback to localStorage
-    try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(chats));
-    } catch (error) {
-      const mapped = mapBrowserError(error);
-      logger.error('Failed to save to localStorage:', mapped);
+      logger.error('Failed to persist chats to SecureStorageV2', mapped);
       throw mapped;
     }
   }
@@ -57,6 +57,7 @@ export class ChatStorage {
     
     const newChat: ChatBookmark = {
       ...chatData,
+  isPinned: chatData.isPinned ?? false,
       id: typeof crypto !== 'undefined' && crypto.randomUUID
         ? `chat_${crypto.randomUUID()}`
         : `chat_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
