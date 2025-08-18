@@ -1,16 +1,80 @@
 /// <reference path="../.wxt/wxt.d.ts" />
 
 import { chatStorage } from '../lib/chatStorage';
+import { logger } from '../lib/logger';
 import { initializeContextMenu, initializeKeyboardShortcuts } from '../lib/shortcuts';
 import { initializeStorage, promptStorage } from '../lib/storage';
 
+type SaveBookmarkMsg = {
+  type: 'SAVE_BOOKMARK';
+  data: {
+    title: string;
+    url: string;
+    platform?: 'chatgpt' | 'gemini' | 'claude' | 'deepseek' | string;
+    workspace?: string;
+    tags?: string[];
+    description?: string;
+    isPinned?: boolean;
+    scrapedContent?: unknown;
+  };
+};
+
+type SaveChatBookmarkMsg = {
+  type: 'SAVE_CHAT_BOOKMARK';
+  data: {
+    title: string;
+    url: string;
+    platform: 'chatgpt' | 'gemini' | 'claude' | 'deepseek';
+    workspace?: string;
+    tags?: string[];
+    scrapedContent?: unknown;
+  };
+};
+
+type GetWorkspacesAndTagsMsg = { type: 'GET_WORKSPACES_AND_TAGS' };
+type DeleteWorkspaceMsg = { type: 'DELETE_WORKSPACE'; name: string };
+type DeleteTagMsg = { type: 'DELETE_TAG'; tag: string };
+
+type BgMessage =
+  | SaveBookmarkMsg
+  | SaveChatBookmarkMsg
+  | GetWorkspacesAndTagsMsg
+  | DeleteWorkspaceMsg
+  | DeleteTagMsg;
+
+// Narrow unknown scraped content to the expected shape or drop it
+function normalizeScrapedContent(input: unknown): {
+  summary: string;
+  messageCount: number;
+  lastMessage: string;
+  scrapedAt: string;
+} | undefined {
+  if (
+    input &&
+    typeof input === 'object' &&
+    'summary' in input &&
+    'messageCount' in input &&
+    'lastMessage' in input &&
+    'scrapedAt' in input
+  ) {
+    const sc = input as any;
+    return {
+      summary: String(sc.summary ?? ''),
+      messageCount: Number(sc.messageCount ?? 0),
+      lastMessage: String(sc.lastMessage ?? ''),
+      scrapedAt: String(sc.scrapedAt ?? new Date().toISOString()),
+    };
+  }
+  return undefined;
+}
+
 export default defineBackground(() => {
-  console.log('DialogDrive background script loaded!', { id: browser.runtime.id });
+  logger.info('DialogDrive background script loaded!', { id: browser.runtime.id });
 
   // Initialize on install
-  browser.runtime.onInstalled.addListener(async (details: any) => {
+  browser.runtime.onInstalled.addListener(async (details: { reason: 'install' | 'update' | string }) => {
     if (details.reason === 'install') {
-      console.log('Extension installed, initializing storage...');
+      logger.info('Extension installed, initializing storage...');
       await initializeStorage();
     }
 
@@ -23,34 +87,35 @@ export default defineBackground(() => {
   initializeContextMenu();
 
   // Message routing
-  browser.runtime.onMessage.addListener((message: any, sender: any, sendResponse: any) => {
+  browser.runtime.onMessage.addListener((message: BgMessage, _sender, sendResponse) => {
     if (message.type === 'SAVE_BOOKMARK') {
       (async () => {
         try {
-          const data = message.data || {};
+          const data = message.data ?? ({} as SaveBookmarkMsg['data']);
           const newBookmark = await chatStorage.add({
             title: data.title,
             url: data.url,
-            platform: data.platform || 'chatgpt',
+            platform: (data.platform as any) || 'chatgpt',
             workspace: data.workspace || 'General',
             tags: data.tags || [],
             description: data.description || undefined,
             isPinned: !!data.isPinned,
-            scrapedContent: data.scrapedContent
+            scrapedContent: normalizeScrapedContent(data.scrapedContent),
           });
           sendResponse({ success: true, bookmark: newBookmark });
         } catch (error) {
-          console.error('Error saving bookmark:', error);
+          logger.error('Error saving bookmark:', error);
           sendResponse({ success: false, error: 'Failed to save bookmark' });
         }
       })();
       return true;
     }
+
     if (message.type === 'SAVE_CHAT_BOOKMARK') {
       (async () => {
         try {
-          console.log('Saving chat bookmark from floating button:', message.data);
-          
+          logger.debug('Saving chat bookmark from floating button');
+
           const chatData = message.data;
           const newBookmark = await chatStorage.add({
             title: chatData.title,
@@ -59,49 +124,44 @@ export default defineBackground(() => {
             workspace: chatData.workspace || 'General',
             tags: chatData.tags || [],
             isPinned: false,
-            scrapedContent: chatData.scrapedContent
+            scrapedContent: normalizeScrapedContent(chatData.scrapedContent),
           });
-          
-          console.log('Chat bookmark saved successfully:', newBookmark.id);
+
+          logger.info('Chat bookmark saved successfully', newBookmark.id);
           sendResponse({ success: true, bookmark: newBookmark });
-          
         } catch (error) {
-          console.error('Error saving chat bookmark:', error);
+          logger.error('Error saving chat bookmark:', error);
           sendResponse({ error: 'Failed to save chat bookmark' });
         }
       })();
-      
-  return true; // async response
+
+      return true; // async response
     }
-    
+
     if (message.type === 'GET_WORKSPACES_AND_TAGS') {
       (async () => {
         try {
-          console.log('Fetching workspaces and tags for quick form');
+          logger.debug('Fetching workspaces and tags for quick form');
 
-          const [prompts, chats] = await Promise.all([
-            promptStorage.getAll(),
-            chatStorage.getAll()
-          ]);
+          const [prompts, chats] = await Promise.all([promptStorage.getAll(), chatStorage.getAll()]);
 
-          const promptWorkspaces = prompts.map(p => p.workspace).filter(Boolean);
-          const chatWorkspaces = chats.map(c => c.workspace).filter(Boolean);
+          const promptWorkspaces = prompts.map((p) => p.workspace).filter(Boolean);
+          const chatWorkspaces = chats.map((c) => c.workspace).filter(Boolean);
           const workspaces = Array.from(new Set(['General', ...promptWorkspaces, ...chatWorkspaces]));
 
-          const promptTags = prompts.flatMap(p => p.tags || []);
-          const chatTags = chats.flatMap(c => c.tags || []);
+          const promptTags = prompts.flatMap((p) => p.tags || []);
+          const chatTags = chats.flatMap((c) => c.tags || []);
           const allTags = Array.from(new Set([...promptTags, ...chatTags]));
-          
-          console.log('Found workspaces:', workspaces, 'tags:', allTags);
+
+          logger.debug('Workspace/tag counts', { workspaces: workspaces.length, tags: allTags.length });
           sendResponse({ success: true, workspaces, tags: allTags });
-          
         } catch (error) {
-          console.error('Error fetching workspaces/tags:', error);
+          logger.error('Error fetching workspaces/tags:', error);
           sendResponse({ success: false, workspaces: ['General'], tags: [] });
         }
       })();
-      
-  return true; // async response
+
+      return true; // async response
     }
 
     if (message.type === 'DELETE_WORKSPACE') {
@@ -112,25 +172,20 @@ export default defineBackground(() => {
             sendResponse({ success: false, error: 'Invalid workspace name' });
             return;
           }
-          const [prompts, chats] = await Promise.all([
-            promptStorage.getAll(),
-            chatStorage.getAll()
-          ]);
-          const updatedPrompts = prompts.map(p => p.workspace === name ? { ...p, workspace: 'General' } : p);
+          const [prompts, chats] = await Promise.all([promptStorage.getAll(), chatStorage.getAll()]);
+          const updatedPrompts = prompts.map((p) => (p.workspace === name ? { ...p, workspace: 'General' } : p));
           for (const p of updatedPrompts) {
             await promptStorage.update(p);
           }
-          const updatedChats = [] as any[];
           for (const c of chats) {
             if (c.workspace === name) {
               const updated = { ...c, workspace: 'General' };
               await chatStorage.update(updated);
-              updatedChats.push(updated);
-            } else updatedChats.push(c);
+            }
           }
           sendResponse({ success: true });
         } catch (error) {
-          console.error('Error deleting workspace:', error);
+          logger.error('Error deleting workspace:', error);
           sendResponse({ success: false, error: 'Failed to delete workspace' });
         }
       })();
@@ -141,31 +196,31 @@ export default defineBackground(() => {
       (async () => {
         try {
           const tag = (message.tag || '').trim();
-          if (!tag) { sendResponse({ success: false, error: 'Invalid tag' }); return; }
-          const [prompts, chats] = await Promise.all([
-            promptStorage.getAll(),
-            chatStorage.getAll()
-          ]);
-          const updatedPrompts = prompts.map(p => p.tags?.includes(tag) ? { ...p, tags: p.tags.filter(t => t !== tag) } : p);
+          if (!tag) {
+            sendResponse({ success: false, error: 'Invalid tag' });
+            return;
+          }
+          const [prompts, chats] = await Promise.all([promptStorage.getAll(), chatStorage.getAll()]);
+          const updatedPrompts = prompts.map((p) => (p.tags?.includes(tag) ? { ...p, tags: p.tags.filter((t) => t !== tag) } : p));
           for (const p of updatedPrompts) {
             await promptStorage.update(p);
           }
           for (const c of chats) {
             if (c.tags?.includes(tag)) {
-              const updated = { ...c, tags: c.tags.filter(t => t !== tag) };
+              const updated = { ...c, tags: c.tags.filter((t) => t !== tag) };
               await chatStorage.update(updated);
             }
           }
           sendResponse({ success: true });
         } catch (error) {
-          console.error('Error deleting tag:', error);
+          logger.error('Error deleting tag:', error);
           sendResponse({ success: false, error: 'Failed to delete tag' });
         }
       })();
       return true;
     }
-    
-  // Unknown message type
+
+    // Unknown message type
     return false;
   });
 });

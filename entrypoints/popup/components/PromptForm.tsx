@@ -1,23 +1,18 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, Check, ChevronDown, Clock, Hash, Loader2, Wand2, X } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Clock, Hash, Loader2, Wand2, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from "sonner";
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "../../../components/ui/select";
 import { Switch } from '../../../components/ui/switch';
 import { Textarea } from '../../../components/ui/textarea';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import type { Prompt } from '../../../types/prompt';
+import TagSelect from './TagSelect';
 import { VoiceToneGenerator } from './VoiceToneGenerator';
+import WorkspaceSelect from './WorkspaceSelect';
 
 export const PromptForm: React.FC = () => {
   const {
@@ -44,6 +39,8 @@ export const PromptForm: React.FC = () => {
   const [showVoiceToneGenerator, setShowVoiceToneGenerator] = useState(false);
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const tagDropdownRef = useRef<HTMLDivElement>(null);
+  const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
+  const workspaceDropdownRef = useRef<HTMLDivElement>(null);
 
   const tagInputRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
@@ -290,16 +287,8 @@ export const PromptForm: React.FC = () => {
             className="space-y-1.5"
           >
             <Label htmlFor="workspace" className="text-[12px] font-medium">Workspace</Label>
-            <Select value={workspace} onValueChange={setWorkspace}>
-              <SelectTrigger id="workspace" className="shadow-sm h-8 text-[12px]">
-                <SelectValue placeholder="Select a workspace" />
-              </SelectTrigger>
-              <SelectContent>
-                {workspaces.map((ws: string) => (
-                  <SelectItem key={ws} value={ws}>{ws}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <WorkspaceSelect value={workspace} onChange={setWorkspace} id="workspace" className="shadow-sm h-8 text-[12px]" />
+            {/* Inline delete now available directly in Select dropdown; extra Browse menu removed. */}
             <div className="flex mt-2 gap-1">
               <Input
                 placeholder="New workspace name"
@@ -336,47 +325,15 @@ export const PromptForm: React.FC = () => {
               <Hash className="h-3.5 w-3.5" />
               Tags
             </Label>
-              <div className="flex items-center justify-between relative" ref={tagDropdownRef}>
-                <Label htmlFor="tags" className="text-[12px] font-medium">Tags</Label>
-                {allTags.length > 0 && (
-                  <Button type="button" variant="outline" size="sm" onClick={() => setShowTagDropdown(v=>!v)} className="h-6 px-2 text-[10px]">
-                    Browse <ChevronDown className="h-3 w-3 ml-1" />
-                  </Button>
-                )}
-                {showTagDropdown && (
-                  <div className="absolute top-full right-0 mt-1 w-52 max-h-60 overflow-y-auto bg-popover border border-border rounded-md shadow-lg z-50 p-1">
-                    {allTags.length === 0 && <div className="text-[11px] text-muted-foreground p-2">No tags</div>}
-                    {allTags.map(tag => {
-                      const selected = tags.includes(tag);
-                      return (
-                        <div key={tag} className="group flex items-center gap-1 px-2 h-7 text-[11px] rounded hover:bg-accent/10">
-                          <button
-                            type="button"
-                            onClick={() => setTags(prev => selected ? prev.filter(t=>t!==tag) : [...prev, tag])}
-                            className="flex-1 text-left truncate"
-                          >
-                            <span className="inline-flex items-center gap-1">{selected && <Check className="h-3 w-3 text-green-600" />}{tag}</span>
-                          </button>
-                          <button
-                            type="button"
-                            aria-label={`Delete tag ${tag}`}
-                            className="opacity-60 hover:opacity-100 text-red-600 p-0.5"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm(`Delete tag \"${tag}\" from all items?`)) {
-                                deleteTag(tag);
-                                setTags(prev => prev.filter(t=>t!==tag));
-                              }
-                            }}
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+            <TagSelect
+              allTags={allTags}
+              value={tags}
+              onChange={(next) => setTags(next)}
+              onDeleteTag={(tag) => {
+                deleteTag(tag);
+                setTags((prev) => prev.filter(t => t !== tag));
+              }}
+            />
             <div className="relative">
               <Input
                 id="tags"

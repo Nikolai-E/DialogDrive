@@ -119,6 +119,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
   return (
     <div className="mx-3 my-2" role="listitem">
       <button
+        type="button"
         onClick={handleCardClick}
         className={cn(
           'w-full text-left select-none',
@@ -136,6 +137,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
           <div className="flex items-center gap-1 shrink-0">
             {/* Action buttons */}
             <button
+              type="button"
               aria-label={prompt.isPinned ? 'Unpin prompt' : 'Pin prompt'}
               onClick={handlePin}
               className={`${prompt.isPinned ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200' : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'} p-1.5 rounded-md transition-all duration-150`}
@@ -145,6 +147,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
             </button>
 
             <button
+              type="button"
               aria-label="Edit prompt"
               onClick={handleEdit}
               className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-150"
@@ -154,6 +157,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
             </button>
 
             <button
+              type="button"
               aria-label="Delete prompt"
               onClick={handleDelete}
               className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all duration-150"

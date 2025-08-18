@@ -119,6 +119,20 @@ export default defineContentScript({
           }
           
           .dd-form-actions { padding:12px 16px; border-top:1px solid #d6d3d1; display:flex; justify-content:flex-end; gap:8px; }
+          /* Custom select for workspace with inline delete */
+          .dd-select { position: relative; }
+          .dd-select-trigger { width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 10px; border:1px solid #d6d3d1; border-radius:6px; background:#fff; color:#111827; font-size:13px; cursor:pointer; }
+          .dd-select-trigger:hover { background:#f9fafb; }
+          .dd-select-content { position:absolute; top:calc(100% + 4px); left:0; right:0; max-height:220px; overflow:auto; background:#fff; border:1px solid #d6d3d1; border-radius:8px; padding:6px; box-shadow:none; z-index:1000000; }
+          .dd-select-item { display:flex; align-items:center; gap:6px; padding:4px 6px; border-radius:6px; cursor:pointer; }
+          .dd-select-item:hover { background:#f4f4f5; }
+          .dd-select-check { width:14px; height:14px; color:#16a34a; opacity:0.9; }
+          .dd-select-spacer { width:14px; height:14px; }
+          .dd-select-del { margin-left:auto; border:none; background:transparent; color:#dc2626; cursor:pointer; padding:2px; border-radius:4px; }
+          .dd-select-del:hover { background:#fee2e2; }
+          /* Tag select uses same styles */
+          /* Deprecated workspace browse dropdown (replaced by dd-select) */
+
           
           .dd-btn { padding:6px 14px; border-radius:6px; font-size:13px; font-weight:500; cursor:pointer; transition:background .15s; border:1px solid #d6d3d1; background:#e7e5e4; color:#292524; }
           
@@ -147,6 +161,11 @@ export default defineContentScript({
           .dd-switch.active .dd-switch-thumb {
             transform: translateX(20px);
           }
+
+          /* Tag browse items with inline delete */
+          .dd-tag-browse-item { display:flex; align-items:center; gap:6px; padding:4px 6px; border:1px solid #e7e5e4; background:#fff; border-radius:6px; font-size:11px; }
+          .dd-tag-browse-item button { border:none; background:transparent; color:#dc2626; cursor:pointer; padding:2px; border-radius:4px; }
+          .dd-tag-browse-item button:hover { background:#fee2e2; }
 
           @media (max-width: 640px) {
             .dd-quick-save-modal {
@@ -193,9 +212,13 @@ export default defineContentScript({
               
               <div class="dd-form-group">
                 <label class="dd-form-label">Workspace</label>
-                <select class="dd-form-select" id="dd-workspace">
-                  <option value="General">General</option>
-                </select>
+                <div id="dd-workspace-select" class="dd-select">
+                  <button type="button" class="dd-select-trigger" id="dd-workspace-trigger">
+                    <span id="dd-workspace-label">General</span>
+                    <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd"/></svg>
+                  </button>
+                  <div class="dd-select-content" id="dd-workspace-content" style="display:none;"></div>
+                </div>
                 <div style="display:flex; gap:6px; margin-top:6px;">
                   <input type="text" id="dd-new-workspace" class="dd-form-input" placeholder="New workspace" style="flex:1;" />
                   <button type="button" id="dd-add-workspace" class="dd-btn dd-btn-secondary" style="padding:0 10px;">Add</button>
@@ -206,11 +229,17 @@ export default defineContentScript({
               
               <div class="dd-form-group">
                 <label class="dd-form-label">Tags</label>
-                <div class="dd-tag-input-container">
+                <div id="dd-tag-select" class="dd-select">
+                  <button type="button" class="dd-select-trigger" id="dd-tag-trigger">
+                    <span id="dd-tag-label">Select tags</span>
+                    <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd"/></svg>
+                  </button>
+                  <div class="dd-select-content" id="dd-tag-content" style="display:none;"></div>
+                </div>
+                <div class="dd-tag-input-container" style="margin-top:6px;">
                   <input type="text" class="dd-form-input" id="dd-tag-input" placeholder="Add a tag...">
                   <button type="button" class="dd-btn dd-btn-secondary" id="dd-add-tag">Add</button>
                 </div>
-                <div id="dd-existing-tags" style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;"></div>
                 <div class="dd-tag-list" id="dd-tags"></div>
               </div>
               
@@ -245,26 +274,30 @@ export default defineContentScript({
       const cancelBtn = document.getElementById('dd-cancel');
       const saveBookmarkBtn = document.getElementById('dd-save');
       const pinSwitch = document.getElementById('dd-pin-switch');
-      const tagInput = document.getElementById('dd-tag-input') as HTMLInputElement;
+  const tagInput = document.getElementById('dd-tag-input') as HTMLInputElement;
       const addTagBtn = document.getElementById('dd-add-tag');
       const tagsContainer = document.getElementById('dd-tags');
       const titleInput = document.getElementById('dd-title') as HTMLInputElement;
       const urlInput = document.getElementById('dd-url') as HTMLInputElement;
-  const workspaceSelect = document.getElementById('dd-workspace') as HTMLSelectElement;
+  // Custom workspace select elements
+  const workspaceTrigger = document.getElementById('dd-workspace-trigger') as HTMLButtonElement;
+  const workspaceContent = document.getElementById('dd-workspace-content') as HTMLDivElement;
+  const workspaceLabel = document.getElementById('dd-workspace-label') as HTMLSpanElement;
   const newWorkspaceInput = document.getElementById('dd-new-workspace') as HTMLInputElement;
   const addWorkspaceBtn = document.getElementById('dd-add-workspace') as HTMLButtonElement;
+  // Current selected workspace value
+  let currentWorkspace = 'General';
       // Add workspace handler
       addWorkspaceBtn.addEventListener('click', () => {
         const value = newWorkspaceInput.value.trim();
         if (!value) return;
         // Avoid duplicates
-        if (![...workspaceSelect.options].some(o => o.value.toLowerCase() === value.toLowerCase())) {
-          const opt = document.createElement('option');
-          opt.value = value;
-          opt.textContent = value;
-          workspaceSelect.appendChild(opt);
+        const items = Array.from(workspaceContent?.querySelectorAll('[data-ws]') || []);
+        if (!items.some(el => (el as HTMLElement).dataset.ws?.toLowerCase() === value.toLowerCase())) {
+          // Optimistically add to list
+          buildWorkspaceList([...(items.map(el => (el as HTMLElement).dataset.ws!) ), value].filter(Boolean) as string[]);
         }
-        workspaceSelect.value = value;
+        setWorkspace(value);
         newWorkspaceInput.value = '';
       });
   // Description removed
@@ -273,62 +306,212 @@ export default defineContentScript({
       let isPinned = false;
 
       // Load workspaces and tags from storage
-      const loadWorkspacesAndTags = async () => {
+  const loadWorkspacesAndTags = async () => {
         try {
           const response = await browser.runtime.sendMessage({
             type: 'GET_WORKSPACES_AND_TAGS'
           });
           
           if (response.workspaces) {
-            workspaceSelect.innerHTML = '';
-            response.workspaces.forEach((workspace: string) => {
-              const option = document.createElement('option');
-              option.value = workspace;
-              option.textContent = workspace;
-              workspaceSelect.appendChild(option);
-            });
+            buildWorkspaceList(response.workspaces);
           }
           if (response.tags) {
-            const existingTagsContainer = document.getElementById('dd-existing-tags');
-            if (existingTagsContainer) {
-              existingTagsContainer.innerHTML = '';
-              response.tags.forEach((tag: string) => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.textContent = tag;
-                btn.style.cssText = 'background:#e7e5e4;border:1px solid #d6d3d1;border-radius:4px;padding:2px 6px;font-size:11px;cursor:pointer;';
-                btn.addEventListener('click', () => {
-                  if (!tags.includes(tag)) { tags.push(tag); renderTags(); }
-                });
-                // Alt-click to delete tag globally
-                btn.addEventListener('auxclick', (e) => { e.preventDefault(); });
-                btn.addEventListener('contextmenu', (e) => { e.preventDefault(); });
-                btn.addEventListener('mousedown', async (e) => {
-                  if (e.altKey) {
-                    const confirmDelete = confirm(`Delete tag "${tag}" from all items?`);
-                    if (confirmDelete) {
-                      try {
-                        const resp = await browser.runtime.sendMessage({ type: 'DELETE_TAG', tag });
-                        if (resp?.success) {
-                          // Refresh tags
-                          await loadWorkspacesAndTags();
-                        } else {
-                          alert('Failed to delete tag');
-                        }
-                      } catch {
-                        alert('Failed to delete tag');
-                      }
-                    }
-                  }
-                });
-                existingTagsContainer.appendChild(btn);
-              });
-            }
+            buildTagList(response.tags);
           }
         } catch (error) {
           logger.error('Failed to load workspaces and tags:', error);
         }
       };
+
+      // Tag select elements/state
+      const tagTrigger = document.getElementById('dd-tag-trigger') as HTMLButtonElement;
+      const tagContent = document.getElementById('dd-tag-content') as HTMLDivElement;
+      const tagLabel = document.getElementById('dd-tag-label') as HTMLSpanElement;
+
+      const toggleTagDropdown = (open?: boolean) => {
+        if (!tagContent) return;
+        const willOpen = open ?? tagContent.style.display === 'none';
+        tagContent.style.display = willOpen ? 'block' : 'none';
+      };
+
+      const updateTagLabel = () => {
+        if (!tagLabel) return;
+        tagLabel.textContent = tags.length === 0 ? 'Select tags' : `${tags.length} selected`;
+      };
+
+      const buildTagList = (all: string[]) => {
+        if (!tagContent) return;
+        tagContent.innerHTML = '';
+        all.forEach((t) => {
+          const row = document.createElement('div');
+          row.className = 'dd-select-item';
+          row.dataset.tag = t;
+
+          const check = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          check.setAttribute('viewBox', '0 0 16 16');
+          check.setAttribute('fill', 'currentColor');
+          check.setAttribute('class', 'dd-select-check');
+          check.innerHTML = '<path d="M13.485 1.929a1.5 1.5 0 0 1 0 2.121L6.75 10.786l-3.536-3.536a1.5 1.5 0 1 1 2.121-2.121l1.415 1.415 5.657-5.657a1.5 1.5 0 0 1 2.121 0z" />';
+          const spacer = document.createElement('div');
+          spacer.setAttribute('class', 'dd-select-spacer');
+          row.appendChild(tags.includes(t) ? check : spacer);
+
+          const labelBtn = document.createElement('button');
+          labelBtn.type = 'button';
+          labelBtn.textContent = t;
+          labelBtn.style.cssText = 'flex:1; text-align:left; padding:2px 0; color:#292524; background:transparent; border:none;';
+          labelBtn.addEventListener('click', () => {
+            if (tags.includes(t)) {
+              tags = tags.filter(x => x !== t);
+            } else {
+              tags = [...tags, t];
+            }
+            renderTags();
+            updateTagLabel();
+            // update checkmark
+            const first = row.firstChild as HTMLElement | null;
+            if (first) {
+              row.removeChild(first);
+              if (tags.includes(t)) row.insertBefore(check, row.firstChild); else row.insertBefore(spacer, row.firstChild);
+            }
+          });
+          row.appendChild(labelBtn);
+
+          const del = document.createElement('button');
+          del.setAttribute('aria-label', `Delete tag ${t}`);
+          del.className = 'dd-select-del';
+          del.innerHTML = '&times;';
+          del.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const ok = confirm(`Delete tag "${t}" from all items?`);
+            if (!ok) return;
+            try {
+              const resp = await browser.runtime.sendMessage({ type: 'DELETE_TAG', tag: t });
+              if (resp?.success) {
+                tags = tags.filter(x => x !== t);
+                renderTags();
+                updateTagLabel();
+                await loadWorkspacesAndTags();
+              } else {
+                alert('Failed to delete tag');
+              }
+            } catch {
+              alert('Failed to delete tag');
+            }
+          });
+          row.appendChild(del);
+
+          tagContent.appendChild(row);
+        });
+      };
+
+      tagTrigger?.addEventListener('click', (e) => { e.stopPropagation(); toggleTagDropdown(); });
+      document.addEventListener('mousedown', (ev) => {
+        if (!tagContent?.contains(ev.target as Node) && (ev.target as HTMLElement)?.id !== 'dd-tag-trigger') {
+          toggleTagDropdown(false);
+        }
+      });
+      updateTagLabel();
+
+      // Build custom workspace list with inline delete inside the select dropdown
+      const buildWorkspaceList = (workspaces: string[]) => {
+        if (!workspaceContent) return;
+        workspaceContent.innerHTML = '';
+        workspaces.forEach((ws) => {
+          const row = document.createElement('div');
+          row.className = 'dd-select-item';
+          row.dataset.ws = ws;
+
+          // checkmark or spacer
+          const check = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          check.setAttribute('viewBox', '0 0 16 16');
+          check.setAttribute('fill', 'currentColor');
+          check.setAttribute('class', 'dd-select-check');
+          check.innerHTML = '<path d="M13.485 1.929a1.5 1.5 0 0 1 0 2.121L6.75 10.786l-3.536-3.536a1.5 1.5 0 1 1 2.121-2.121l1.415 1.415 5.657-5.657a1.5 1.5 0 0 1 2.121 0z" />';
+          const spacer = document.createElement('div');
+          spacer.setAttribute('class', 'dd-select-spacer');
+          row.appendChild(ws === currentWorkspace ? check : spacer);
+
+          const labelBtn = document.createElement('button');
+          labelBtn.type = 'button';
+          labelBtn.textContent = ws;
+          labelBtn.style.cssText = 'flex:1; text-align:left; padding:2px 0; color:#292524; background:transparent; border:none;';
+          labelBtn.addEventListener('click', () => {
+            setWorkspace(ws);
+            toggleWorkspaceDropdown(false);
+          });
+          row.appendChild(labelBtn);
+
+          if (ws !== 'General') {
+            const del = document.createElement('button');
+            del.setAttribute('aria-label', `Delete workspace ${ws}`);
+            del.className = 'dd-select-del';
+            del.innerHTML = '&times;';
+            del.addEventListener('click', async (e) => {
+              e.stopPropagation();
+              const ok = confirm(`Delete workspace "${ws}" and move its items to General?`);
+              if (!ok) return;
+              try {
+                const resp = await browser.runtime.sendMessage({ type: 'DELETE_WORKSPACE', name: ws });
+                if (resp?.success) {
+                  if (currentWorkspace === ws) setWorkspace('General');
+                  await loadWorkspacesAndTags();
+                } else {
+                  alert('Failed to delete workspace');
+                }
+              } catch {
+                alert('Failed to delete workspace');
+              }
+            });
+            row.appendChild(del);
+          }
+          workspaceContent.appendChild(row);
+        });
+      };
+
+      const toggleWorkspaceDropdown = (open?: boolean) => {
+        if (!workspaceContent) return;
+        const willOpen = open ?? workspaceContent.style.display === 'none';
+        workspaceContent.style.display = willOpen ? 'block' : 'none';
+      };
+
+      const setWorkspace = (ws: string) => {
+        currentWorkspace = ws;
+        if (workspaceLabel) workspaceLabel.textContent = ws;
+        // update checkmarks
+        const items = workspaceContent?.querySelectorAll('.dd-select-item');
+        items?.forEach((item) => {
+          const el = item as HTMLElement;
+          const isSel = el.dataset.ws === ws;
+          const firstChild = el.firstChild as HTMLElement | null;
+          if (firstChild) {
+            el.removeChild(firstChild);
+            if (isSel) {
+              const check = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+              check.setAttribute('viewBox', '0 0 16 16');
+              check.setAttribute('fill', 'currentColor');
+              check.setAttribute('class', 'dd-select-check');
+              check.innerHTML = '<path d="M13.485 1.929a1.5 1.5 0 0 1 0 2.121L6.75 10.786l-3.536-3.536a1.5 1.5 0 1 1 2.121-2.121l1.415 1.415 5.657-5.657a1.5 1.5 0 0 1 2.121 0z" />';
+              el.insertBefore(check, el.firstChild);
+            } else {
+              const spacer = document.createElement('div');
+              spacer.setAttribute('class', 'dd-select-spacer');
+              el.insertBefore(spacer, el.firstChild);
+            }
+          }
+        });
+      };
+
+      // Trigger and outside click handling
+      workspaceTrigger?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleWorkspaceDropdown();
+      });
+      document.addEventListener('mousedown', (ev) => {
+        if (!workspaceContent?.contains(ev.target as Node) && (ev.target as HTMLElement)?.id !== 'dd-workspace-trigger') {
+          toggleWorkspaceDropdown(false);
+        }
+      });
 
       // Detect platform from URL
       const detectPlatform = (url: string): string => {
@@ -354,11 +537,14 @@ export default defineContentScript({
       };
 
       // Add tag functionality
-      const addTag = () => {
+    const addTag = () => {
         const tagValue = tagInput.value.trim().toLowerCase();
         if (tagValue && !tags.includes(tagValue)) {
           tags.push(tagValue);
           renderTags();
+      // update dropdown label
+      const lbl = document.getElementById('dd-tag-label') as HTMLSpanElement | null;
+      if (lbl) lbl.textContent = tags.length === 0 ? 'Select tags' : `${tags.length} selected`;
           tagInput.value = '';
         }
       };
@@ -367,6 +553,8 @@ export default defineContentScript({
       const removeTag = (tagToRemove: string) => {
         tags = tags.filter(tag => tag !== tagToRemove);
         renderTags();
+        const lbl = document.getElementById('dd-tag-label') as HTMLSpanElement | null;
+        if (lbl) lbl.textContent = tags.length === 0 ? 'Select tags' : `${tags.length} selected`;
       };
 
       // Render tags
@@ -398,12 +586,12 @@ export default defineContentScript({
           return;
         }
 
-        try {
+    try {
           const bookmarkData = {
             title: titleInput.value.trim(),
             url: urlInput.value.trim(),
             platform: detectPlatform(urlInput.value),
-            workspace: workspaceSelect.value,
+      workspace: currentWorkspace,
             description: undefined,
             tags: tags,
             isPinned: isPinned
@@ -470,9 +658,9 @@ export default defineContentScript({
 
       // Reset form
       const resetForm = () => {
-        titleInput.value = '';
-        urlInput.value = '';
-        workspaceSelect.value = 'General';
+  titleInput.value = '';
+  urlInput.value = '';
+  setWorkspace('General');
   // description reset removed
         tagInput.value = '';
         tags = [];

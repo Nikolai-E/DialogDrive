@@ -1,6 +1,6 @@
-import * as React from "react"
-import { Check, ChevronDown, ChevronUp } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
+import { Check, ChevronDown } from "lucide-react";
+import * as React from "react";
 
 // Lightweight inline Select without portals
 
@@ -47,6 +47,7 @@ const SelectTrigger = React.forwardRef<
     return (
       <button
         ref={ref}
+  type="button"
         className={cn(
           "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
           className
@@ -116,6 +117,7 @@ const SelectItem = React.forwardRef<
     return (
       <button
         ref={ref}
+  type="button"
         role="option"
         aria-selected={selected}
         className={cn(
@@ -147,11 +149,74 @@ const SelectSeparator: React.FC<{ className?: string }> = ({ className }) => (
 )
 
 export {
-  Select,
-  SelectGroup,
-  SelectValue,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectSeparator,
-}
+    Select, SelectContent, SelectGroup, SelectItem,
+    SelectSeparator, SelectTrigger, SelectValue
+};
+ 
+// Extended item with trailing action (e.g., delete icon)
+const SelectItemAction = (
+  {
+    value,
+    children,
+    action,
+    onActionClick,
+    className,
+  }: {
+    value: string;
+    children: React.ReactNode;
+    action?: React.ReactNode;
+    onActionClick?: () => void;
+    className?: string;
+  }
+) => {
+  const { value: cur, onValueChange, setOpen, setOptions } = useSelect();
+  React.useEffect(() => {
+    setOptions((prev: Option[]) => {
+      if (prev.some((p: Option) => p.value === value)) return prev;
+      return [...prev, { value, label: children } as Option];
+    });
+  }, [value, children, setOptions]);
+  const selected = cur === value;
+  return (
+    <div
+      role="option"
+      aria-selected={selected}
+      className={cn(
+        "relative flex w-full items-center rounded-sm py-1 pl-1 pr-1 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+        selected && "bg-primary/10 text-primary",
+        className
+      )}
+    >
+      <button
+        type="button"
+        className={cn(
+          "flex-1 flex items-center rounded-sm py-0.5 pl-7 pr-2 text-left truncate"
+        )}
+        onClick={() => {
+          onValueChange?.(value);
+          setOpen(false);
+        }}
+      >
+        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+          {selected ? <Check className="h-4 w-4" /> : null}
+        </span>
+        <span className="truncate">{children}</span>
+      </button>
+      {action && (
+        <button
+          type="button"
+          className="ml-1 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-muted/50"
+          onClick={(e) => {
+            e.stopPropagation();
+            onActionClick?.();
+          }}
+          aria-label="action"
+        >
+          {action}
+        </button>
+      )}
+    </div>
+  );
+};
+
+export { SelectItemAction };

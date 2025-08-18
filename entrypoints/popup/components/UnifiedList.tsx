@@ -21,20 +21,21 @@ export const UnifiedList: React.FC = () => {
     filterTag,
     setSelectedWorkspace,
     selectedWorkspace,
-    workspaces
+    workspaces,
+    selectedTags,
+    setSelectedTags
   } = useUnifiedStore();
 
-  // Local multi-select state for tags (store still holds single filterTag for legacy compatibility)
-  const [activeTags, setActiveTags] = React.useState<string[]>(filterTag !== 'all' ? [filterTag] : []);
+  // Use store-backed multi-select tags for OR filtering
+  const activeTags = selectedTags && selectedTags.length > 0 ? selectedTags : (filterTag !== 'all' ? [filterTag] : []);
   const toggleTag = (tag: string) => {
-    setActiveTags(prev => {
-      const exists = prev.includes(tag);
-      const next = exists ? prev.filter(t => t !== tag) : [...prev, tag];
-      // Update primary filterTag for now: if 0 then 'all', if 1 use that tag, if >1 keep last selected for backend
-      if (next.length === 0) setFilterTag('all');
-      else setFilterTag(next[next.length - 1]);
-      return next;
-    });
+    const exists = activeTags.includes(tag);
+    const next = exists ? activeTags.filter(t => t !== tag) : [...activeTags, tag];
+    // Sync to store for unified filtering (OR semantics)
+    setSelectedTags(next);
+    // Maintain legacy single-tag field for other UIs
+    if (next.length === 0) setFilterTag('all');
+    else setFilterTag(next[next.length - 1]);
   };
 
   // Derive frequency metrics (combined prompts & chats)
@@ -123,6 +124,7 @@ export const UnifiedList: React.FC = () => {
         <div className="flex gap-1.5 items-center overflow-x-auto whitespace-nowrap scrollbar-thin pb-1">
           {topWorkspaces.map(ws => (
             <button
+              type="button"
               key={ws}
               onClick={() => setSelectedWorkspace(selectedWorkspace === ws ? 'all' : ws)}
               className={cn('px-2.5 py-1 rounded-full text-[10px] border transition-colors shrink-0',
@@ -131,6 +133,7 @@ export const UnifiedList: React.FC = () => {
           ))}
           {topTags.map(tag => (
             <button
+              type="button"
               key={tag}
               onClick={() => toggleTag(tag)}
               className={cn('px-2.5 py-1 rounded-full text-[10px] border transition-colors shrink-0',
@@ -183,6 +186,7 @@ export const UnifiedList: React.FC = () => {
                 const empty = getEmptyStateContent();
                 return (
                   <button
+                    type="button"
                     onClick={() => setCurrentView(empty.actionView)}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors font-medium shadow-sm"
                   >

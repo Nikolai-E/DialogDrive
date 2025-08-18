@@ -1,7 +1,7 @@
 "use client"
 
-import * as React from "react"
 import { cn } from "@/lib/utils"
+import * as React from "react"
 
 // Simple inline Popover (no portals)
 
@@ -35,6 +35,7 @@ const PopoverTrigger = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttri
     const { open, setOpen, triggerRef } = usePopover()
     return (
       <button
+        type="button"
         ref={(node) => { (ref as any)?.(node); triggerRef.current = node }}
         className={className}
         aria-haspopup="dialog"
@@ -67,4 +68,5 @@ const PopoverContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTM
   }
 )
 
-export { Popover, PopoverTrigger, PopoverContent }
+export { Popover, PopoverContent, PopoverTrigger }
+

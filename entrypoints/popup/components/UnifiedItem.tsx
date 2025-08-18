@@ -6,6 +6,7 @@ import { Edit2, ExternalLink, FileText, MessageSquare, Pin, Trash2 } from 'lucid
 import { toast } from 'sonner';
 import { Button } from '../../../components/ui/button';
 import { ChatStorage } from '../../../lib/chatStorage';
+import { logger } from '../../../lib/logger';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { cn } from '../../../lib/utils';
 import type { ChatBookmark, WorkspaceItem } from '../../../types/chat';
@@ -53,7 +54,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
   } = useUnifiedStore();
 
   const handleCardClick = async () => {
-    console.log('Card clicked!', item.type);
+    logger.debug('Card clicked', item.type);
     
     if (item.type === 'prompt') {
       const prompt = item.data as Prompt;
@@ -66,14 +67,14 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
         }
         return txt;
       };
-      const finalText = buildText();
-      console.log('Copying text:', finalText);
+  const finalText = buildText();
+  logger.debug('Copying text (len)', finalText.length);
       try {
         await navigator.clipboard.writeText(finalText);
         toast.success('📋 Copied!');
         await incrementUsage(prompt.id);
       } catch (err) {
-        console.error('Copy failed:', err);
+  logger.error('Copy failed:', err);
         // Fallback method
         const textArea = document.createElement('textarea');
         textArea.value = finalText;

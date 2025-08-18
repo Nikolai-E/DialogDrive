@@ -2,7 +2,7 @@
   "name": "dialogdrive",
   "description": "DialogDrive - Your AI Project Workspaces Extension",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -13,7 +13,7 @@
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
     "postinstall": "wxt prepare",
-    "clean": "rm -rf node_modules .wxt dist build",
+  "clean": "rimraf node_modules .wxt dist build",
     "clean:files": "node -e \"require('fs').readdirSync('.').filter(f => f.startsWith('test-') && f.endsWith('.html')).forEach(f => require('fs').unlinkSync(f))\"",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "lint": "tsc --noEmit && echo 'TypeScript check passed'",
@@ -57,6 +57,7 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
-    "wxt": "^0.20.6"
+  "wxt": "^0.20.6",
+  "rimraf": "^6.0.1"
   }
 }

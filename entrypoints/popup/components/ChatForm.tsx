@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, ChevronDown, Link, Save, X } from 'lucide-react';
+import { ArrowLeft, Link, Save, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '../../../components/ui/badge';
@@ -8,6 +8,8 @@ import { Label } from '../../../components/ui/label';
 import { Switch } from '../../../components/ui/switch';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { AddChatBookmark } from '../../../types/chat';
+import TagSelect from './TagSelect';
+import WorkspaceSelect from './WorkspaceSelect';
 
 export const ChatForm: React.FC = () => {
   const { 
@@ -139,9 +141,7 @@ export const ChatForm: React.FC = () => {
       if (platformRef.current && !platformRef.current.contains(event.target as Node)) {
         setShowPlatformDropdown(false);
       }
-      if (workspaceRef.current && !workspaceRef.current.contains(event.target as Node)) {
-        setShowWorkspaceDropdown(false);
-      }
+  // workspace dropdown handled by Select internally
       if (tagDropdownRef.current && !tagDropdownRef.current.contains(event.target as Node)) {
         setShowTagDropdown(false);
       }
@@ -202,60 +202,36 @@ export const ChatForm: React.FC = () => {
           {/* Workspace (platform selection removed) */}
           <div className="space-y-1.5">
             <Label htmlFor="workspace" className="text-[12px] font-medium">Workspace</Label>
-            <div className="relative" ref={workspaceRef}>
-              <button
+            <WorkspaceSelect
+              value={formData.workspace}
+              onChange={(v) => setFormData(prev => ({ ...prev, workspace: v }))}
+              id="workspace"
+              className="shadow-sm h-8 text-[12px]"
+            />
+            <div className="flex mt-2 gap-1">
+              <Input
+                placeholder="New workspace name"
+                value={newWorkspace}
+                onChange={(e) => setNewWorkspace(e.target.value)}
+                className="h-8 text-[12px]"
+              />
+              <Button
                 type="button"
-                onClick={() => setShowWorkspaceDropdown(prev => !prev)}
-                className="w-full h-8 text-[12px] px-3 border border-border bg-background text-foreground rounded-md flex items-center justify-between hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              >
-                <span>{formData.workspace}</span>
-                <ChevronDown className="h-3 w-3 text-muted-foreground" />
-              </button>
-              {showWorkspaceDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-[9999] overflow-hidden">
-                  <div className="max-h-40 overflow-y-auto">
-                    {workspaces.map((workspace) => (
-                      <button
-                        key={workspace}
-                        type="button"
-                        onClick={() => handleWorkspaceSelect(workspace)}
-                        className="w-full h-8 text-left text-xs px-3 hover:bg-accent/10"
-                      >
-                        {workspace}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="p-2 border-t border-border bg-background/50 space-y-2">
-                    <input
-                      type="text"
-                      value={newWorkspace}
-                      onChange={(e) => setNewWorkspace(e.target.value)}
-                      placeholder="New workspace name"
-                      className="w-full h-7 px-2 text-[11px] border rounded"
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={!newWorkspace.trim()}
-                      className="w-full h-7 text-[11px]"
-                      onClick={() => {
-                        const ws = newWorkspace.trim();
-                        if (ws && !workspaces.includes(ws)) {
-                          // Add to store and select it
-                          // use store action
-                          (useUnifiedStore.getState().addWorkspace)(ws);
-                          handleWorkspaceSelect(ws);
-                        } else if (ws) {
-                          handleWorkspaceSelect(ws);
-                        }
-                        setNewWorkspace('');
-                        setShowWorkspaceDropdown(false);
-                      }}
-                    >Add Workspace</Button>
-                  </div>
-                </div>
-              )}
+                size="sm"
+                variant="outline"
+                disabled={!newWorkspace.trim()}
+                onClick={() => {
+                  const ws = newWorkspace.trim();
+                  if (ws && !workspaces.includes(ws)) {
+                    (useUnifiedStore.getState().addWorkspace)(ws);
+                    setFormData(prev => ({ ...prev, workspace: ws }));
+                  } else if (ws) {
+                    setFormData(prev => ({ ...prev, workspace: ws }));
+                  }
+                  setNewWorkspace('');
+                }}
+                className="h-8 text-xs"
+              >Add</Button>
             </div>
           </div>
 
@@ -263,52 +239,16 @@ export const ChatForm: React.FC = () => {
 
           {/* Tags */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between relative" ref={tagDropdownRef}>
-              <Label className="text-[12px] font-medium">Tags</Label>
-              {allTags.length > 0 && (
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowTagDropdown(v=>!v)} className="h-6 px-2 text-[10px]">
-                  Browse
-                  <ChevronDown className="h-3 w-3 ml-1" />
-                </Button>
-              )}
-              {showTagDropdown && (
-                <div className="absolute top-full right-0 mt-1 w-48 max-h-60 overflow-y-auto bg-popover border border-border rounded-md shadow-lg z-50 p-1">
-                  {allTags.length === 0 && (
-                    <div className="text-[11px] text-muted-foreground p-2">No tags</div>
-                  )}
-                  {allTags.map(tag => {
-                    const selected = (formData.tags||[]).includes(tag);
-                    return (
-                      <div key={tag} className="group flex items-center gap-1 px-2 h-7 text-[11px] rounded hover:bg-accent/10">
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, tags: selected ? (prev.tags||[]).filter(t=>t!==tag) : [...(prev.tags||[]), tag] }))}
-                          className="flex-1 text-left truncate"
-                        >
-                          <span className="inline-flex items-center gap-1">
-                            {selected && <Check className="h-3 w-3 text-green-600" />}{tag}
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          aria-label={`Delete tag ${tag}`}
-                          className="opacity-60 hover:opacity-100 text-red-600 p-0.5"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm(`Delete tag "${tag}" from all items?`)) {
-                              deleteTag(tag);
-                              setFormData(prev => ({ ...prev, tags: (prev.tags||[]).filter(t=>t!==tag) }));
-                            }
-                          }}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <Label className="text-[12px] font-medium">Tags</Label>
+            <TagSelect
+              allTags={allTags}
+              value={formData.tags || []}
+              onChange={(next) => setFormData(prev => ({ ...prev, tags: next }))}
+              onDeleteTag={(tag) => {
+                deleteTag(tag);
+                setFormData(prev => ({ ...prev, tags: (prev.tags||[]).filter(t=>t!==tag) }));
+              }}
+            />
             <div className="flex flex-wrap gap-1">
               {['chatgpt','gemini','claude','deepseek'].map(p => {
                 const active = (formData.tags || []).includes(p);

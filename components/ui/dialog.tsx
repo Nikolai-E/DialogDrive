@@ -1,5 +1,5 @@
-import * as React from "react"
 import { cn } from "@/lib/utils"
+import * as React from "react"
 
 // Simple inline Dialog implementation without portals
 // Keeps everything inside the popup DOM to avoid positioning glitches.
@@ -105,6 +105,7 @@ const DialogTrigger = React.forwardRef<
     const { setOpen } = useDialogCtx()
     return (
       <button
+        type="button"
         ref={ref}
         {...props}
         onClick={(e) => {
@@ -126,6 +127,7 @@ const DialogClose = React.forwardRef<
     const { setOpen } = useDialogCtx()
     return (
       <button
+        type="button"
         ref={ref}
         {...props}
         onClick={(e) => {
@@ -251,13 +253,6 @@ const DialogDescription = React.forwardRef<
 DialogDescription.displayName = "DialogDescription"
 
 export {
-  Dialog,
-  DialogOverlay,
-  DialogClose,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
+    Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogTitle, DialogTrigger
 }
+

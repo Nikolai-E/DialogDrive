@@ -149,6 +149,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
 
   const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ active, onClick, icon, label }) => (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
         'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium outline-none',
@@ -215,6 +216,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
             />
             {searchTerm && (
               <button
+                type="button"
                 aria-label="Clear search"
                 className="absolute right-6 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-muted/60 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 onClick={() => setSearchTerm('')}
@@ -229,6 +231,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
         <div className="flex items-center gap-1.5 flex-shrink-0" ref={dropdownRef}>
           {/* Create button with explicit light styling */}
           <button
+            type="button"
             ref={buttonRef}
             onClick={() => setShowDropdown((v) => !v)}
             className="h-7 px-2 rounded-md border border-border bg-background text-foreground hover:bg-accent/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background inline-flex items-center justify-center gap-1 transition-colors relative z-[1]"
@@ -240,6 +243,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
             <Plus className="h-4 w-4" />
           </button>
           <button
+            type="button"
             ref={filterButtonRef}
             onClick={() => setShowFilterPopover((v) => !v)}
             className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:bg-accent/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background inline-flex items-center justify-center border border-transparent"
@@ -252,6 +256,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
           </button>
           {/* Settings button with explicit light styling */}
           <button
+            type="button"
             onClick={onSettings}
             className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:bg-accent/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background inline-flex items-center justify-center border border-transparent"
             aria-label="Open settings"

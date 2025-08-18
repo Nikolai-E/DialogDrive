@@ -4,8 +4,8 @@
  * Uses TanStack Virtual for efficient DOM virtualization
  */
 
-import React from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import React from 'react';
 
 interface VirtualizedListProps<T> {
   items: T[];
@@ -67,10 +67,12 @@ export function VirtualizedList<T>({
 }
 
 // Specialized virtualized prompt list
+import type { Prompt } from '../types/prompt';
+
 interface VirtualizedPromptListProps {
-  prompts: any[];
-  onPromptSelect: (prompt: any) => void;
-  onPromptEdit: (prompt: any) => void;
+  prompts: Prompt[];
+  onPromptSelect: (prompt: Prompt) => void;
+  onPromptEdit: (prompt: Prompt) => void;
   onPromptDelete: (id: string) => void;
   className?: string;
   height?: number;
@@ -86,12 +88,12 @@ export function VirtualizedPromptList({
 }: VirtualizedPromptListProps) {
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
 
-  const handleSelect = (p: any) => {
+  const handleSelect = (p: Prompt) => {
     setSelectedId(p.id);
     onPromptSelect(p);
   };
 
-  const renderPromptItem = (prompt: any, index: number) => (
+  const renderPromptItem = (prompt: Prompt, index: number) => (
     <div 
       key={prompt.id}
       className="mx-3 my-2"
@@ -118,6 +120,7 @@ export function VirtualizedPromptList({
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <button
+            type="button"
             onClick={(e) => { e.stopPropagation(); onPromptEdit(prompt); }}
             className="text-gray-400 hover:text-gray-700 rounded-md px-2 py-1"
             aria-label="Edit"
@@ -125,6 +128,7 @@ export function VirtualizedPromptList({
             ✏️
           </button>
           <button
+            type="button"
             onClick={(e) => { e.stopPropagation(); onPromptDelete(prompt.id); }}
             className="text-gray-400 hover:text-red-600 rounded-md px-2 py-1"
             aria-label="Delete"

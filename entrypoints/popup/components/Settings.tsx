@@ -1,13 +1,12 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, ExternalLink, Info, Shield } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Folder, Info, Shield, Tag, Trash2 } from 'lucide-react';
 import React from 'react';
-import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import type { Prompt } from '../../../types/prompt';
 
 export const Settings: React.FC = () => {
-  const { setCurrentView, prompts } = useUnifiedStore();
+  const { setCurrentView, prompts, workspaces, allTags, deleteWorkspace, deleteTag } = useUnifiedStore();
 
   const stats = {
     totalPrompts: prompts.length,
@@ -60,25 +59,55 @@ export const Settings: React.FC = () => {
         </motion.div>
 
 
-        {/* About Section */}
+        {/* Manage Workspaces */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.3 }}
           className="space-y-3"
         >
-          <h3 className="text-sm font-semibold text-foreground">About DialogDrive</h3>
-          <div className="space-y-3 text-sm text-muted-foreground">
-            <p>Manage and paste AI prompts into ChatGPT, Claude, and Gemini with ease.</p>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="bg-secondary text-secondary-foreground border-0">v1.0.0</Badge>
-              <Badge variant="secondary" className="bg-secondary text-secondary-foreground border-0">WXT Framework</Badge>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">ChatGPT</span>
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700">Claude</span>
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">Gemini</span>
-            </div>
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Folder className="h-4 w-4"/> Manage Workspaces</h3>
+          <div className="space-y-2">
+            {workspaces.filter(w => w !== 'General').length === 0 ? (
+              <p className="text-xs text-muted-foreground">No custom workspaces yet.</p>
+            ) : (
+              <ul className="space-y-1">
+                {workspaces.filter(w => w !== 'General').map(ws => (
+                  <li key={ws} className="flex items-center justify-between text-sm bg-muted/30 rounded-md px-3 py-2">
+                    <span>{ws}</span>
+                    <Button variant="destructive" size="sm" className="h-7 px-2 text-[11px]" onClick={() => deleteWorkspace(ws)}>
+                      <Trash2 className="h-3.5 w-3.5 mr-1"/> Delete
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Manage Tags */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.35 }}
+          className="space-y-3"
+        >
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Tag className="h-4 w-4"/> Manage Tags</h3>
+          <div className="space-y-2">
+            {allTags.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No tags yet.</p>
+            ) : (
+              <ul className="grid grid-cols-2 gap-2">
+                {allTags.map(tag => (
+                  <li key={tag} className="flex items-center justify-between text-sm bg-muted/30 rounded-md px-3 py-2">
+                    <span>#{tag}</span>
+                    <Button variant="destructive" size="sm" className="h-7 px-2 text-[11px]" onClick={() => deleteTag(tag)}>
+                      <Trash2 className="h-3.5 w-3.5 mr-1"/> Delete
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </motion.div>
 

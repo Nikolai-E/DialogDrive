@@ -62,7 +62,7 @@ export const ERROR_MESSAGES = {
 // Feature flags
 export const FEATURE_FLAGS = {
   ENABLE_AI_IMPROVEMENTS: true,
-  ENABLE_VOICE_FEATURES: true,
-  ENABLE_CHAIN_EXECUTION: true,
+  ENABLE_VOICE_FEATURES: false,
+  ENABLE_CHAIN_EXECUTION: false,
   ENABLE_ANALYTICS: false,
 } as const;

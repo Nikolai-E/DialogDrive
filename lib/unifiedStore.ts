@@ -29,6 +29,7 @@ interface UnifiedState {
   searchTerm: string;
   sortBy: SortOption;
   filterTag: string;
+  selectedTags: string[]; // New: multi-tag selection (OR)
   showPinned: boolean;
   contentFilter: ContentFilter; // New: filter by content type
   selectedWorkspace: string; // New: workspace filter
@@ -69,6 +70,7 @@ interface UnifiedState {
   setSearchTerm: (term: string) => void;
   setSortBy: (sortBy: SortOption) => void;
   setFilterTag: (tag: string) => void;
+  setSelectedTags: (tags: string[]) => void; // New
   setShowPinned: (show: boolean) => void;
   setContentFilter: (filter: ContentFilter) => void; // New
   setSelectedWorkspace: (workspace: string) => void; // New
@@ -122,6 +124,7 @@ const getFilteredAndSortedItems = (
   searchTerm: string,
   sortBy: SortOption,
   filterTag: string,
+  selectedTags: string[],
   showPinned: boolean,
   contentFilter: ContentFilter,
   selectedWorkspace: string
@@ -143,8 +146,13 @@ const getFilteredAndSortedItems = (
     items = items.filter(item => item.isPinned);
   }
   
-  if (filterTag !== 'all') {
-    items = items.filter(item => item.tags?.includes(filterTag));
+  // Tag filtering: if multi selectedTags provided, OR-match; otherwise fallback to single filterTag
+  const effectiveTags = selectedTags && selectedTags.length > 0
+    ? selectedTags
+    : (filterTag !== 'all' ? [filterTag] : []);
+  if (effectiveTags.length > 0) {
+    // AND semantics: require all selected tags to be present on the item
+    items = items.filter(item => effectiveTags.every(t => item.tags?.includes(t)));
   }
   
   if (selectedWorkspace !== 'all') {
@@ -191,6 +199,7 @@ const getFilteredAndSortedPrompts = (
   searchTerm: string,
   sortBy: SortOption,
   filterTag: string,
+  selectedTags: string[],
   showPinned: boolean
 ): Prompt[] => {
   let result = prompts;
@@ -198,8 +207,12 @@ const getFilteredAndSortedPrompts = (
   if (showPinned) {
     result = result.filter(p => p.isPinned);
   }
-  if (filterTag !== 'all') {
-    result = result.filter(p => p.tags?.includes(filterTag));
+  const effectiveTags = selectedTags && selectedTags.length > 0
+    ? selectedTags
+    : (filterTag !== 'all' ? [filterTag] : []);
+  if (effectiveTags.length > 0) {
+    // AND semantics: require all selected tags to be present on the prompt
+    result = result.filter(p => effectiveTags.every(t => p.tags?.includes(t)));
   }
   if (searchTerm) {
     const lowercasedTerm = searchTerm.toLowerCase();
@@ -267,6 +280,7 @@ const updateAndFilterState = (state: UnifiedState) => {
     state.searchTerm,
     state.sortBy,
     state.filterTag,
+  state.selectedTags,
     state.showPinned,
     state.contentFilter,
     state.selectedWorkspace
@@ -277,7 +291,8 @@ const updateAndFilterState = (state: UnifiedState) => {
     state.prompts,
     state.searchTerm,
     state.sortBy,
-    state.filterTag,
+  state.filterTag,
+  state.selectedTags,
     state.showPinned
   );
   
@@ -303,6 +318,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   searchTerm: '',
   sortBy: 'recent',
   filterTag: 'all',
+  selectedTags: [],
   showPinned: false,
   contentFilter: 'all',
   selectedWorkspace: 'all',
@@ -596,6 +612,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   setSearchTerm: (term) => set(state => updateAndFilterState({ ...state, searchTerm: term })),
   setSortBy: (sortBy) => set(state => updateAndFilterState({ ...state, sortBy })),
   setFilterTag: (tag) => set(state => updateAndFilterState({ ...state, filterTag: tag })),
+  setSelectedTags: (tags) => set(state => updateAndFilterState({ ...state, selectedTags: tags })),
   setShowPinned: (show) => set(state => updateAndFilterState({ ...state, showPinned: show })),
   setContentFilter: (filter) => set(state => updateAndFilterState({ ...state, contentFilter: filter })),
   setSelectedWorkspace: (workspace) => set(state => updateAndFilterState({ ...state, selectedWorkspace: workspace })),
@@ -604,6 +621,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
     ...state, 
     searchTerm: '', 
     filterTag: 'all', 
+  selectedTags: [],
     showPinned: false,
     contentFilter: 'all',
     selectedWorkspace: 'all'

@@ -1,5 +1,5 @@
-import * as React from 'react';
 import { cn } from '@/lib/utils';
+import * as React from 'react';
 
 export const InlinePopoverContext = React.createContext<{
   open: boolean;
@@ -36,7 +36,7 @@ export const PopoverTrigger = React.forwardRef<HTMLButtonElement, React.ButtonHT
     else if (ref && 'current' in (ref as any)) (ref as any).current = node;
   };
   return (
-    <button ref={setRefs} {...props} onClick={(e) => { onClick?.(e); setOpen(true); }} />
+    <button type="button" ref={setRefs} {...props} onClick={(e) => { onClick?.(e); setOpen(true); }} />
   );
 });
 

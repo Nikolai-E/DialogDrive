@@ -1,6 +1,6 @@
-import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { InlinePopover, PopoverTrigger, PopoverContent } from './InlinePopover';
+import * as React from 'react';
+import { InlinePopover, PopoverContent, PopoverTrigger } from './InlinePopover';
 
 export type Option = { value: string; label: string };
 
@@ -15,7 +15,7 @@ export const InlineSelect: React.FC<{
   const selected = options.find(o => o.value === value);
   return (
     <InlinePopover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className={cn('w-full rounded border bg-background px-2 py-1 text-left', className)}>
+  <PopoverTrigger type="button" className={cn('w-full rounded border bg-background px-2 py-1 text-left', className)}>
         {selected ? selected.label : <span className="text-muted-foreground">{placeholder}</span>}
       </PopoverTrigger>
       <PopoverContent className="max-h-56 w-full overflow-auto">
@@ -23,6 +23,7 @@ export const InlineSelect: React.FC<{
           {options.map(opt => (
             <li key={opt.value}>
               <button
+                type="button"
                 role="option"
                 aria-selected={opt.value === value}
                 className={cn('w-full px-2 py-1 text-left hover:bg-accent', opt.value === value && 'bg-accent')}
