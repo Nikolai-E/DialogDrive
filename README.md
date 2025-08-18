@@ -15,10 +15,11 @@ DialogDrive helps you capture, organize, search, and reuse AI prompts and chat b
 * Side panel & popup UI (space‑efficient, virtualized lists)
 * 100% local storage – no cloud, no tracking, no analytics
 
+
 <table>
   <tr>
     <td align="center" width="50%">
-      <img alt="image" src="https://github.com/user-attachments/assets/ff87a19a-a69d-4dc4-a9c0-ffbc52003a2f" width="100%" />
+      <img width="683" height="957" alt="image" src="https://github.com/user-attachments/assets/31906a60-a3bb-47a7-b68d-e7d00d53dba6" />
     </td>
     <td align="center" width="50%">
       <img alt="image" src="https://github.com/user-attachments/assets/ada94d43-6239-4c78-9551-bd56fa721d05" width="100%" />
