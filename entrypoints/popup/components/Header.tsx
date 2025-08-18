@@ -193,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
       <div className="px-2 py-1.5 flex items-center">
         <div className="flex items-center gap-2">
           <img
-            src="/icon/icon_32.png"
+            src="/icon/icon-32.png"
             alt="DialogDrive Icon"
             className="w-5 h-5 rounded-md shadow-sm ring-1 ring-border object-contain bg-background"
             draggable={false}

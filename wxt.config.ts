@@ -10,7 +10,7 @@ export default defineConfig({
   manifest: {
     name: 'DialogDrive',
     description: 'Your AI Project Workspaces Extension',
-    version: '1.0.0',
+  version: '1.0.1',
     permissions: [
       // Data persistence
       'storage',
@@ -63,15 +63,27 @@ export default defineConfig({
     side_panel: {
       default_path: 'sidepanel/index.html'
     },
-    // Updated to use icon_* assets (consistent blue D artwork)
+    // Ensure the toolbar/action icon uses our branded assets
+  action: {
+      default_title: 'DialogDrive',
+      default_popup: 'popup.html',
+      default_icon: {
+    16: 'icon/icon-16.png',
+    19: 'icon/icon-19.png',
+    32: 'icon/icon-32.png',
+    38: 'icon/icon-38.png'
+      }
+    },
+  // Use provided dd-icons PNGs for all manifest icons
     icons: {
-      16: 'icon/icon_16.png',
-      19: 'icon/icon_19.png', // toolbar @2x for some browsers  
-      32: 'icon/icon_32.png',
-      38: 'icon/icon_38.png', // toolbar @2x for some browsers
-      48: 'icon/icon_48.png',
-      128: 'icon/icon_128.png',
-      256: 'icon/icon_256.png'
+    16: 'icon/icon-16.png',
+    19: 'icon/icon-19.png',
+    32: 'icon/icon-32.png',
+    38: 'icon/icon-38.png',
+    48: 'icon/icon-48.png',
+    96: 'icon/icon_96.png',
+    128: 'icon/icon-128.png',
+    256: 'icon/icon-256.png'
     }
   },
 });
