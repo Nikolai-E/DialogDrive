@@ -3,13 +3,13 @@
 DialogDrive helps you capture, organize, search, and reuse AI prompts and chat bookmarks across leading AI chat platforms (ChatGPT, Claude, Gemini) directly from a compact, fast browser extension interface.
 
 ## Key Features
-- 🔍 Unified prompt & chat bookmark library (workspaces, tags, pinning)
-- ⚡ Instant search, filtering, sorting (recent, usage, alphabetical, pinned)
-- 📌 One‑click or shortcut capture of current chat context
-- ⌨️ Global commands & configurable keyboard shortcuts
-- 📋 Smart paste of most recent prompt (with usage tracking)
-- 🧩 Side panel & popup UI (space‑efficient, virtualized lists)
-- 🔒 100% local storage – no cloud, no tracking, no analytics
+- Unified prompt & chat bookmark library (workspaces, tags, pinning)
+- Instant search, filtering, sorting (recent, usage, alphabetical, pinned)
+- One‑click or shortcut capture of current chat context
+- Global commands & configurable keyboard shortcuts
+- Smart paste of most recent prompt (with usage tracking)
+- Side panel & popup UI (space‑efficient, virtualized lists)
+- 100% local storage – no cloud, no tracking, no analytics
 
 ## Privacy & Data
 All data (prompts, bookmarks, settings, usage counts) is stored locally using browser extension storage. No external servers or analytics are contacted. See `PRIVACY_POLICY.md` for details.
