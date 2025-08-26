@@ -21,6 +21,7 @@ declare global {
     tabs: {
       query: (queryInfo: { active?: boolean; currentWindow?: boolean }) => Promise<{ id?: number; url?: string }[]>;
       sendMessage: (tabId: number, message: any) => Promise<any>;
+      create?: (createProperties: { url: string }) => Promise<{ id?: number }>;
     };
     runtime: {
       sendMessage: (message: any) => Promise<any>;

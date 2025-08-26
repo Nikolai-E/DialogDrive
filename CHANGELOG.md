@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.2] - 2025-08-25
+### Added
+- Text Cleaner: "Show invisibles" toggle with legend (· ⍽ → ⏎) in diff preview.
+- Text Cleaner: AI phrase blacklist input (supports comma-separated strings and /regex/).
+- Text Cleaner: Optional "Smooth" discourse style pass for rote lead-ins.
+- Rule count chips surfaced in Cleaner panel.
+
+### Improved
+- Accessibility: aria-labels for icon-only buttons; search inputs labeled; proper aria-expanded/controls on menu triggers.
+- Dialogs: role=dialog with aria-labelledby/aria-describedby; focus trap and Escape close; restores focus to trigger.
+- Floating UI (content script): centralized listener management via AbortController, outside-click using composedPath, scoped to shadow DOM, focus trap in modal, teardown on SPA navigations.
+
+### Changed
+- Expanded AI-marker patterns (conservative and aggressive modes) for better disclaimer and template removal.
+
 ## [1.0.0] - 2025-08-08
 ### Added
 - Initial public release candidate of DialogDrive.
@@ -22,3 +37,4 @@ All notable changes to this project will be documented in this file.
 - Removed redundant background scripts.
 
 [1.0.0]: https://github.com/Nikolai-E/DialogDrive/releases/tag/v1.0.0
+[1.0.2]: https://github.com/Nikolai-E/DialogDrive/releases/tag/v1.0.2

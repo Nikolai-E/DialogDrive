@@ -4,10 +4,10 @@
 DialogDrive – AI Prompt & Chat Workspace
 
 ## Short Description (<=132 chars)
-Capture, organize, search, and paste AI prompts & chat bookmarks for ChatGPT, Claude, and Gemini. 100% local. No tracking.
+Capture, organize, search, and paste AI prompts & chat bookmarks for ChatGPT. 100% local. No tracking.
 
 ## Long Description
-DialogDrive is a focused productivity extension that centralizes your AI prompt workflow and chat session bookmarks across major AI platforms (ChatGPT, Claude, Gemini). Stop hunting through scattered notes—capture, organize, and reuse everything instantly.
+DialogDrive is a focused productivity extension that centralizes your AI prompt workflow and chat session bookmarks for ChatGPT. Stop hunting through scattered notes—capture, organize, and reuse everything instantly.
 
 ### Key Features
 - Unified library for prompts & chat bookmarks
@@ -34,7 +34,7 @@ All data (prompts, bookmarks, usage counts, settings) stays on your device. No c
 - contextMenus: Right-click capture & paste
 - notifications: Confirm save actions
 - sidePanel: Persistent workspace view
-- Specific host permissions: ChatGPT, Claude, Gemini only
+- Specific host permissions: ChatGPT only
 
 ### Why DialogDrive?
 - Minimal, fast, unobtrusive

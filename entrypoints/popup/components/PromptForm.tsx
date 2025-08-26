@@ -180,7 +180,13 @@ export const PromptForm: React.FC = () => {
         transition={{ duration: 0.15 }}
         className="flex items-center p-2 border-b bg-background/80 backdrop-blur-sm"
       >
-        <Button variant="ghost" size="icon" className="h-7 w-7 mr-1.5" onClick={handleClose}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 mr-1.5"
+          onClick={handleClose}
+          aria-label="Back"
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h2 className="text-sm font-semibold">

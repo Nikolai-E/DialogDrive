@@ -2,7 +2,6 @@
 export const STORAGE_KEYS = {
   PROMPTS: 'dialogdrive-prompts',
   CHATS: 'dialogdrive-chats',
-  API_KEY: 'dialogdrive-api-key',
   SETTINGS: 'dialogdrive-settings',
 } as const;
 

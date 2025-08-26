@@ -20,17 +20,22 @@ const commandHandlers = {
           new Date(a.lastUsed || a.created).getTime()
         )[0];
 
-      // Send to active tab
-      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-      if (tabs[0]?.id) {
-        await browser.tabs.sendMessage(tabs[0].id, {
-          type: 'PASTE_PROMPT',
-          text: latestPrompt.text
-        });
+      // Try send to active tab; fallback to clipboard
+      try {
+        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        if (tabs[0]?.id) {
+          await browser.tabs.sendMessage(tabs[0].id, {
+            type: 'PASTE_PROMPT',
+            text: latestPrompt.text
+          });
+          await promptStorage.incrementUsage(latestPrompt.id);
+          return;
+        }
+      } catch (_) {}
 
-        // Increment usage
-        await promptStorage.incrementUsage(latestPrompt.id);
-      }
+      // Fallback: copy to clipboard
+      await navigator.clipboard.writeText(latestPrompt.text);
+      await promptStorage.incrementUsage(latestPrompt.id);
     } catch (error) {
       logger.error('Failed to paste latest prompt:', error);
     }
@@ -40,9 +45,29 @@ const commandHandlers = {
     try {
       const tabs = await browser.tabs.query({ active: true, currentWindow: true });
       if (tabs[0]?.id) {
-        await browser.tabs.sendMessage(tabs[0].id, {
+        const response = await browser.tabs.sendMessage(tabs[0].id, {
           type: 'CAPTURE_CHAT'
         });
+
+        if (response?.success && response.url && response.title) {
+          // Forward to background to persist as bookmark
+          await browser.runtime.sendMessage({
+            type: 'SAVE_CHAT_BOOKMARK',
+            data: {
+              title: response.title,
+              url: response.url,
+              platform: (response.platform || (response.url.includes('chatgpt') ? 'chatgpt' : 'chatgpt')),
+              workspace: 'General',
+              tags: [],
+              scrapedContent: {
+                summary: response.title,
+                messageCount: response.messageCount || 0,
+                lastMessage: response.lastMessage || '',
+                scrapedAt: new Date().toISOString()
+              }
+            }
+          });
+        }
       }
     } catch (error) {
       logger.error('Failed to save current chat:', error);
@@ -95,8 +120,7 @@ const contextMenuItems = [
     contexts: ['editable'],
     documentUrlPatterns: [
       '*://chatgpt.com/*',
-      '*://claude.ai/*',
-      '*://gemini.google.com/*'
+      '*://chat.openai.com/*'
     ]
   },
   {
@@ -105,8 +129,7 @@ const contextMenuItems = [
     contexts: ['page'],
     documentUrlPatterns: [
       '*://chatgpt.com/*',
-      '*://claude.ai/*',
-      '*://gemini.google.com/*'
+      '*://chat.openai.com/*'
     ]
   },
   {
@@ -214,13 +237,27 @@ async function handleSaveChatBookmark(tab?: any) {
   if (!tab?.id || !tab.url) return;
 
   try {
-    // Send message to content script to capture chat data
-    const response = await browser.tabs.sendMessage(tab.id, {
-      type: 'CAPTURE_CHAT_BOOKMARK'
-    });
+    // Capture from content script
+    const response = await browser.tabs.sendMessage(tab.id, { type: 'CAPTURE_CHAT' });
 
-    if (response?.success) {
-      // Show notification
+    if (response?.success && response.url && response.title) {
+      await browser.runtime.sendMessage({
+        type: 'SAVE_CHAT_BOOKMARK',
+        data: {
+          title: response.title,
+          url: response.url,
+          platform: (response.platform || (response.url.includes('chatgpt') ? 'chatgpt' : 'chatgpt')),
+          workspace: 'General',
+          tags: [],
+          scrapedContent: {
+            summary: response.title,
+            messageCount: response.messageCount || 0,
+            lastMessage: response.lastMessage || '',
+            scrapedAt: new Date().toISOString()
+          }
+        }
+      });
+
       if (browser.notifications) {
         browser.notifications.create({
           type: 'basic',
@@ -236,27 +273,7 @@ async function handleSaveChatBookmark(tab?: any) {
 }
 
 // Global shortcut detection for content scripts
-export function initializeGlobalShortcuts() {
-  document.addEventListener('keydown', (event) => {
-    // Ctrl/Cmd + Shift + P - Paste latest prompt
-    if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'P') {
-      event.preventDefault();
-      browser.runtime.sendMessage({ type: 'PASTE_LATEST_PROMPT' });
-    }
-
-    // Ctrl/Cmd + Shift + B - Save current chat
-    if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'B') {
-      event.preventDefault();
-      browser.runtime.sendMessage({ type: 'SAVE_CURRENT_CHAT' });
-    }
-
-    // Ctrl/Cmd + Shift + D - Open DialogDrive
-    if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'D') {
-      event.preventDefault();
-      browser.runtime.sendMessage({ type: 'OPEN_DIALOGDRIVE' });
-    }
-  });
-}
+// Removed unused initializeGlobalShortcuts (content-level)
 
 // Enhanced clipboard operations
 export class ClipboardManager {

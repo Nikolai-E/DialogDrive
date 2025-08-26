@@ -29,7 +29,6 @@
 
 - [ ] **Task 3.2**: Create Settings Component
   - Extract settings panel from App.tsx
-  - Handle API key management
   - Add better validation and feedback
 
 - [ ] **Task 3.3**: Add Keyboard Shortcuts
@@ -39,9 +38,7 @@
 
 ### Phase 4: Background Script Enhancement
 - [ ] **Task 4.1**: Improve Background Script
-  - Add rate limiting for OpenAI API
   - Better error handling and logging
-  - Add request queuing
 
 - [ ] **Task 4.2**: Update Content Script
   - More robust site detection

@@ -1,6 +1,7 @@
 import type { AddChatBookmark, ChatBookmark } from '../types/chat';
 import { mapBrowserError } from './errors';
 import { logger } from './logger';
+import { AddChatBookmarkSchema } from './schemas';
 import { secureStorage } from './secureStorageV2';
 
 export class ChatStorage {
@@ -54,10 +55,16 @@ export class ChatStorage {
 
   async add(chatData: AddChatBookmark): Promise<ChatBookmark> {
     const chats = await this.getFromStorage();
+    // Validate incoming data; coerce defaults where provided
+    const parsed = AddChatBookmarkSchema.safeParse(chatData);
+    if (!parsed.success) {
+      throw new Error(`Invalid chat bookmark: ${parsed.error.message}`);
+    }
+    const safe = parsed.data;
     
     const newChat: ChatBookmark = {
-      ...chatData,
-  isPinned: chatData.isPinned ?? false,
+      ...safe,
+      isPinned: safe.isPinned ?? false,
       id: typeof crypto !== 'undefined' && crypto.randomUUID
         ? `chat_${crypto.randomUUID()}`
         : `chat_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,

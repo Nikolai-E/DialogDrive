@@ -10,6 +10,7 @@ export interface CaptureResult {
   success: boolean;
   title?: string;
   url?: string;
+  platform?: string;
   messageCount?: number;
   lastMessage?: string;
   error?: string;

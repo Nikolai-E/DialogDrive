@@ -29,7 +29,6 @@ graph TD
     end
 
     subgraph "External Services"
-        O[OpenAI API (gpt-4o)]
     end
 
     subgraph "Data Storage"
@@ -48,11 +47,11 @@ graph TD
 ### Architectural Components:
 
 *   **UI (Popup)**: A React application that serves as the main user interface. It manages its own state using Zustand and communicates with the background script for any operations requiring persistent state or access to browser APIs.
-*   **Background Script**: The central hub of the extension. It manages the prompt library stored in `browser.storage`, handles communication between the popup and content scripts, and processes any long-running tasks, such as API calls to OpenAI.
+*   **Background Script**: The central hub of the extension. It manages the prompt library stored in `browser.storage` and handles communication between the popup and content scripts. No external API calls are performed.
 *   **Content Script**: Injected into supported websites (ChatGPT, Claude, Gemini). Its sole responsibility is to interact with the page's DOM, primarily to paste prompts into text boxes. It is designed to be lightweight to minimize performance impact on the host page.
 *   **Browser Storage**:
     *   `storage.local`: Used for storing the user's prompt library. This is the default, local-first approach.
-    *   `storage.sync`: Used for storing the user's OpenAI API key, allowing it to be synced across devices if the user is logged into their browser profile.
+    *   `storage.sync`: Used for lightweight preferences (no API keys).
 
 ## 2. Requirements (EARS Format)
 
@@ -67,9 +66,7 @@ This section lists the functional and non-functional requirements for Phase 1 of
 | F1.3| **The user shall be able to** delete a prompt from the prompt library.                                                                   |
 | F2.1| **While** on a supported site (e.g., chat.openai.com), **the user shall be able to** click a button to paste a selected prompt into the active textbox. |
 | F2.2| **If** the active site is not a supported site, **the system shall** provide a fallback mechanism to copy the prompt to the clipboard.     |
-| F3.1| **The user shall be able to** click an "Improve this prompt" button for a given prompt.                                                  |
-| F3.2| **When** the "Improve this prompt" button is clicked, **the system shall** send the prompt to the OpenAI API (gpt-4o model).             |
-| F3.3| **The system shall** display the improved prompt received from the OpenAI API to the user.                                             |
+| F3.1| (Removed) AI prompt improvement via external APIs is out of scope for this release. |
 | F4.1| **The user shall be able to** enable or disable a "timestamp" transformation for each prompt via a UI toggle.                            |
 | F4.2| **The user shall be able to** enable or disable a "voice tag" transformation for each prompt via a UI toggle.                            |
 
@@ -85,4 +82,4 @@ This section lists the functional and non-functional requirements for Phase 1 of
 | R4.1| **The system shall** define and enforce a strict Content Security Policy (CSP) to mitigate cross-site scripting attacks.                 |
 | R4.2| **The system shall** sanitize all data before it is injected into the DOM.                                                               |
 | R4.3| **The system shall not** use insecure functions like `eval()` or `element.innerHTML`.                                                    |
-| R5.1| **The system shall** only access the OpenAI API key from `chrome.storage.sync` when the user has explicitly opted-in.                    |
+| R5.1| (Removed) No API keys are collected or stored. |

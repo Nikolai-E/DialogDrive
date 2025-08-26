@@ -52,6 +52,7 @@ export class ChatGPTAdapter extends BasePlatformAdapter {
       
       return {
         success: true,
+        platform: 'chatgpt',
         title,
         url: window.location.href,
         messageCount: messages.length,

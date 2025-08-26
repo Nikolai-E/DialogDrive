@@ -1,5 +1,5 @@
 // Store and component state types
-export type ViewType = 'list' | 'form' | 'chat-form' | 'settings';
+export type ViewType = 'list' | 'form' | 'chat-form' | 'settings' | 'cleaner';
 export type TabType = 'all' | 'prompts' | 'chats';
 export type SortOption = 'recent' | 'usage' | 'alphabetical' | 'pinned';
 

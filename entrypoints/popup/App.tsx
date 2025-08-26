@@ -1,8 +1,12 @@
-import React, { useEffect, Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
+import { Toaster } from 'sonner';
+import { logger } from '../../lib/logger';
 import { useUnifiedStore } from '../../lib/unifiedStore';
+import './App.css';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Header } from './components/Header';
 import { UnifiedList } from './components/UnifiedList';
+import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 // Lazy-loaded heavy views
 const PromptForm = React.lazy(async () => {
   const { PromptForm } = await import('./components/PromptForm');
@@ -16,10 +20,10 @@ const Settings = React.lazy(async () => {
   const { Settings } = await import('./components/Settings');
   return { default: Settings };
 });
-import { Toaster } from 'sonner';
-import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
-import { logger } from '../../lib/logger';
-import './App.css';
+const TextCleanerPanel = React.lazy(async () => {
+  const mod = await import('./components/TextCleanerPanel');
+  return { default: mod.TextCleanerPanel };
+});
 
 const App: React.FC = () => {
   const { 
@@ -48,6 +52,9 @@ const App: React.FC = () => {
   const handleShowSettings = () => {
     setCurrentView('settings');
   };
+  const handleOpenCleaner = () => {
+    setCurrentView('cleaner');
+  };
 
   return (
     <ErrorBoundary>
@@ -57,6 +64,7 @@ const App: React.FC = () => {
           onNewPrompt={handleNewPrompt} 
           onNewChat={handleNewChat}
           onSettings={handleShowSettings} 
+          onOpenCleaner={handleOpenCleaner}
         />
         {/* Single scroll container; prevent nested scrolling */}
         <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent px-2.5 py-2">
@@ -65,6 +73,7 @@ const App: React.FC = () => {
             {currentView === 'form' && <PromptForm />}
             {currentView === 'chat-form' && <ChatForm />}
             {currentView === 'settings' && <Settings />}
+            {currentView === 'cleaner' && <TextCleanerPanel />}
           </Suspense>
         </div>
         {/* Toasts */}

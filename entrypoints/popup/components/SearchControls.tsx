@@ -55,6 +55,7 @@ export const SearchControls: React.FC = () => {
             placeholder="Search prompts... (Ctrl+F)"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Search prompts"
             className="pl-9 pr-9 h-9 bg-white border-gray-200 rounded-md text-sm placeholder:text-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
           />
           {searchTerm && (
@@ -62,6 +63,7 @@ export const SearchControls: React.FC = () => {
               variant="ghost"
               size="icon"
               onClick={() => setSearchTerm('')}
+              aria-label="Clear search"
               className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 w-7 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600"
             >
               <X className="h-4 w-4" />

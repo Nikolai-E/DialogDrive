@@ -2,6 +2,7 @@
 
 import { chatStorage } from '../lib/chatStorage';
 import { logger } from '../lib/logger';
+import { BgMessageSchema, SaveBookmarkMsgSchema, SaveChatBookmarkMsgSchema } from '../lib/schemas';
 import { initializeContextMenu, initializeKeyboardShortcuts } from '../lib/shortcuts';
 import { initializeStorage, promptStorage } from '../lib/storage';
 
@@ -88,10 +89,19 @@ export default defineBackground(() => {
 
   // Message routing
   browser.runtime.onMessage.addListener((message: BgMessage, _sender, sendResponse) => {
-    if (message.type === 'SAVE_BOOKMARK') {
+    // Validate message shape at runtime; log and reject early on failure
+    const parsed = BgMessageSchema.safeParse(message as unknown);
+    if (!parsed.success) {
+      logger.warn('Rejected invalid background message', parsed.error.flatten());
+      return false;
+    }
+    const msg = parsed.data;
+
+    if (msg.type === 'SAVE_BOOKMARK') {
       (async () => {
         try {
-          const data = message.data ?? ({} as SaveBookmarkMsg['data']);
+          // Narrow and coerce via schema
+          const { data } = SaveBookmarkMsgSchema.parse({ type: 'SAVE_BOOKMARK', data: msg.data } as any);
           const newBookmark = await chatStorage.add({
             title: data.title,
             url: data.url,
@@ -111,12 +121,11 @@ export default defineBackground(() => {
       return true;
     }
 
-    if (message.type === 'SAVE_CHAT_BOOKMARK') {
+    if (msg.type === 'SAVE_CHAT_BOOKMARK') {
       (async () => {
         try {
           logger.debug('Saving chat bookmark from floating button');
-
-          const chatData = message.data;
+          const { data: chatData } = SaveChatBookmarkMsgSchema.parse(msg as any);
           const newBookmark = await chatStorage.add({
             title: chatData.title,
             url: chatData.url,

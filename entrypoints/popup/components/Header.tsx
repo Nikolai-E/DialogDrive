@@ -12,10 +12,11 @@ interface HeaderProps {
   onNewPrompt: () => void;
   onNewChat: () => void;
   onSettings: () => void;
+  onOpenCleaner?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettings }) => {
-  const { searchTerm, setSearchTerm, contentFilter, setContentFilter } = useUnifiedStore();
+export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettings, onOpenCleaner }) => {
+  const { searchTerm, setSearchTerm, contentFilter, setContentFilter, currentView } = useUnifiedStore();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showFilterPopover, setShowFilterPopover] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -269,10 +270,11 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
       {/* Segmented Tabs */}
       <div className="px-2 pb-2 pt-0">
         <div className="relative w-full">
-          <div role="tablist" aria-label="Views" className="grid grid-cols-3 gap-1 p-1 rounded-md bg-muted/40 border border-border">
+          <div role="tablist" aria-label="Views" className="grid grid-cols-4 gap-1 p-1 rounded-md bg-muted/40 border border-border">
             <TabButton active={contentFilter === 'all'} onClick={() => setContentFilter('all')} icon={<LayoutGrid className="h-3.5 w-3.5" />} label="All" />
             <TabButton active={contentFilter === 'prompts'} onClick={() => setContentFilter('prompts')} icon={<List className="h-3.5 w-3.5" />} label="Prompts" />
             <TabButton active={contentFilter === 'chats'} onClick={() => setContentFilter('chats')} icon={<MessageSquare className="h-3.5 w-3.5" />} label="Chats" />
+            <TabButton active={currentView === 'cleaner'} onClick={() => onOpenCleaner && onOpenCleaner()} icon={<MessageSquareText className="h-3.5 w-3.5" />} label="Cleaner" />
           </div>
         </div>
       </div>

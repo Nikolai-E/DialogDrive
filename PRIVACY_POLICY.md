@@ -4,7 +4,7 @@
 
 ## Overview
 
-DialogDrive is a browser extension that helps you manage and organize AI prompts for use with ChatGPT, Claude, and Gemini. We are committed to protecting your privacy and being transparent about how we handle your data.
+DialogDrive is a browser extension that helps you manage and organize AI prompts for use with ChatGPT. We are committed to protecting your privacy and being transparent about how we handle your data.
 
 ## Data Collection and Storage
 
@@ -24,7 +24,7 @@ DialogDrive is a browser extension that helps you manage and organize AI prompts
 
 ### Local Storage Only
 - All your data is stored locally on your device using Chrome's extension storage
-- **API Keys**: Encrypted and stored temporarily in memory (not synced across devices)
+- **No API Keys Stored**: DialogDrive does not collect, store, or transmit any API keys
 - **Prompts and Bookmarks**: Stored in local browser storage (up to 5MB)
 - **Preferences**: Lightweight settings synced across your signed-in browsers (up to 100KB)
 
@@ -52,22 +52,18 @@ DialogDrive is a browser extension that helps you manage and organize AI prompts
 - **sidePanel**: Offer persistent workspace panel
 
 ### Limited Host Permissions
-- **chatgpt.com, claude.ai, gemini.google.com**: Only to enable prompt pasting and chat capture
+- **chatgpt.com**: Only to enable prompt pasting and chat capture
 - We do not access or inject into any other domains
 
 ## Data Security
 
 ### Security Measures
-- **Encryption**: API keys are encrypted using browser-native crypto APIs
 - **Minimal Permissions**: We request only the minimum permissions necessary
 - **No Network Storage**: Data remains on your device
 - **Input Validation**: All user input is validated and sanitized
 
 ### API Key Security
-- API keys are encrypted before storage
-- Keys are stored in memory only (not synced)
-- Keys are never transmitted to our servers
-- You can remove keys at any time through settings
+Not applicable. DialogDrive does not collect or store API keys.
 
 ## Your Rights and Controls
 

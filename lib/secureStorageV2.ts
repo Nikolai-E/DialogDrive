@@ -17,7 +17,6 @@ const STORAGE_KEYS = {
   PROMPTS: 'dd_prompts',
   CHATS: 'dd_chats',
   PREFERENCES: 'dd_prefs',
-  API_KEY: 'dd_api_key',
 } as const;
 
 export interface StorageAdapter {
@@ -100,22 +99,6 @@ export class SecureStorageV2 {
 
   async setPreferences<T>(preferences: T): Promise<void> {
     return this.sync.set(STORAGE_KEYS.PREFERENCES, preferences);
-  }
-
-  // API Key - stored in sync storage with browser's built-in protection
-  async getApiKey(): Promise<string | undefined> {
-    return this.sync.get<string>(STORAGE_KEYS.API_KEY);
-  }
-
-  async setApiKey(apiKey: string): Promise<void> {
-    if (!apiKey.startsWith('sk-')) {
-      throw new Error('Invalid API key format');
-    }
-    return this.sync.set(STORAGE_KEYS.API_KEY, apiKey);
-  }
-
-  async removeApiKey(): Promise<void> {
-    return this.sync.remove(STORAGE_KEYS.API_KEY);
   }
 
   // Storage info

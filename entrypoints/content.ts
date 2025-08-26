@@ -4,9 +4,7 @@ import { platformManager } from '../lib/platforms/manager';
 export default defineContentScript({
   matches: [
     '*://chatgpt.com/*',
-    '*://chat.openai.com/*',
-    '*://claude.ai/*',
-    '*://gemini.google.com/*'
+    '*://chat.openai.com/*'
   ],
   main() {
   logger.info('DialogDrive content script loaded');
@@ -19,7 +17,7 @@ export default defineContentScript({
             sendResponse({ success: pasteSuccess });
             break;
             
-          case 'CAPTURE_CURRENT_CHAT':
+          case 'CAPTURE_CHAT':
             const captureResult = await platformManager.capture();
             sendResponse(captureResult);
             break;

@@ -155,7 +155,13 @@ export const ChatForm: React.FC = () => {
     <div className="flex flex-col h-full bg-background text-[12px]">
       {/* Header */}
       <div className="flex items-center gap-2 px-2.5 py-2 border-b bg-background/80 backdrop-blur-sm">
-        <Button variant="ghost" size="icon" onClick={handleCancel} className="h-7 w-7 p-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleCancel}
+          className="h-7 w-7 p-0"
+          aria-label="Back"
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h2 className="text-sm font-semibold">

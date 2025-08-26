@@ -94,3 +94,16 @@
   .row-interactive:hover { background-color: hsl(var(--accent) / 0.40); }
   .row-interactive:active { background-color: hsl(var(--accent) / 0.60); }
 }
+html, body, #root {
+  width: 400px;
+  height: 580px;
+  min-width: 400px;
+  min-height: 580px;
+  max-width: 400px;
+  max-height: 580px;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body { overflow: hidden; }
+#root { display: flex; flex-direction: column; background: hsl(var(--background)); }

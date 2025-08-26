@@ -16,7 +16,7 @@
   "clean": "rimraf node_modules .wxt dist build",
     "clean:files": "node -e \"require('fs').readdirSync('.').filter(f => f.startsWith('test-') && f.endsWith('.html')).forEach(f => require('fs').unlinkSync(f))\"",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "lint": "tsc --noEmit && echo 'TypeScript check passed'",
+    "lint": "tsc --noEmit && echo 'TypeScript check passed' && eslint . --ext .ts,.tsx",
     "prebuild": "npm run lint"
   },
   "dependencies": {

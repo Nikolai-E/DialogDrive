@@ -27,6 +27,7 @@ export const Settings: React.FC = () => {
           size="icon" 
           className="h-9 w-9 mr-3 hover:bg-muted rounded-xl" 
           onClick={() => setCurrentView('list')}
+          aria-label="Back"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>

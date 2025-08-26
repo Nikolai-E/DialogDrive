@@ -59,6 +59,7 @@ export const EnhancedSearchControls: React.FC = () => {
           placeholder="Search prompts and chats... (Ctrl+F)"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          aria-label="Search prompts and chats"
           className="pl-10 pr-10 h-10 bg-white border-gray-300 rounded-lg text-sm placeholder:text-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
         />
         {searchTerm && (
@@ -66,6 +67,7 @@ export const EnhancedSearchControls: React.FC = () => {
             variant="ghost"
             size="icon"
             onClick={() => setSearchTerm('')}
+            aria-label="Clear search"
             className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600"
           >
             <X className="h-4 w-4" />

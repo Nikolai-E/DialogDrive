@@ -50,6 +50,29 @@ const Dialog: React.FC<DialogRootProps> = ({
 
   // Simple focus trap when dialog opens (cycles focus within dialog content)
   const previouslyFocused = React.useRef<Element | null>(null)
+  const handleFocusTrap = React.useCallback((e: KeyboardEvent) => {
+    if (e.key !== "Tab") return
+    const container = containerRef.current
+    const content = container?.querySelector<HTMLElement>("[data-dd-dialog-content]")
+    if (!content) return
+    const focusables = Array.from(
+      content.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((el) => !el.hasAttribute("disabled") && el.tabIndex !== -1)
+    if (focusables.length === 0) return
+    const first = focusables[0]
+    const last = focusables[focusables.length - 1]
+    const active = document.activeElement as HTMLElement | null
+    const shift = (e as any).shiftKey
+    if (!shift && active === last) {
+      e.preventDefault()
+      first.focus()
+    } else if (shift && active === first) {
+      e.preventDefault()
+      last.focus()
+    }
+  }, [])
   React.useEffect(() => {
     if (open) {
       previouslyFocused.current = document.activeElement
@@ -61,12 +84,18 @@ const Dialog: React.FC<DialogRootProps> = ({
       )
       const first = focusables && focusables[0]
       first?.focus()
+      // enable focus trap cycling
+      container?.addEventListener("keydown", handleFocusTrap as any)
     } else {
       if (previouslyFocused.current instanceof HTMLElement) {
         previouslyFocused.current.focus()
       }
     }
-  }, [open])
+    return () => {
+      const container = containerRef.current
+      container?.removeEventListener("keydown", handleFocusTrap as any)
+    }
+  }, [open, handleFocusTrap])
 
   // Prevent scroll on underlying container only (not document body)
   React.useEffect(() => {
@@ -166,6 +195,8 @@ const DialogContent = React.forwardRef<
 >(
   function DialogContent({ className, children, ...props }, ref) {
     const { open } = useDialogCtx()
+    const titleId = React.useId()
+    const descId = React.useId()
     if (!open) return null
     return (
       <div className="relative z-50">
@@ -174,6 +205,8 @@ const DialogContent = React.forwardRef<
           ref={ref}
           role="dialog"
           aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={descId}
           data-dd-dialog-content
           className={cn(
             "absolute left-1/2 top-1/2 w-[calc(100%-16px)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-md border bg-background p-4 shadow-lg",
@@ -181,7 +214,17 @@ const DialogContent = React.forwardRef<
           )}
           {...props}
         >
-          {children}
+          {/* Inject IDs into first title/description children if present */}
+          {React.Children.map(children, (child) => {
+            if (!React.isValidElement(child)) return child
+            if ((child as any).type?.displayName === "DialogTitle") {
+              return React.cloneElement(child as any, { id: titleId })
+            }
+            if ((child as any).type?.displayName === "DialogDescription") {
+              return React.cloneElement(child as any, { id: descId })
+            }
+            return child
+          })}
         </div>
       </div>
     )

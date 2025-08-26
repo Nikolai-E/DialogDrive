@@ -9,10 +9,10 @@ export default defineConfig({
   manifest: {
     name: 'DialogDrive',
     description: 'Your AI Project Workspaces Extension',
-    version: '1.0.1',
+    version: '1.0.2',
     permissions: [
       'storage',
-      'tabs',
+      'activeTab',
       'clipboardWrite',
       'contextMenus',
       'notifications',
@@ -20,9 +20,7 @@ export default defineConfig({
     ],
     host_permissions: [
       'https://chatgpt.com/*',
-      'https://chat.openai.com/*',
-      'https://claude.ai/*',
-      'https://gemini.google.com/*'
+      'https://chat.openai.com/*'
     ],
     commands: {
       'paste-latest-prompt': {
@@ -75,6 +73,9 @@ export default defineConfig({
       48: 'icon/icon-48.png',
       128: 'icon/icon-128.png',
       256: 'icon/icon-256.png'
+    },
+    content_security_policy: {
+      extension_pages: "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline'"
     }
   },
 });
