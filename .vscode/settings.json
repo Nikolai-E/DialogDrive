@@ -145,5 +145,6 @@
     "yaml": true,
     "plaintext": true,
     "markdown": true
-  }
+  },
+  "chatgpt.openOnStartup": true
 }
