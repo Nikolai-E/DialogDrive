@@ -58,7 +58,20 @@ export class ChatStorage {
     // Validate incoming data; coerce defaults where provided
     const parsed = AddChatBookmarkSchema.safeParse(chatData);
     if (!parsed.success) {
-      throw new Error(`Invalid chat bookmark: ${parsed.error.message}`);
+      const issues = parsed.error.issues || [];
+      const urlIssue = issues.find((issue) => issue.path?.includes('url'));
+      if (urlIssue) {
+        throw new Error('Invalid chat bookmark URL. Please include a full https:// link.');
+      }
+      const titleIssue = issues.find((issue) => issue.path?.includes('title'));
+      if (titleIssue) {
+        throw new Error('Chat bookmark title is required.');
+      }
+      const workspaceIssue = issues.find((issue) => issue.path?.includes('workspace'));
+      if (workspaceIssue) {
+        throw new Error('Choose a workspace before saving this bookmark.');
+      }
+      throw new Error('Invalid chat bookmark payload.');
     }
     const safe = parsed.data;
     

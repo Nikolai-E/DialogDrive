@@ -543,10 +543,11 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   addChat: async (chat) => {
     try {
       const newChat = await chatStorage.add(chat);
-      set(state => updateAndFilterState({ ...state, chats: [newChat, ...state.chats] }));
+      set((state) => updateAndFilterState({ ...state, chats: [newChat, ...state.chats], error: null }));
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Failed to add chat';
       set({ error });
+      throw err instanceof Error ? err : new Error(error);
     }
   },
 

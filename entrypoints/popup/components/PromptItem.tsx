@@ -54,7 +54,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
     setIsProcessing(true);
     try {
       // Copy to clipboard first
-  await copyToClipboard(buildPromptText(prompt));
+      await copyToClipboard(buildPromptText(prompt));
       await incrementUsage(prompt.id);
       
       // Try to paste to active tab if on supported site
@@ -70,7 +70,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
             return undefined;
           });
           if (response?.success) {
-            toast.success('✨ Pasted');
+            toast.success('Prompt pasted into chat');
             return;
           }
           // Provide actionable guidance
@@ -80,7 +80,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
         console.warn('Could not paste to tab, copied to clipboard', tabError);
       }
       
-      toast.success('📋 Copied');
+      toast.success('Copied to clipboard');
     } catch (error) {
       toast.error('Failed to copy');
     } finally {
@@ -92,7 +92,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
     e.stopPropagation();
     try {
       await togglePinPrompt(prompt.id);
-      toast.success(prompt.isPinned ? '📌 Unpinned' : '📌 Pinned');
+      toast.success(prompt.isPinned ? 'Prompt unpinned' : 'Prompt pinned');
     } catch (error) {
       toast.error('Failed to update pin status');
     }
@@ -109,7 +109,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
     if (window.confirm(`Delete "${prompt.title}"?`)) {
       try {
         await deletePrompt(prompt.id);
-        toast.success('🗑️ Prompt deleted');
+        toast.success('Prompt deleted');
       } catch (error) {
         toast.error('Failed to delete prompt');
       }

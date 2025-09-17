@@ -81,32 +81,68 @@ export const ChatForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.title.trim()) {
+
+    const title = formData.title.trim();
+    if (!title) {
       toast.error('Please enter a title');
       return;
     }
 
+    let urlInput = formData.url.trim() || editingChat?.url || '';
+    if (!urlInput) {
+      toast.error('Please enter a valid URL (include https://)');
+      return;
+    }
+    if (!/^https?:\/\//i.test(urlInput)) {
+      urlInput = `https://${urlInput}`;
+    }
+
+    let normalizedUrl: string;
     try {
-      const platform = detectPlatform(formData.url || editingChat?.url || '');
+      normalizedUrl = new URL(urlInput).toString();
+    } catch {
+      toast.error('Please enter a valid URL (include https://)');
+      return;
+    }
+
+    const workspace = (formData.workspace || 'General').trim() || 'General';
+    const tags = Array.from(new Set((formData.tags || []).map((tag) => tag.trim()).filter(Boolean)));
+
+    const base = {
+      ...formData,
+      title,
+      url: normalizedUrl,
+      workspace,
+      tags,
+    };
+
+    setFormData((prev) => ({
+      ...prev,
+      ...base,
+    }));
+
+    try {
+      const platform = detectPlatform(normalizedUrl);
       if (editingChat) {
         await updateChat({
           ...editingChat,
-          ...formData,
-          platform
+          ...base,
+          platform,
         });
         toast.success('Bookmark updated!');
       } else {
-        await addChat({ ...formData, platform });
+        await addChat({ ...base, platform });
         toast.success('Bookmark added!');
       }
-      
+
       setCurrentView('list');
       setEditingChat(null);
-    } catch {
-      toast.error('Failed to save bookmark');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save bookmark';
+      toast.error(message);
     }
-  };
+
+};
 
   const handleCancel = () => { setCurrentView('list'); setEditingChat(null); };
 

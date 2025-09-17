@@ -36,7 +36,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
 const ErrorFallback: React.FC<{ error?: Error }> = ({ error }) => (
   <div className="flex flex-col items-center justify-center p-8 text-center">
-    <div className="text-6xl mb-4">😔</div>
+    <div className="text-6xl mb-4">:(</div>
     <h2 className="text-lg font-semibold text-gray-800 mb-2">
       Something went wrong
     </h2>

@@ -1,13 +1,13 @@
 # Store Listing Draft
 
 ## Proposed Name
-DialogDrive – AI Prompt & Chat Workspace
+DialogDrive - AI Prompt & Chat Workspace
 
 ## Short Description (<=132 chars)
 Capture, organize, search, and paste AI prompts & chat bookmarks for ChatGPT. 100% local. No tracking.
 
 ## Long Description
-DialogDrive is a focused productivity extension that centralizes your AI prompt workflow and chat session bookmarks for ChatGPT. Stop hunting through scattered notes—capture, organize, and reuse everything instantly.
+DialogDrive is a focused productivity extension that centralizes your AI prompt workflow and chat session bookmarks for ChatGPT. Stop hunting through scattered notes-capture, organize, and reuse everything instantly.
 
 ### Key Features
 - Unified library for prompts & chat bookmarks

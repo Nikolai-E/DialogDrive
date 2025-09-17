@@ -18,8 +18,26 @@ export const PromptList: React.FC = () => {
   } = useUnifiedStore();
 
   const handlePromptSelect = async (prompt: Prompt) => {
+    // Prefer pasting into the active tab; fallback to clipboard
+    try {
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+      const tabId = tabs?.[0]?.id;
+      if (tabId) {
+        try {
+          await browser.tabs.sendMessage(tabId, { type: 'PASTE_PROMPT', text: prompt.text });
+          await incrementUsage(prompt.id);
+          return;
+        } catch (_) {}
+      }
+    } catch (_) {}
+
+    try {
+      await navigator.clipboard.writeText(prompt.text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = prompt.text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    }
     await incrementUsage(prompt.id);
-    // TODO: Implement paste to active tab
   };
 
   const handlePromptEdit = (prompt: Prompt) => {

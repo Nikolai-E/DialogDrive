@@ -47,7 +47,7 @@ DialogDrive is a browser extension that helps you manage and organize AI prompts
 - **storage**: Save your prompts, bookmarks, and settings locally
 - **tabs**: Query the active tab to send paste/capture messages (no broad page access)
 - **clipboardWrite**: Copy prompts to your clipboard
-- **contextMenus**: Provide right‑click capture & paste actions
+- **contextMenus**: Provide right-click capture & paste actions
 - **notifications**: Show confirmations after save actions
 - **sidePanel**: Offer persistent workspace panel
 

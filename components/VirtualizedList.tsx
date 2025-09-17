@@ -115,7 +115,7 @@ export function VirtualizedPromptList({
             {prompt.tags.map((tag: string) => (
               <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-gray-100 text-gray-700">{tag}</span>
             ))}
-            {prompt.isPinned && <span className="text-yellow-500 text-xs">📌</span>}
+            {prompt.isPinned && <span className="text-yellow-500 text-xs">Pinned</span>}
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
@@ -125,7 +125,7 @@ export function VirtualizedPromptList({
             className="text-gray-400 hover:text-gray-700 rounded-md px-2 py-1"
             aria-label="Edit"
           >
-            ✏️
+            Edit
           </button>
           <button
             type="button"
@@ -133,7 +133,7 @@ export function VirtualizedPromptList({
             className="text-gray-400 hover:text-red-600 rounded-md px-2 py-1"
             aria-label="Delete"
           >
-            🗑️
+            Delete
           </button>
         </div>
       </div>

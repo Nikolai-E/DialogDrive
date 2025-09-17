@@ -69,7 +69,7 @@ const App: React.FC = () => {
         {/* Single scroll container; prevent nested scrolling */}
         <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent px-2.5 py-2">
           {currentView === 'list' && <UnifiedList />}
-          <Suspense fallback={<div className="py-6 text-center text-muted-foreground">Loading…</div>}>
+          <Suspense fallback={<div className="py-6 text-center text-muted-foreground">Loading...</div>}>
             {currentView === 'form' && <PromptForm />}
             {currentView === 'chat-form' && <ChatForm />}
             {currentView === 'settings' && <Settings />}

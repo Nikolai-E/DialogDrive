@@ -1,7 +1,7 @@
 <p align="center">
   <img width="128" height="128" alt="icon-256" src="https://github.com/user-attachments/assets/85d4c29f-d78e-443c-baf1-2b3fc0a0afde" />
 </p>
-<h1 align="center">DialogDrive – AI Prompt & Chat Workspace Extension</h1>
+<h1 align="center">DialogDrive - AI Prompt & Chat Workspace Extension</h1>
 
 DialogDrive helps you capture, organize, search, and reuse AI prompts and chat bookmarks for ChatGPT directly from a compact, fast browser extension interface. Support for additional providers is planned.
 
@@ -9,11 +9,11 @@ DialogDrive helps you capture, organize, search, and reuse AI prompts and chat b
 
 * Unified prompt & chat bookmark library (workspaces, tags, pinning)
 * Instant search, filtering, sorting (recent, usage, alphabetical, pinned)
-* One‑click or shortcut capture of current chat context
+* One-click or shortcut capture of current chat context
 * Global commands & configurable keyboard shortcuts
 * Smart paste of most recent prompt (with usage tracking)
-* Side panel & popup UI (space‑efficient, virtualized lists)
-* 100% local storage – no cloud, no tracking, no analytics
+* Side panel & popup UI (space-efficient, virtualized lists)
+* 100% local storage - no cloud, no tracking, no analytics
 
 
 <table>
@@ -32,28 +32,19 @@ DialogDrive helps you capture, organize, search, and reuse AI prompts and chat b
 All data (prompts, bookmarks, settings, usage counts) is stored locally using browser extension storage. No external servers or analytics are contacted. See `PRIVACY_POLICY.md` for details.
 
 ## Permissions Justification
-<<<<<<< HEAD
-| Permission | Reason |
-|------------|--------|
-| storage | Persist prompts, bookmarks, settings |
-| clipboardWrite | Copy/paste prompt fallback |
-| contextMenus | Quick save selection, paste latest prompt |
-| notifications | User feedback after save actions |
-| sidePanel | Provide persistent workspace panel |
-| host permissions (chatgpt.com) | Inject minimal content scripts for capture & paste |
-=======
 
-| Permission                                                   | Reason                                             |
-| ------------------------------------------------------------ | -------------------------------------------------- |
-| storage                                                      | Persist prompts, bookmarks, settings               |
-| clipboardWrite                                               | Copy/paste prompt fallback                         |
-| contextMenus                                                 | Quick save selection, paste latest prompt          |
-| notifications                                                | User feedback after save actions                   |
-| sidePanel                                                    | Provide persistent workspace panel                 |
-| host permissions (chatgpt.com, claude.ai, gemini.google.com) | Inject minimal content scripts for capture & paste |
->>>>>>> 70874bcf4a4da63b59ceb62556fb45e5e417ac65
+| Permission                         | Reason                                             |
+| ---------------------------------- | -------------------------------------------------- |
+| `storage`                          | Persist prompts, bookmarks, settings               |
+| `tabs`                             | Query active tab for paste/capture workflows        |
+| `clipboardWrite`                   | Copy/paste prompt fallback                         |
+| `contextMenus`                     | Quick save selection, paste latest prompt          |
+| `notifications`                    | User feedback after save actions                   |
+| `sidePanel`                        | Provide persistent workspace panel                 |
+| host permissions (`chatgpt.com`)   | Inject minimal content scripts for capture & paste |
 
 No broad `<all_urls>` access. No network requests to third-party APIs.
+Note: Support for additional providers (Gemini, Claude, etc.) is planned and will add their host permissions when implemented.
 
 ## Development
 
@@ -87,7 +78,7 @@ Load Unpacked (Chrome):
 
 1. Open `chrome://extensions`
 2. Enable Developer Mode
-3. Load Unpacked → select `dist/` (after build)
+3. Load Unpacked -> select `dist/` (after build)
 
 ## Keyboard Shortcuts (Default)
 

@@ -10,7 +10,7 @@ export const useCopyToClipboard = () => {
     try {
       await navigator.clipboard.writeText(text);
       setIsCopied(true);
-      toast.success('📋 Copied');
+      toast.success('Copied to clipboard');
 
       setTimeout(() => {
         setIsCopied(false);

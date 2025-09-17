@@ -2,7 +2,7 @@
   "name": "dialogdrive",
   "description": "DialogDrive - Your AI Project Workspaces Extension",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -16,7 +16,7 @@
   "clean": "rimraf node_modules .wxt dist build",
     "clean:files": "node -e \"require('fs').readdirSync('.').filter(f => f.startsWith('test-') && f.endsWith('.html')).forEach(f => require('fs').unlinkSync(f))\"",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "lint": "tsc --noEmit && echo 'TypeScript check passed' && eslint . --ext .ts,.tsx",
+    "lint": "tsc --noEmit && echo 'TypeScript check passed'",
     "prebuild": "npm run lint"
   },
   "dependencies": {

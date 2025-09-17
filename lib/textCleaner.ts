@@ -44,7 +44,6 @@ export type RuleId =
   | 'redact:url'
   | 'redact:email'
   | 'transliterate:strip-combining'
-  | 'style:smooth-discourse'
   | 'ai:conservative'
   | 'ai:aggressive'
   | 'ws:final-pass';
@@ -63,8 +62,6 @@ export interface CleanOptions {
   ellipsisMode: 'dots' | 'dot'; // … → '...' | '.'
   symbolMap: Record<string, string>; // custom mapping for non-keyboard symbols
   aiPhraseBlacklist: (string | RegExp)[]; // extra phrases
-  styleSmoothDiscourse?: boolean; // optional style smoothing of rote rhetoric
-  whitespacePolicy?: 'ascii' | 'common' | 'all'; // mapping behavior for unicode spaces
   debug: boolean; // include simple diff snippets
 }
 
@@ -94,8 +91,6 @@ export const defaultCleanOptions: CleanOptions = {
   ellipsisMode: 'dots',
   symbolMap: {},
   aiPhraseBlacklist: [],
-  styleSmoothDiscourse: false,
-  whitespacePolicy: 'ascii',
   debug: false,
 };
 
@@ -116,8 +111,6 @@ const RE = {
   invisibles: /[\u200B-\u200D\u2060\u00AD\u200E\u200F\u202A-\u202E\u2066-\u2069]/g,
   nbsp: /\u00A0/g,
   nnBsp: /\u202F/g,
-  // All non-ASCII spacing characters we may want to map
-  specialSpaces: /[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g,
   // Whitespace collapse (horizontal)
   horizWS: /[ \t]+/g,
   trailWS: /[ \t]+\n/g,
@@ -166,12 +159,9 @@ const SUPERSCRIPT_MAP: Record<string, string> = {
 
 // AI marker patterns (boundary-aware, case-insensitive)
 const AI_CONSERVATIVE: RegExp[] = [
-  /\b(as an\s+ai(?:\s+language\s+model)?(?:\s+developed\s+by\s+[^,.;]+)?)\b/i,
-  /\b(i\s+(?:cannot|can't)\s+(?:assist|provide)\s+(?:legal|medical)\s+advice)\b/i,
+  /\b(as an\s+ai(?:\s+language\s+model)?)\b/i,
   /\b(i\s+(?:cannot|can't)\s+assist\s+with)\b/i,
-  /\b(i\s+don['’]t\s+have\s+access\s+to\s+(?:real[- ]?time\s+data|the\s+internet|current\s+(?:events|stock\s+prices|exchange\s+rates)))\b/i,
-  /\b(i\s+don['’]t\s+have\s+(?:browsing|internet)\s+capabilities)\b/i,
-  /\b(my\s+training\s+data\s+only\s+goes\s+up\s+to\s+\d{4})\b/i,
+  /\b(i\s+don['’]t\s+have\s+access\s+to\s+(?:real[- ]?time\s+data|the\s+internet))\b/i,
   /\b(here(?:'|’)s\s+(?:a|the)\s+step[- ]?by[- ]?step)\b/i,
   /\b(key\s+takeaways:)\b/i,
   /\b(remember\s+that)\b.*$/im,
@@ -181,7 +171,7 @@ const AI_CONSERVATIVE: RegExp[] = [
 
 const AI_AGGRESSIVE: RegExp[] = [
   /^(certainly|absolutely|of\s+course)[!,.]*\s+/im, // drop lead-in token
-  /^(additionally|furthermore|moreover|in\s+conclusion|in\s+summary|overall),\s+/gim, // drop discourse markers at line start
+  /^(additionally|furthermore|in\s+conclusion),\s+/gim, // drop discourse markers at line start
   /\n(?:\s*(?:pros|cons|key\s+takeaways)\s*:\s*\n){1,}/gi, // strip templated sections
 ];
 
@@ -225,25 +215,12 @@ export function cleanText(input: string, userOptions: Partial<CleanOptions> = {}
       t = t.replace(RE.invisibles, '');
       report.ruleCounts['strip:control'] += diffCount(before, afterControl);
       report.ruleCounts['strip:invisible'] += diffCount(afterControl, t);
-    }
 
-    // Map Unicode spaces based on policy
-    if (opt.normalizeWhitespace) {
-      const policy = opt.whitespacePolicy || 'ascii';
-      if (policy !== 'all') {
-        // For 'common', keep NBSP (U+00A0), NNBSP (U+202F), and THIN SPACE (U+2009); map others to ASCII space.
-        let replaced = false;
-        t = t.replace(RE.specialSpaces, (ch: string) => {
-          if (policy === 'ascii') { replaced = true; return ' '; }
-          // common: keep NBSP, NNBSP, THIN SPACE; map others to normal space
-          if (policy === 'common') {
-            const cp = ch.codePointAt(0) || 0;
-            if (cp === 0x00A0 || cp === 0x202F || cp === 0x2009) return ch;
-          }
-          replaced = true;
-          return ' ';
-        });
-        if (replaced) count('map:nbsp-to-space', t, report);
+      if (opt.normalizeWhitespace) {
+        // NBSP/NNBSP → space so it can be collapsed later
+        const before2 = t;
+        t = t.replace(RE.nbsp, ' ').replace(RE.nnBsp, ' ');
+        report.ruleCounts['map:nbsp-to-space'] += diffCount(before2, t);
       }
     }
 
@@ -344,21 +321,14 @@ export function cleanText(input: string, userOptions: Partial<CleanOptions> = {}
       }
     }
 
-    // 10) Style smoothing (optional, conservative)
-    if (opt.styleSmoothDiscourse) {
-      const before = t;
-      t = smoothDiscourse(t, report);
-      if (before !== t) report.ruleCounts['style:smooth-discourse'] += 1;
-    }
-
-    // 11) AI-marker heuristics (toggleable)
+    // 10) AI-marker heuristics (toggleable)
     if (opt.removeAIMarkers.conservative || opt.removeAIMarkers.aggressive || opt.aiPhraseBlacklist.length) {
       const before = t;
       t = applyAIMarkers(t, opt, report);
       if (before !== t && opt.debug) debug.push({ rule: opt.removeAIMarkers.aggressive ? 'ai:aggressive' : 'ai:conservative', before, after: t });
     }
 
-    // 12) Final whitespace pass
+    // 11) Final whitespace pass
     if (opt.normalizeWhitespace) {
       const before = t;
       t = t.replace(RE.trailWS, '\n').replace(RE.horizWS, ' ');
@@ -396,7 +366,6 @@ function withDefaults(u: Partial<CleanOptions>): CleanOptions {
     removeAIMarkers: { conservative: !!ram.conservative, aggressive: !!ram.aggressive },
     symbolMap: u.symbolMap || d.symbolMap,
     aiPhraseBlacklist: u.aiPhraseBlacklist || d.aiPhraseBlacklist,
-    whitespacePolicy: u.whitespacePolicy || d.whitespacePolicy,
   };
 }
 
@@ -406,7 +375,7 @@ function initRuleCounts(): Record<RuleId, number> {
     'ws:collapse-inline', 'ws:trim-lines', 'ws:collapse-blank-lines', 'punct:quotes', 'punct:dashes', 'punct:ellipsis',
     'punct:bullets', 'punct:fractions', 'punct:fullwidth-ascii', 'symbols:strip-nonkeyboard', 'md:flatten-headings',
     'md:flatten-emphasis', 'md:flatten-lists', 'md:flatten-links', 'md:flatten-images', 'md:strip-inline-code',
-    'redact:url', 'redact:email', 'transliterate:strip-combining', 'style:smooth-discourse', 'ai:conservative', 'ai:aggressive', 'ws:final-pass',
+    'redact:url', 'redact:email', 'transliterate:strip-combining', 'ai:conservative', 'ai:aggressive', 'ws:final-pass',
   ];
   const o: any = {};
   ids.forEach((k) => (o[k] = 0));
@@ -485,8 +454,6 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// (reserved)
-
 function performanceNow(): number {
   try {
     if (typeof performance !== 'undefined' && typeof performance.now === 'function') return performance.now();
@@ -515,9 +482,9 @@ function applyAIMarkers(t: string, opt: CleanOptions, report: CleanReport): stri
             .replace(/^(pros:|cons:|conclusion:|limitations:)\s*/i, '')
             .replace(/\b(i\s+hope\s+this\s+helps!?)\b/i, '')
             .replace(/\b(remember\s+that)\b.*$/i, '')
-            .replace(/\b(as an\s+ai(?:\s+language\s+model)?(?:\s+developed\s+by\s+[^,.;]+)?)\b/i, '')
+            .replace(/\b(as an\s+ai(?:\s+language\s+model)?)\b/i, '')
             .replace(/\b(i\s+(?:cannot|can't)\s+assist\s+with)\b/i, '')
-            .replace(/\b(i\s+don['’]t\s+have\s+access\s+to\s+(?:real[- ]?time\s+data|the\s+internet|current\s+(?:events|stock\s+prices|exchange\s+rates)))\b/i, '')
+            .replace(/\b(i\s+don['’]t\s+have\s+access\s+to\s+(?:real[- ]?time\s+data|the\s+internet))\b/i, '')
             .replace(/\b(here(?:'|’)s\s+(?:a|the)\s+step[- ]?by[- ]?step)\b/i, '')
             .replace(/\b(key\s+takeaways:)\b/i, '');
           // if line becomes only punctuation/whitespace, remove it entirely
@@ -531,7 +498,7 @@ function applyAIMarkers(t: string, opt: CleanOptions, report: CleanReport): stri
       const before = line;
       line = line
         .replace(/^(certainly|absolutely|of\s+course)[!,.]*\s+/i, '')
-        .replace(/^(additionally|furthermore|moreover|in\s+conclusion|in\s+summary|overall),\s+/i, '');
+        .replace(/^(additionally|furthermore|in\s+conclusion),\s+/i, '');
       if (before !== line) report.ruleCounts['ai:aggressive'] += 1;
     }
 
@@ -555,19 +522,4 @@ function applyAIMarkers(t: string, opt: CleanOptions, report: CleanReport): stri
     t = t.replace(/\n(?:\s*(?:pros|cons|key\s+takeaways)\s*:\s*\n){1,}/gi, (m) => (incr('ai:aggressive', report), '\n'));
   }
   return t;
-}
-
-function smoothDiscourse(t: string, _report: CleanReport): string {
-  // Remove rote lead-ins at paragraph/line starts conservatively.
-  const leadIn = /^(?:in\s+conclusion|to\s+conclude|overall|in\s+summary|in\s+short|in\s+general|this\s+(?:article|post)|we\s+(?:will|can|should)|let['’]s|let\s+us|i\s+(?:will|can|should))[,;:\s-]+/i;
-  const parts = t.split(/(\n\n+)/);
-  for (let i = 0; i < parts.length; i += 2) {
-    const p = parts[i];
-    const lines = p.split(/\n/);
-    for (let j = 0; j < lines.length; j++) {
-      lines[j] = lines[j].replace(leadIn, '');
-    }
-    parts[i] = lines.join('\n');
-  }
-  return parts.join('');
 }

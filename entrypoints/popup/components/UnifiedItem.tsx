@@ -62,27 +62,49 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
         let txt = prompt.text;
         if (prompt.includeTimestamp) {
           const now = new Date();
-            const ts = now.toISOString().replace('T', ' ').replace(/\..+/, '');
+          const ts = now.toISOString().replace('T', ' ').replace(/\..+/, '');
           txt += `\n\n[Timestamp: ${ts}]`;
         }
         return txt;
       };
-  const finalText = buildText();
-  logger.debug('Copying text (len)', finalText.length);
+      const finalText = buildText();
+      logger.debug('Pasting to active tab (len)', finalText.length);
+      // Prefer pasting into the active tab via content script; fallback to clipboard
+      try {
+        const tabs = await (window as any).browser?.tabs?.query({ active: true, currentWindow: true })
+          ?? await api.tabs?.query({ active: true, currentWindow: true });
+        const tabId = tabs && tabs[0] && tabs[0].id;
+        if (tabId) {
+          try {
+            await (window as any).browser?.tabs?.sendMessage(tabId, { type: 'PASTE_PROMPT', text: finalText })
+              ?? await api.tabs?.sendMessage(tabId, { type: 'PASTE_PROMPT', text: finalText });
+            toast.success('Prompt pasted into chat');
+            await incrementUsage(prompt.id);
+            return;
+          } catch (e) {
+            logger.warn('Active tab paste failed, falling back to clipboard', e);
+          }
+        }
+      } catch (e) {
+        logger.warn('Unable to message active tab, falling back to clipboard', e);
+      }
+
+      // Clipboard fallback
       try {
         await navigator.clipboard.writeText(finalText);
-        toast.success('📋 Copied!');
+        toast.success('Copied to clipboard');
         await incrementUsage(prompt.id);
       } catch (err) {
-  logger.error('Copy failed:', err);
-        // Fallback method
+        logger.error('Clipboard API failed, using execCommand fallback:', err);
         const textArea = document.createElement('textarea');
         textArea.value = finalText;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
         document.body.appendChild(textArea);
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
-        toast.success('📋 Copied!');
+        toast.success('Copied to clipboard');
         await incrementUsage(prompt.id);
       }
     } else if (item.type === 'chat') {
@@ -90,7 +112,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
       if (api && api.tabs) {
         api.tabs.create({ url: chat.url });
         await incrementChatAccess(chat.id);
-        toast.success('🔗 Chat opened');
+        toast.success('Chat opened in new tab');
       }
     }
   };
@@ -103,7 +125,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
       } else {
         await togglePinChat(item.id);
       }
-      toast.success(item.isPinned ? '📌 Unpinned' : '📌 Pinned');
+      toast.success(item.isPinned ? 'Item unpinned' : 'Item pinned');
     } catch {
       toast.error('Failed to update pin status');
     }
@@ -130,7 +152,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
         } else {
           await deleteChat(item.id);
         }
-        toast.success(`🗑️ ${itemType} deleted`);
+        toast.success(`${itemType} deleted`);
       } catch {
         toast.error(`Failed to delete ${itemType}`);
       }
@@ -150,9 +172,9 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
           <MessageSquare className="w-3 h-3 text-secondary" />
           <span className="text-[11px] leading-4 text-muted-foreground">{platformNames[chat.platform] || chat.platform}</span>
           {isShareLink ? (
-            <span className="text-[10px] leading-4 text-accent bg-accent/10 px-1 rounded" title="Public share link - works without login">🔗</span>
+            <span className="text-[10px] leading-4 text-accent bg-accent/10 px-1 rounded" title="Public share link - works without login">Public</span>
           ) : (
-            <span className="text-[10px] leading-4 text-destructive bg-destructive/10 px-1 rounded" title="Private conversation - requires login">🔒</span>
+            <span className="text-[10px] leading-4 text-destructive bg-destructive/10 px-1 rounded" title="Private conversation - requires login">Private</span>
           )}
         </div>
       );

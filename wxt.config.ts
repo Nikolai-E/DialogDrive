@@ -12,7 +12,7 @@ export default defineConfig({
     version: '1.0.2',
     permissions: [
       'storage',
-      'activeTab',
+      'tabs',
       'clipboardWrite',
       'contextMenus',
       'notifications',
