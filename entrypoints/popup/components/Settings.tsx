@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, ExternalLink, Folder, Info, Shield, Tag, Trash2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Folder, Info, Tag, Trash2 } from 'lucide-react';
 import React from 'react';
 import { Button } from '../../../components/ui/button';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
@@ -16,16 +16,16 @@ export const Settings: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <motion.div 
+      <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3 }}
         className="flex items-center p-4 border-b border-border"
       >
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-9 w-9 mr-3 hover:bg-muted rounded-xl" 
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 mr-3 hover:bg-muted rounded-xl"
           onClick={() => setCurrentView('list')}
           aria-label="Back"
         >
@@ -58,7 +58,6 @@ export const Settings: React.FC = () => {
             </div>
           </div>
         </motion.div>
-
 
         {/* Manage Workspaces */}
         <motion.div
@@ -112,30 +111,27 @@ export const Settings: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Privacy & Support */}
+        {/* Extension Info */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.4 }}
           className="space-y-3"
         >
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Shield className="h-4 w-4" /> Privacy & Support</h3>
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Info className="h-4 w-4" /> Extension Info</h3>
           <div className="space-y-2 text-sm">
-            <p className="text-muted-foreground">DialogDrive stores all data locally. No analytics, tracking, or external data transfer.</p>
-            <div className="flex flex-col gap-2">
-              <Button variant="outline" className="justify-start h-8 text-xs" onClick={() => browser.tabs.create({ url: 'https://github.com/Nikolai-E/DialogDrive/blob/main/PRIVACY_POLICY.md' })}>
-                <Shield className="h-3.5 w-3.5 mr-2" /> Privacy Policy
-              </Button>
-              <Button variant="outline" className="justify-start h-8 text-xs" onClick={() => browser.tabs.create({ url: 'https://github.com/Nikolai-E/DialogDrive/issues' })}>
-                <Info className="h-3.5 w-3.5 mr-2" /> Support & Issues
-              </Button>
-              <Button variant="outline" className="justify-start h-8 text-xs" onClick={() => browser.tabs.create({ url: 'https://github.com/Nikolai-E/DialogDrive' })}>
-                <ExternalLink className="h-3.5 w-3.5 mr-2" /> Source Code
-              </Button>
-            </div>
+            <p className="text-muted-foreground">DialogDrive keeps your prompts on this device and doesn't send them to our servers.</p>
+            <Button
+              variant="outline"
+              className="justify-start h-8 text-xs"
+              onClick={() => browser.tabs.create({ url: 'https://chromewebstore.google.com/detail/dialogdrive' })}
+            >
+              <ExternalLink className="h-3.5 w-3.5 mr-2" /> Chrome Web Store Listing
+            </Button>
           </div>
         </motion.div>
       </div>
     </div>
   );
 };
+
