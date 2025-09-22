@@ -4,14 +4,14 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { Toaster } from 'sonner';
 import { logger } from '../../lib/logger';
+import { secureStorage } from '../../lib/secureStorageV2';
 import { useUnifiedStore } from '../../lib/unifiedStore';
 import './App.css';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Header } from './components/Header';
+import OnboardingBanner from './components/OnboardingBanner';
 import { UnifiedList } from './components/UnifiedList';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
-import { secureStorage } from '../../lib/secureStorageV2';
-import OnboardingBanner from './components/OnboardingBanner';
 // removed pulsing overlay icons
 // Lazy-loaded heavy views keep the initial popup snappy.
 const PromptForm = React.lazy(async () => {
