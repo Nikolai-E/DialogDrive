@@ -272,10 +272,12 @@ const calculateStats = (prompts: Prompt[], chats: ChatBookmark[]): AppStats => {
 
 const updateAndFilterState = (state: UnifiedState) => {
   // Sync derived lists, tags, workspaces, and stats anytime base data changes.
-  // Combine workspaces from both prompts and chats
+  // Combine workspaces from both prompts and chats, and preserve any user-added ones already in state
   const promptWorkspaces = state.prompts.map(p => p.workspace).filter(Boolean);
   const chatWorkspaces = state.chats.map(c => c.workspace).filter(Boolean);
-  const workspaces = Array.from(new Set(['General', ...promptWorkspaces, ...chatWorkspaces]));
+  const existing = Array.isArray(state.workspaces) ? state.workspaces : [];
+  const workspaces = Array.from(new Set(['General', ...existing, ...promptWorkspaces, ...chatWorkspaces]))
+    .sort((a, b) => a.localeCompare(b));
   
   // Combine tags from both prompts and chats
   const promptTags = state.prompts.flatMap(p => p.tags || []);
@@ -707,7 +709,8 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
           updatedChats.push(c);
         }
       }
-      set(s => updateAndFilterState({ ...s, prompts: updatedPrompts, chats: updatedChats }));
+      // Also drop the workspace label from the selectable list immediately
+      set(s => updateAndFilterState({ ...s, prompts: updatedPrompts, chats: updatedChats, workspaces: s.workspaces.filter(w => w !== name) }));
     } catch (err) {
       logger.error('Failed to delete workspace', err);
     }
@@ -754,6 +757,8 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
         ...state,
         prompts: [],
         chats: [],
+        // Reset selectable lists after a full wipe
+        workspaces: ['General'],
         stats: {
           totalPrompts: 0,
           totalChats: 0,
