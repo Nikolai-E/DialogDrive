@@ -28,6 +28,7 @@ export const PromptForm: React.FC = () => {
     updatePrompt,
     setCurrentView,
     setEditingPrompt,
+    addWorkspace,
   deleteTag,
   } = useUnifiedStore();
 
@@ -335,11 +336,13 @@ export const PromptForm: React.FC = () => {
                 disabled={!newWorkspace.trim()}
                 onClick={() => {
                   const ws = newWorkspace.trim();
-                  if (ws && !workspaces.includes(ws)) {
-                    setWorkspace(ws);
-                  } else if (ws) {
-                    setWorkspace(ws);
+                  if (!ws) return;
+                  // Ensure it's added to the central store immediately
+                  if (!workspaces.includes(ws)) {
+                    try { addWorkspace(ws); } catch {}
                   }
+                  // Select it in the form either way
+                  setWorkspace(ws);
                   setNewWorkspace('');
                 }}
                 className="h-8 text-xs"
@@ -368,17 +371,27 @@ export const PromptForm: React.FC = () => {
                 setTags((prev) => prev.filter(t => t !== safeTag));
               }}
             />
-            <div className="relative">
+            <div className="flex gap-1.5 items-center">
               <Input
                 id="tags"
                 ref={tagInputRef}
                 value={tagInput}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTagInput(e.target.value)}
                 onKeyDown={handleTagKeyDown}
-                placeholder="Add tags (press Enter to add)"
+                placeholder="Add a tag..."
                 disabled={isSubmitting}
-                className="shadow-sm h-8 text-[12px]"
+                className="shadow-sm h-8 text-[12px] flex-1"
               />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => addTag()}
+                disabled={!sanitizeTagLabel(tagInput)}
+                className="h-8"
+              >
+                Add
+              </Button>
             </div>
             {suggestedTags.length > 0 && (
               <motion.div 

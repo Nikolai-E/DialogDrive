@@ -1,15 +1,15 @@
 // An extension by Nikolai Eidheim, built with WXT + TypeScript.
 // Zustand store that unifies prompts, chats, filters, and destructive actions.
 
+import { toast } from 'sonner';
 import { create } from 'zustand';
 import type { AppStats, SortOption, ViewType } from '../types/app';
 import type { AddChatBookmark, ChatBookmark, WorkspaceItem } from '../types/chat';
 import type { Prompt } from '../types/prompt';
 import { chatStorage } from './chatStorage';
 import { logger } from './logger';
-import { promptStorage } from './storage';
 import { secureStorage } from './secureStorageV2';
-import { toast } from 'sonner';
+import { promptStorage } from './storage';
 
 type AddPrompt = Omit<Prompt, 'id' | 'created'>;
 type ContentFilter = 'all' | 'prompts' | 'chats';
