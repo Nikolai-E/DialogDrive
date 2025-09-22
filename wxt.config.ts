@@ -12,7 +12,7 @@ export default defineConfig({
   manifest: {
     name: 'DialogDrive',
     description: 'Your AI Project Workspaces Extension',
-    version: '1.0.2',
+  version: '1.0.3',
     permissions: [
       'storage',
       'tabs',
