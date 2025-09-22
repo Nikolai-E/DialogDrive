@@ -48,7 +48,7 @@ graph TD
 
 *   **UI (Popup)**: A React application that serves as the main user interface. It manages its own state using Zustand and communicates with the background script for any operations requiring persistent state or access to browser APIs.
 *   **Background Script**: The central hub of the extension. It manages the prompt library stored in `browser.storage` and handles communication between the popup and content scripts. No external API calls are performed.
-*   **Content Script**: Injected into supported websites (ChatGPT, Claude, Gemini). Its sole responsibility is to interact with the page's DOM, primarily to paste prompts into text boxes. It is designed to be lightweight to minimize performance impact on the host page.
+*   **Content Script**: Injected into the currently supported website (ChatGPT). Its sole responsibility is to interact with the page's DOM, primarily to paste prompts into text boxes. Scaffolding exists for additional providers (e.g., Gemini, Claude), but those integrations are not enabled yet. The script is designed to be lightweight to minimize performance impact on the host page.
 *   **Browser Storage**:
     *   `storage.local`: Used for storing the user's prompt library. This is the default, local-first approach.
     *   `storage.sync`: Used for lightweight preferences (no API keys).

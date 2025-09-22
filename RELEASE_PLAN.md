@@ -151,13 +151,21 @@ Acceptance: STORE_CHECKLIST.md fully checked; assets zipped via `npm run zip` an
 
 ## 8) Deliverables
 
-- Focus‑trapped dialog with labeled controls.
-- Floating UI with leak‑free listener management and teardown.
+- Focus-trapped dialog with labeled controls.
+- Floating UI with leak-free listener management and teardown.
 - Cleaner panel with improved AI removal and whitespace visualization, plus rule count chips and legend.
 - Updated STORE_CHECKLIST.md boxes ticked; CHANGELOG.md entry for release.
 
 
-## 9) Out‑of‑Scope (Consider Post‑1.0)
+## 9) Publisher Account Security
+
+- **2FA / Security Keys**: Chrome Web Store owner account and collaborators must use security keys or, at minimum, TOTP-based two-factor authentication. Verify enrollment before each release cycle.
+- **Access Review Cadence**: Review Chrome Web Store, Google Cloud, and GitHub collaborator lists quarterly. Remove dormant access and document the review date in the internal security log (stored in the private shared drive).
+- **Release Approval**: Before uploading a package, confirm the release checklist (STORE_CHECKLIST + QA_TEST_PLAN) is signed off by an approver other than the packager. Record approver initials in the release journal (private).
+- **Incident Response Ready**: Keep the security playbook (link in private drive) handy for account compromise procedures; ensure contact details remain current.
+
+
+## 10) Out-of-Scope (Consider Post-1.0)
 
 - i18n for UI labels.
 - Import/export flows.
@@ -165,7 +173,7 @@ Acceptance: STORE_CHECKLIST.md fully checked; assets zipped via `npm run zip` an
 - Automated e2e tests (Playwright) for popup focus management.
 
 
-## 10) Verification Checklist
+## 11) Verification Checklist
 
 - [x] Dialog focus trap passes manual Tab/Shift+Tab tests.
 - [x] All icon‑only buttons have aria‑labels; inputs are labeled.

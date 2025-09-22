@@ -1,3 +1,6 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// Storage helper responsible for persisting chat bookmarks securely.
+
 import type { AddChatBookmark, ChatBookmark } from '../types/chat';
 import { mapBrowserError } from './errors';
 import { logger } from './logger';
@@ -8,6 +11,7 @@ export class ChatStorage {
   // Legacy key used before SecureStorageV2 adoption; retained for one-time migration
   private readonly LEGACY_STORAGE_KEY = 'dialogdrive_chats';
 
+  // Reads chats from the encrypted store, falling back to the legacy bucket once.
   private async getFromStorage(): Promise<ChatBookmark[]> {
     // Prefer centralized secure storage
     try {
@@ -50,12 +54,14 @@ export class ChatStorage {
   }
 
   async getAll(): Promise<ChatBookmark[]> {
+    // Expose current chats without extra shaping.
     return await this.getFromStorage();
   }
 
   async add(chatData: AddChatBookmark): Promise<ChatBookmark> {
     const chats = await this.getFromStorage();
     // Validate incoming data; coerce defaults where provided
+    // Surface friendly errors if the schema rejects the payload.
     const parsed = AddChatBookmarkSchema.safeParse(chatData);
     if (!parsed.success) {
       const issues = parsed.error.issues || [];
@@ -93,6 +99,7 @@ export class ChatStorage {
   }
 
   async update(chat: ChatBookmark): Promise<ChatBookmark> {
+    // Replace an existing chat entry after edits.
     const chats = await this.getFromStorage();
     const index = chats.findIndex(c => c.id === chat.id);
     
@@ -108,6 +115,7 @@ export class ChatStorage {
   }
 
   async delete(id: string): Promise<void> {
+    // Remove a chat bookmark entirely.
     const chats = await this.getFromStorage();
     const filteredChats = chats.filter(c => c.id !== id);
     
@@ -120,6 +128,7 @@ export class ChatStorage {
   }
 
   async incrementAccess(id: string): Promise<void> {
+    // Track quick usage analytics for the unified list.
     const chats = await this.getFromStorage();
     const chat = chats.find(c => c.id === id);
     
@@ -132,6 +141,7 @@ export class ChatStorage {
   }
 
   // Enhanced URL parsing for both conversation and share URLs
+  // Helps downstream callers understand what kind of link a user saved.
   static parseUrl(url: string): { 
     platform: 'chatgpt' | 'gemini' | 'claude' | null, 
     conversationId: string | null,

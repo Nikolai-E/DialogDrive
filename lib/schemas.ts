@@ -1,3 +1,6 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// Zod schemas that keep messages, bookmarks, and scraped content predictable.
+
 import { z } from 'zod';
 
 // Common enums
@@ -74,6 +77,7 @@ export const DeleteTagMsgSchema = z.object({
   tag: z.string(),
 });
 
+// Bundle every background message into a single runtime-validated union.
 export const BgMessageSchema = z.union([
   SaveBookmarkMsgSchema,
   SaveChatBookmarkMsgSchema,

@@ -42,5 +42,12 @@
 - User-entered text rendered safely (no HTML injection)
 - Clipboard operations only on explicit action
 
+## Security Regression
+| ID | Scenario | Steps | Expected |
+|----|----------|-------|----------|
+| S1 | Floating save tags treat input as text | Create tag named `<img onerror=1>`, reopen floating modal | Tag chip shows literal text, remove icon works with mouse & keyboard |
+| S2 | Clear Local Data wipes everything | Seed prompts/chats, run Settings → Clear Local Data | Library empties, toast appears, "Last cleared" timestamp updates |
+| S3 | CSP enforces self-only resources | Build extension, load popup, inspect DevTools console | No blocked resource errors; dev websocket may be blocked during local development |
+
 ## Sign-off
-Complete all P1–P13 before submission.
+Complete P1–P13 and S1–S3 before submission.

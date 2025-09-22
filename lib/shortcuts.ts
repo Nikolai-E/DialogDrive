@@ -1,3 +1,4 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
 /**
  * Keyboard shortcuts and context menu implementation
  * Addresses UX improvements from expert review
@@ -7,6 +8,7 @@ import { logger } from '../lib/logger';
 import { promptStorage } from '../lib/storage';
 
 // Command handlers
+// Map browser command ids to friendly async actions.
 const commandHandlers = {
   'paste-latest-prompt': async () => {
     try {
@@ -108,6 +110,7 @@ const commandHandlers = {
 
 // Context menu items
 const contextMenuItems = [
+  // Highlight a few high-value tasks directly from the right-click menu.
   {
     id: 'save-selection-as-prompt',
     title: 'Save selection as prompt',
@@ -147,6 +150,7 @@ const contextMenuItems = [
 
 // Initialize keyboard shortcuts
 export function initializeKeyboardShortcuts() {
+  // Bind native browser shortcuts to our command handler map.
   if (browser.commands) {
     browser.commands.onCommand.addListener((command) => {
       const handler = commandHandlers[command as keyof typeof commandHandlers];
@@ -161,11 +165,13 @@ export function initializeKeyboardShortcuts() {
 
 // Initialize context menu
 export function initializeContextMenu() {
+  // Rebuild the context menu every time the background boots up.
   if (browser.contextMenus) {
     // Remove existing items
     browser.contextMenus.removeAll();
 
     // Create new items
+    // Recreate each context-menu entry from our local descriptor list.
     contextMenuItems.forEach(item => {
       if (browser.contextMenus) {
         browser.contextMenus.create(item as any);

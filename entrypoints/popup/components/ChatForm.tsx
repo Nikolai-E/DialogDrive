@@ -1,3 +1,6 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// Chat bookmark form for saving AI conversations with tags and workspaces.
+
 import { ArrowLeft, Link, Save, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -8,10 +11,12 @@ import { Label } from '../../../components/ui/label';
 import { Switch } from '../../../components/ui/switch';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { AddChatBookmark } from '../../../types/chat';
+import { sanitizeTagLabel } from '../../floating-save/tagHelpers';
 import TagSelect from './TagSelect';
 import WorkspaceSelect from './WorkspaceSelect';
 
 export const ChatForm: React.FC = () => {
+  // Read chat editing state and actions from the unified store.
   const { 
     editingChat, 
     setEditingChat, 
@@ -23,12 +28,12 @@ export const ChatForm: React.FC = () => {
   deleteTag
   } = useUnifiedStore();
 
+  // Keep the mutable form data in local state for easier inputs.
   const [formData, setFormData] = useState<AddChatBookmark>({
     title: '',
     url: '',
     platform: 'chatgpt',
-    workspace: 'General',
-  // description removed
+  workspace: 'General',
     tags: [],
     isPinned: false
   });
@@ -42,33 +47,47 @@ export const ChatForm: React.FC = () => {
   const platformRef = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
 
+  const normalizedAllTags = React.useMemo(() => {
+    // Normalize tags for dropdown suggestions and duplicate checks.
+    const seen = new Set<string>();
+    const result: string[] = [];
+    allTags.forEach((tag: string) => {
+      const safe = sanitizeTagLabel(tag).toLowerCase();
+      if (!safe || seen.has(safe)) return;
+      seen.add(safe);
+      result.push(safe);
+    });
+    return result;
+  }, [allTags]);
+
   useEffect(() => {
+    // Hydrate the form when editing an existing chat bookmark.
     if (editingChat) {
+      const safeTags = (editingChat.tags || []).map(t => sanitizeTagLabel(t).toLowerCase()).filter(Boolean);
       setFormData({
         title: editingChat.title,
         url: editingChat.url,
         platform: editingChat.platform,
         workspace: editingChat.workspace,
-  // description retained if previously present but not editable
-        tags: editingChat.tags || [],
+        tags: Array.from(new Set(safeTags)),
         isPinned: editingChat.isPinned
       });
     } else {
-      // Reset form for new chat
+      // Reset the form for a new chat bookmark.
       setFormData({
         title: '',
         url: '',
         platform: 'chatgpt',
         workspace: 'General',
-  // description removed
         tags: [],
         isPinned: false
       });
     }
   }, [editingChat]);
 
-  // Auto-detect platform instead of manual selection
+  // Auto-detect the platform instead of manual selection.
   const detectPlatform = (url: string): 'chatgpt' | 'gemini' | 'claude' | 'deepseek' => {
+    // Infers the chat provider from the URL so the user doesn't need to.
     try {
       const host = new URL(url).hostname;
       if (host.includes('chatgpt') || host.includes('openai')) return 'chatgpt';
@@ -80,6 +99,7 @@ export const ChatForm: React.FC = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    // Validate user input and persist the bookmark.
     e.preventDefault();
 
     const title = formData.title.trim();
@@ -106,7 +126,7 @@ export const ChatForm: React.FC = () => {
     }
 
     const workspace = (formData.workspace || 'General').trim() || 'General';
-    const tags = Array.from(new Set((formData.tags || []).map((tag) => tag.trim()).filter(Boolean)));
+    const tags = Array.from(new Set((formData.tags || []).map((tag) => sanitizeTagLabel(tag).toLowerCase()).filter(Boolean)));
 
     const base = {
       ...formData,
@@ -142,23 +162,35 @@ export const ChatForm: React.FC = () => {
       toast.error(message);
     }
 
-};
+  };
 
-  const handleCancel = () => { setCurrentView('list'); setEditingChat(null); };
+  const handleCancel = () => {
+    // Close the form and return to the list view.
+    setCurrentView('list');
+    setEditingChat(null);
+  };
 
   const handleAddTag = () => {
-    if (currentTag.trim() && !(formData.tags || []).includes(currentTag.trim())) {
-      setFormData(prev => ({ ...prev, tags: [...(prev.tags || []), currentTag.trim()] }));
+    // Adds a sanitized tag to the pending chat bookmark.
+    const safeTag = sanitizeTagLabel(currentTag).toLowerCase();
+    if (safeTag && !(formData.tags || []).includes(safeTag)) {
+      setFormData(prev => ({ ...prev, tags: [...(prev.tags || []), safeTag] }));
       setCurrentTag('');
     }
   };
   
-  const handleRemoveTag = (tagToRemove: string) => { 
-    setFormData(prev => ({ ...prev, tags: (prev.tags || []).filter(tag => tag !== tagToRemove) })); 
+  const handleRemoveTag = (tagToRemove: string) => {
+    // Remove a tag chip from the chat bookmark.
+    const safeTag = sanitizeTagLabel(tagToRemove).toLowerCase();
+    setFormData(prev => ({ ...prev, tags: (prev.tags || []).filter(tag => tag !== safeTag) }));
   };
-  
-  const handleKeyPress = (e: React.KeyboardEvent) => { 
-    if (e.key === 'Enter') { e.preventDefault(); handleAddTag(); } 
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    // Convert the current input into a tag when pressing enter.
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddTag();
+    }
   };
 
   const handlePlatformSelect = (platform: 'chatgpt' | 'gemini' | 'claude') => {
@@ -173,6 +205,7 @@ export const ChatForm: React.FC = () => {
 
   // Handle clicks outside dropdowns
   useEffect(() => {
+    // Collapses dropdown menus if the user clicks elsewhere.
     const handleClickOutside = (event: MouseEvent) => {
       if (platformRef.current && !platformRef.current.contains(event.target as Node)) {
         setShowPlatformDropdown(false);
@@ -283,12 +316,14 @@ export const ChatForm: React.FC = () => {
           <div className="space-y-1.5">
             <Label className="text-[12px] font-medium">Tags</Label>
             <TagSelect
-              allTags={allTags}
+              allTags={normalizedAllTags}
               value={formData.tags || []}
               onChange={(next) => setFormData(prev => ({ ...prev, tags: next }))}
               onDeleteTag={(tag) => {
-                deleteTag(tag);
-                setFormData(prev => ({ ...prev, tags: (prev.tags||[]).filter(t=>t!==tag) }));
+                const safeTag = sanitizeTagLabel(tag).toLowerCase();
+                if (!safeTag) return;
+                deleteTag(safeTag);
+                setFormData(prev => ({ ...prev, tags: (prev.tags||[]).filter(t=>t!==safeTag) }));
               }}
             />
             <div className="flex flex-wrap gap-1">
@@ -324,7 +359,7 @@ export const ChatForm: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={handleAddTag}
-                disabled={!currentTag.trim()}
+                disabled={!sanitizeTagLabel(currentTag)}
                 className="h-8"
               >
                 Add

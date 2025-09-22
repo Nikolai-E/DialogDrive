@@ -1,3 +1,6 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// Hook wiring up keyboard shortcuts for quick popup navigation.
+
 import { useEffect } from 'react';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 
@@ -5,6 +8,7 @@ export function useGlobalShortcuts() {
   const { currentView, setCurrentView, setEditingPrompt } = useUnifiedStore();
 
   useEffect(() => {
+    // Listen for a few power-user shortcuts while the popup is open.
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ctrl+N for New Prompt
       if (e.ctrlKey && e.key === 'n') {

@@ -1,13 +1,16 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// Prompt storage module responsible for persistence, migration, and exports.
+
 import { v4 as uuidv4 } from 'uuid';
 import type { StorageResult } from '../types/app';
 import type { Prompt } from '../types/prompt';
 import { logger, logStorageAction } from './logger';
 import { secureStorage } from './secureStorageV2';
 
-// Storage version for migrations
+// Storage version for migrations.
 const STORAGE_VERSION = '1.0.0';
 
-// Data validation and sanitization
+// Data validation and sanitization.
 const validatePrompt = (prompt: any): prompt is Prompt => {
   return (
     typeof prompt.id === 'string' &&
@@ -21,7 +24,7 @@ const validatePrompt = (prompt: any): prompt is Prompt => {
   );
 };
 
-// Initial data creation
+// Initial data creation.
 const createInitialPrompts = (): Prompt[] => [
   {
     id: uuidv4(),
@@ -58,7 +61,7 @@ const createInitialPrompts = (): Prompt[] => [
   }
 ];
 
-// Initialize storage with default data
+// Initialize storage with default data.
 export const initializeStorage = async (): Promise<void> => {
   try {
     const existingPrompts = await secureStorage.getPrompts<Prompt[]>();
@@ -70,7 +73,7 @@ export const initializeStorage = async (): Promise<void> => {
       logStorageAction('Initialize storage', true);
     }
 
-    // Set storage version
+    // Set storage version.
     const preferences = await secureStorage.getPreferences() || {};
     await secureStorage.setPreferences({ ...preferences, version: STORAGE_VERSION });
   } catch (error) {
@@ -79,7 +82,7 @@ export const initializeStorage = async (): Promise<void> => {
   }
 };
 
-// Storage operations for prompts
+// Storage operations for prompts.
 export const promptStorage = {
   getAll: async (): Promise<Prompt[]> => {
     try {
@@ -88,7 +91,7 @@ export const promptStorage = {
         return [];
       }
       
-      // Validate and filter prompts
+      // Validate and filter prompts.
       const validPrompts = prompts.filter(validatePrompt);
       if (validPrompts.length !== prompts.length) {
         logger.warn('Some prompts failed validation and were filtered out');

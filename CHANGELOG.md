@@ -21,7 +21,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Initial public release candidate of DialogDrive.
 - Prompt management: add, edit, delete, pin, usage tracking.
-- Chat bookmark capture for ChatGPT, Claude, Gemini.
+- Chat bookmark capture for ChatGPT (additional providers planned).
 - Unified workspace & tagging system.
 - Context menu actions (save selection, paste latest prompt, save chat, open DialogDrive).
 - Keyboard shortcuts (paste prompt, save chat, open side panel, quick search).

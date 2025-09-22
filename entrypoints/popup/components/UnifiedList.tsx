@@ -1,3 +1,6 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// Virtualized list that blends prompts and chats with quick filters.
+
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { FileText, Info, Loader2, MessageSquare, Search } from 'lucide-react';
 import React from 'react';
@@ -7,6 +10,7 @@ import { cn } from '../../../lib/utils';
 import { UnifiedItem } from './UnifiedItem';
 
 export const UnifiedList: React.FC = () => {
+  // Reference for the scroll container powering the virtualizer.
   const parentRef = React.useRef<HTMLDivElement>(null);
   
   const { 
@@ -26,36 +30,38 @@ export const UnifiedList: React.FC = () => {
     setSelectedTags
   } = useUnifiedStore();
 
-  // Use store-backed multi-select tags for OR filtering
+  // Use store-backed multi-select tags for OR filtering.
   const activeTags = selectedTags && selectedTags.length > 0 ? selectedTags : (filterTag !== 'all' ? [filterTag] : []);
   const toggleTag = (tag: string) => {
     const exists = activeTags.includes(tag);
     const next = exists ? activeTags.filter(t => t !== tag) : [...activeTags, tag];
-    // Sync to store for unified filtering (OR semantics)
+    // Sync to the store so unified filtering keeps working across views.
     setSelectedTags(next);
-    // Maintain legacy single-tag field for other UIs
+    // Maintain the legacy single-tag field for other UIs.
     if (next.length === 0) setFilterTag('all');
     else setFilterTag(next[next.length - 1]);
   };
 
-  // Derive frequency metrics (combined prompts & chats)
+  // Derive frequency metrics (combined prompts and chats).
   const tagFrequency: Record<string, number> = {};
-  prompts.forEach(p => (p.tags || []).forEach(t => { tagFrequency[t] = (tagFrequency[t] || 0) + 1; }));
-  chats.forEach(c => (c.tags || []).forEach(t => { tagFrequency[t] = (tagFrequency[t] || 0) + 1; }));
+  // Count how often each tag shows up across prompts and chats.
+  prompts.forEach((p) => (p.tags || []).forEach((t) => { tagFrequency[t] = (tagFrequency[t] || 0) + 1; }));
+  chats.forEach((c) => (c.tags || []).forEach((t) => { tagFrequency[t] = (tagFrequency[t] || 0) + 1; }));
   const topTags = Object.entries(tagFrequency)
     .sort((a,b) => b[1]-a[1])
     .slice(0,10)
     .map(([tag]) => tag);
 
   const workspaceFrequency: Record<string, number> = {};
-  prompts.forEach(p => { workspaceFrequency[p.workspace] = (workspaceFrequency[p.workspace] || 0) + 1; });
-  chats.forEach(c => { workspaceFrequency[c.workspace] = (workspaceFrequency[c.workspace] || 0) + 1; });
+  // Track how many items live in each workspace to surface smart chips.
+  prompts.forEach((p) => { workspaceFrequency[p.workspace] = (workspaceFrequency[p.workspace] || 0) + 1; });
+  chats.forEach((c) => { workspaceFrequency[c.workspace] = (workspaceFrequency[c.workspace] || 0) + 1; });
   const topWorkspaces = Object.entries(workspaceFrequency)
     .sort((a,b) => b[1]-a[1])
     .slice(0,4)
     .map(([ws]) => ws);
 
-  // Virtual list setup
+  // Virtual list setup driven by React Virtual.
   const virtualizer = useVirtualizer({
     count: filteredItems.length,
     getScrollElement: () => parentRef.current,
@@ -66,6 +72,7 @@ export const UnifiedList: React.FC = () => {
   const virtualItems = virtualizer.getVirtualItems();
 
   if (isLoading) {
+    // Friendly loading state while prompts/chats stream in.
     return (
       <div className="flex items-center justify-center h-full bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -77,6 +84,7 @@ export const UnifiedList: React.FC = () => {
   }
 
   if (error) {
+    // Bubble up any load errors so the user can retry later.
     return (
       <div className="p-4 bg-background">
         <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
@@ -89,6 +97,7 @@ export const UnifiedList: React.FC = () => {
   }
 
   const getEmptyStateContent = () => {
+    // Tailor the empty state messaging to the current filter.
     switch (contentFilter) {
       case 'prompts':
         return {
@@ -119,7 +128,7 @@ export const UnifiedList: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
-      {/* Quick Filters */}
+      {/* Quick filters showing top workspaces and tags. */}
       <div className="px-2 pt-1.5 pb-1 border-b bg-background/80 backdrop-blur-sm">
         <div className="flex gap-1.5 items-center overflow-x-auto whitespace-nowrap scrollbar-thin pb-1">
           {topWorkspaces.map(ws => (
@@ -154,6 +163,7 @@ export const UnifiedList: React.FC = () => {
               position: 'relative',
             }}
           >
+            {/* Render each virtual row in place for smooth scrolling. */}
             {virtualItems.map((virtualItem) => (
               <div
                 key={virtualItem.key}

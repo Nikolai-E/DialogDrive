@@ -3,7 +3,7 @@
 </p>
 <h1 align="center">DialogDrive - AI Prompt & Chat Workspace Extension</h1>
 
-DialogDrive helps you capture, organize, search, and reuse AI prompts and chat bookmarks for ChatGPT directly from a compact, fast browser extension interface. Support for additional providers is planned.
+DialogDrive helps you capture, organize, search, and reuse AI prompts and chat bookmarks for ChatGPT directly from a compact, fast browser extension interface. Support for additional providers is on the roadmap but not available yet.
 
 ## Key Features
 
@@ -44,7 +44,7 @@ All data (prompts, bookmarks, settings, usage counts) is stored locally using br
 | host permissions (`chatgpt.com`)   | Inject minimal content scripts for capture & paste |
 
 No broad `<all_urls>` access. No network requests to third-party APIs.
-Note: Support for additional providers (Gemini, Claude, etc.) is planned and will add their host permissions when implemented.
+Note: Today DialogDrive works with ChatGPT. Future releases may add optional support for other providers (e.g., Gemini, Claude) once they are implemented and their host permissions are added.
 
 ## Development
 

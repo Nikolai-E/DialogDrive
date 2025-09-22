@@ -1,3 +1,6 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// WXT configuration describing the build, manifest, and command setup.
+
 import { defineConfig } from 'wxt';
 
 export default defineConfig({
@@ -75,7 +78,7 @@ export default defineConfig({
       256: 'icon/icon-256.png'
     },
     content_security_policy: {
-      extension_pages: "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline'"
+      extension_pages: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'self'"
     }
   },
 });

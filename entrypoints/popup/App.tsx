@@ -1,3 +1,6 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// Main popup shell that ties together prompts, chats, and settings.
+
 import React, { Suspense, useEffect } from 'react';
 import { Toaster } from 'sonner';
 import { logger } from '../../lib/logger';
@@ -7,7 +10,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { Header } from './components/Header';
 import { UnifiedList } from './components/UnifiedList';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
-// Lazy-loaded heavy views
+// Lazy-loaded heavy views keep the initial popup snappy.
 const PromptForm = React.lazy(async () => {
   const { PromptForm } = await import('./components/PromptForm');
   return { default: PromptForm };
@@ -26,6 +29,7 @@ const TextCleanerPanel = React.lazy(async () => {
 });
 
 const App: React.FC = () => {
+  // Pull reactive state/actions from the unified store.
   const { 
     currentView, 
     setCurrentView, 
@@ -35,12 +39,15 @@ const App: React.FC = () => {
   } = useUnifiedStore();
 
   useEffect(() => {
+    // Load prompts and chats when the popup first opens.
     logger.info('App mounted, loading all data...');
     loadAll();
   }, [loadAll]);
 
+  // Registers keyboard shortcuts so users can drive the popup quickly.
   useGlobalShortcuts();
 
+  // Quick view handlers pivot the UI into the right form/panel.
   const handleNewPrompt = () => {
     setEditingPrompt(null);
     setCurrentView('form');

@@ -46,7 +46,7 @@ try {
 ```
 
 ### Content Script Integration
-- **Supported sites**: ChatGPT, Claude, Gemini
+- **Supported site (today)**: ChatGPT (scaffolding for Gemini/Claude exists but is disabled until their adapters are ready)
 - **Direct paste**: Finds and fills contenteditable elements
 - **Fallback**: Clipboard API for unsupported sites
 - **Usage tracking**: Automatically increments counters on paste

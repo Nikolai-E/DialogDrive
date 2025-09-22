@@ -1,3 +1,6 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// Prompt editor that lets people craft, label, and save reusable prompts.
+
 import { motion } from 'framer-motion';
 import { ArrowLeft, ChevronDown, Clock, Hash, Loader2, Wand2, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
@@ -8,6 +11,7 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Switch } from '../../../components/ui/switch';
 import { Textarea } from '../../../components/ui/textarea';
+import { sanitizeTagLabel } from '../../floating-save/tagHelpers';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import type { Prompt } from '../../../types/prompt';
 import TagSelect from './TagSelect';
@@ -15,6 +19,7 @@ import { VoiceToneGenerator } from './VoiceToneGenerator';
 import WorkspaceSelect from './WorkspaceSelect';
 
 export const PromptForm: React.FC = () => {
+  // Wire into the unified store to read/write prompt data.
   const {
     editingPrompt,
     workspaces,
@@ -26,6 +31,7 @@ export const PromptForm: React.FC = () => {
   deleteTag,
   } = useUnifiedStore();
 
+  // Local form state mirrors the fields the user can edit.
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
   const [workspace, setWorkspace] = useState('General');
@@ -33,7 +39,7 @@ export const PromptForm: React.FC = () => {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [includeTimestamp, setIncludeTimestamp] = useState(false);
-  // Removed includeVoiceTag per product decision
+  // Legacy includeVoiceTag flag is no longer exposed.
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSnippets, setShowSnippets] = useState(false);
   const [showVoiceToneGenerator, setShowVoiceToneGenerator] = useState(false);
@@ -46,6 +52,7 @@ export const PromptForm: React.FC = () => {
   const textRef = useRef<HTMLTextAreaElement>(null);
 
   const PROMPT_SNIPPETS = {
+    // Handy starter snippets so the user can compose faster.
     expertise: [
       "You are an expert in [FIELD] with [NUMBER] years of experience.",
       "As a seasoned [ROLE] specializing in [DOMAIN], you understand...",
@@ -69,6 +76,7 @@ export const PromptForm: React.FC = () => {
   };
 
   const handleInsertSnippet = (snippetText: string) => {
+    // Drops a canned snippet at the current cursor position.
     if (!textRef.current) return;
 
     const textarea = textRef.current;
@@ -87,25 +95,39 @@ export const PromptForm: React.FC = () => {
     }, 0);
   };
 
+  const normalizedAllTags = React.useMemo(() => {
+    // Lowercase and dedupe tags so suggestions stay tidy.
+    const seen = new Set<string>();
+    const result: string[] = [];
+    allTags.forEach((tag: string) => {
+      const safe = sanitizeTagLabel(tag).toLowerCase();
+      if (!safe || seen.has(safe)) return;
+      seen.add(safe);
+      result.push(safe);
+    });
+    return result;
+  }, [allTags]);
+
   useEffect(() => {
+    // When a prompt is selected for edit, hydrate the form fields.
     if (editingPrompt) {
       setTitle(editingPrompt.title);
       setText(editingPrompt.text);
       setWorkspace(editingPrompt.workspace);
-      setTags(editingPrompt.tags || []);
+      const safeTags = (editingPrompt.tags || []).map(t => sanitizeTagLabel(t).toLowerCase()).filter(Boolean);
+      setTags(Array.from(new Set(safeTags)));
       setIncludeTimestamp(editingPrompt.includeTimestamp);
-  // ignore legacy includeVoiceTag
     } else {
       setTitle('');
       setText('');
       setWorkspace('General');
       setTags([]);
       setIncludeTimestamp(false);
-  // legacy removed
     }
   }, [editingPrompt]);
 
   const handleSubmit = async (e: React.FormEvent) => {
+    // Validate and persist the prompt back into storage.
     e.preventDefault();
     if (!title.trim() || !text.trim()) {
       toast.error('Title and prompt text are required.');
@@ -120,7 +142,6 @@ export const PromptForm: React.FC = () => {
         workspace,
         tags,
         includeTimestamp,
-  // includeVoiceTag removed
         usageCount: editingPrompt?.usageCount || 0,
         isPinned: editingPrompt?.isPinned || false,
         lastUsed: editingPrompt?.lastUsed,
@@ -143,32 +164,37 @@ export const PromptForm: React.FC = () => {
   };
 
   const handleClose = () => {
+    // Return to the list view and clear editing state.
     setEditingPrompt(null);
     setCurrentView('list');
   };
 
   const addTag = (tagToAdd?: string) => {
-    const newTag = (tagToAdd || tagInput).trim().toLowerCase();
-    if (newTag && !tags.includes(newTag)) {
-      setTags([...tags, newTag]);
+    // Sanitize and add a custom tag to the prompt.
+    const candidate = sanitizeTagLabel(tagToAdd ?? tagInput).toLowerCase();
+    if (candidate && !tags.includes(candidate)) {
+      setTags([...tags, candidate]);
     }
     setTagInput('');
   };
 
   const removeTag = (tagToRemove: string) => {
+    // Remove an applied tag chip from the form.
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
   const handleTagKeyDown = (e: React.KeyboardEvent) => {
+    // Add the tag when users press enter or comma.
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       addTag();
     }
   };
 
-  const suggestedTags = tagInput.trim()
-    ? allTags.filter((tag: string) => 
-        tag.toLowerCase().includes(tagInput.toLowerCase()) && !tags.includes(tag)
+  const normalizedQuery = sanitizeTagLabel(tagInput).toLowerCase();
+  const suggestedTags = normalizedQuery
+    ? normalizedAllTags.filter((tag: string) =>
+        tag.includes(normalizedQuery) && !tags.includes(tag)
       ).slice(0, 5)
     : [];
 
@@ -332,12 +358,14 @@ export const PromptForm: React.FC = () => {
               Tags
             </Label>
             <TagSelect
-              allTags={allTags}
+              allTags={normalizedAllTags}
               value={tags}
               onChange={(next) => setTags(next)}
               onDeleteTag={(tag) => {
-                deleteTag(tag);
-                setTags((prev) => prev.filter(t => t !== tag));
+                const safeTag = sanitizeTagLabel(tag).toLowerCase();
+                if (!safeTag) return;
+                deleteTag(safeTag);
+                setTags((prev) => prev.filter(t => t !== safeTag));
               }}
             />
             <div className="relative">

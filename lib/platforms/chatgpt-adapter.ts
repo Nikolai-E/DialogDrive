@@ -1,3 +1,6 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// ChatGPT-specific adapter for pasting prompts and capturing chats.
+
 import { BasePlatformAdapter, CaptureResult } from './adapter';
 
 export class ChatGPTAdapter extends BasePlatformAdapter {
@@ -11,6 +14,7 @@ export class ChatGPTAdapter extends BasePlatformAdapter {
   async paste(text: string): Promise<boolean> {
     try {
       // First try to find the input
+      // Probe a few known selectors before falling back to the clipboard.
       const possibleSelectors = [
         '#prompt-textarea',
         'textarea[placeholder*="Message"]',
@@ -46,6 +50,7 @@ export class ChatGPTAdapter extends BasePlatformAdapter {
   }
   
   async capture(): Promise<CaptureResult> {
+    // Build a lightweight summary of the current conversation.
     try {
       const title = document.title.replace(' | ChatGPT', '') || 'ChatGPT Conversation';
       const messages = document.querySelectorAll('[data-message-author-role]');

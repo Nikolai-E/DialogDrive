@@ -1,5 +1,8 @@
 /// <reference path="../.wxt/wxt.d.ts" />
 
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// Background worker that wires up install hooks, messaging, and storage.
+
 import { chatStorage } from '../lib/chatStorage';
 import { logger } from '../lib/logger';
 import { BgMessageSchema, SaveBookmarkMsgSchema, SaveChatBookmarkMsgSchema } from '../lib/schemas';
@@ -36,6 +39,7 @@ type GetWorkspacesAndTagsMsg = { type: 'GET_WORKSPACES_AND_TAGS' };
 type DeleteWorkspaceMsg = { type: 'DELETE_WORKSPACE'; name: string };
 type DeleteTagMsg = { type: 'DELETE_TAG'; tag: string };
 
+// Message payload variants the background router understands.
 type BgMessage =
   | SaveBookmarkMsg
   | SaveChatBookmarkMsg
@@ -43,7 +47,7 @@ type BgMessage =
   | DeleteWorkspaceMsg
   | DeleteTagMsg;
 
-// Narrow unknown scraped content to the expected shape or drop it
+// Clean and coerce scraped chat metadata before storage.
 function normalizeScrapedContent(input: unknown): {
   summary: string;
   messageCount: number;
@@ -72,7 +76,7 @@ function normalizeScrapedContent(input: unknown): {
 export default defineBackground(() => {
   logger.info('DialogDrive background script loaded!', { id: browser.runtime.id });
 
-  // Initialize on install
+  // Handle install/update so we can seed storage and affordances on day one.
   browser.runtime.onInstalled.addListener(async (details: { reason: 'install' | 'update' | string }) => {
     if (details.reason === 'install') {
       logger.info('Extension installed, initializing storage...');
@@ -83,13 +87,13 @@ export default defineBackground(() => {
     initializeContextMenu();
   });
 
-  // Initialize on startup
+  // Refresh keyboard shortcuts and menus on every restart.
   initializeKeyboardShortcuts();
   initializeContextMenu();
 
-  // Message routing
+  // Central router that validates every message and dispatches to storage helpers.
   browser.runtime.onMessage.addListener((message: BgMessage, _sender, sendResponse) => {
-    // Validate message shape at runtime; log and reject early on failure
+    // Validate message shape at runtime; log and reject early on failure.
     const parsed = BgMessageSchema.safeParse(message as unknown);
     if (!parsed.success) {
       logger.warn('Rejected invalid background message', parsed.error.flatten());
@@ -98,9 +102,10 @@ export default defineBackground(() => {
     const msg = parsed.data;
 
     if (msg.type === 'SAVE_BOOKMARK') {
+      // Save a rich bookmark coming from the popup or floating button.
       (async () => {
         try {
-          // Narrow and coerce via schema
+          // Narrow and coerce via schema before persisting.
           const { data } = SaveBookmarkMsgSchema.parse({ type: 'SAVE_BOOKMARK', data: msg.data } as any);
           const newBookmark = await chatStorage.add({
             title: data.title,
@@ -122,6 +127,7 @@ export default defineBackground(() => {
     }
 
     if (msg.type === 'SAVE_CHAT_BOOKMARK') {
+      // Save a chat capture initiated while browsing the chat surface.
       (async () => {
         try {
           logger.debug('Saving chat bookmark from floating button');
@@ -148,6 +154,7 @@ export default defineBackground(() => {
     }
 
     if (message.type === 'GET_WORKSPACES_AND_TAGS') {
+      // Return workspace/tag suggestions for the dropdown pickers.
       (async () => {
         try {
           logger.debug('Fetching workspaces and tags for quick form');
@@ -174,6 +181,7 @@ export default defineBackground(() => {
     }
 
     if (message.type === 'DELETE_WORKSPACE') {
+      // Migrate every item out of a workspace before removing the label.
       (async () => {
         try {
           const name = (message.name || '').trim();
@@ -183,9 +191,11 @@ export default defineBackground(() => {
           }
           const [prompts, chats] = await Promise.all([promptStorage.getAll(), chatStorage.getAll()]);
           const updatedPrompts = prompts.map((p) => (p.workspace === name ? { ...p, workspace: 'General' } : p));
+          // Walk each prompt and move it back under the General workspace.
           for (const p of updatedPrompts) {
             await promptStorage.update(p);
           }
+          // Repeat for chats so no bookmark references the removed label.
           for (const c of chats) {
             if (c.workspace === name) {
               const updated = { ...c, workspace: 'General' };
@@ -202,6 +212,7 @@ export default defineBackground(() => {
     }
 
     if (message.type === 'DELETE_TAG') {
+      // Strip a tag from every stored prompt or chat.
       (async () => {
         try {
           const tag = (message.tag || '').trim();
@@ -211,9 +222,11 @@ export default defineBackground(() => {
           }
           const [prompts, chats] = await Promise.all([promptStorage.getAll(), chatStorage.getAll()]);
           const updatedPrompts = prompts.map((p) => (p.tags?.includes(tag) ? { ...p, tags: p.tags.filter((t) => t !== tag) } : p));
+          // Strip the tag from each prompt before persisting the cleaned list.
           for (const p of updatedPrompts) {
             await promptStorage.update(p);
           }
+          // Finish by removing the tag from every chat bookmark too.
           for (const c of chats) {
             if (c.tags?.includes(tag)) {
               const updated = { ...c, tags: c.tags.filter((t) => t !== tag) };

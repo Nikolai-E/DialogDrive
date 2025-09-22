@@ -1,3 +1,6 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// Base adapter contracts for page-specific integrations (ChatGPT, etc.).
+
 export interface PlatformAdapter {
   name: string;
   detect(): boolean;
@@ -21,6 +24,7 @@ export abstract class BasePlatformAdapter implements PlatformAdapter {
   abstract detect(): boolean;
   
   async isReady(): Promise<boolean> {
+    // Wait for the page to be usable before we poke at the DOM.
     return new Promise((resolve) => {
       if (document.readyState === 'complete') {
         resolve(true);
@@ -35,6 +39,7 @@ export abstract class BasePlatformAdapter implements PlatformAdapter {
   abstract capture(): Promise<CaptureResult>;
   
   protected async copyToClipboard(text: string): Promise<boolean> {
+    // Try the modern clipboard API before falling back to execCommand.
     try {
       await navigator.clipboard.writeText(text);
       return true;
@@ -44,6 +49,7 @@ export abstract class BasePlatformAdapter implements PlatformAdapter {
   }
   
   private fallbackCopy(text: string): boolean {
+    // Minimal textarea trick for older browsers or clipboard failures.
     const textarea = document.createElement('textarea');
     textarea.value = text;
     textarea.style.position = 'fixed';

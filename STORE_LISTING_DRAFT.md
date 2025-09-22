@@ -27,6 +27,17 @@ DialogDrive is a focused productivity extension that centralizes your AI prompt 
 ### Privacy & Data
 All data (prompts, bookmarks, usage counts, settings) stays on your device. No cloud sync, no tracking pixels, no third-party analytics. Host permissions are limited strictly to required AI domains to enable paste and capture actions.
 
+## Privacy Practices Matrix
+
+| Data type | Purpose | Retention | Shared outside user device | Storage location |
+| --- | --- | --- | --- | --- |
+| Prompts and chat bookmarks you add | Let you save, search, pin, and paste content | Until you delete it or clear local data | No | `chrome.storage.local` |
+| Workspaces, tags, and pinned flags | Organise saved items | Until you delete it or clear local data | No | `chrome.storage.local` |
+| Usage counters (local analytics) | Surface frequently used prompts | Until you delete it or clear local data | No | `chrome.storage.local` |
+| Extension preferences (layout, cleaner defaults) | Remember UI and feature settings | Until you change them or clear local data | No (Chrome Sync may replicate copies if the user enables Sync) | `chrome.storage.sync` (managed by Chrome) |
+
+**Delete control**: The Settings panel includes a "Clear Local Data" button that erases the local dataset and requests removal of any Chrome-synced preferences in one step.
+
 ### Permissions Justification
 - storage: Persist your library
 - tabs: Identify the active tab for messages

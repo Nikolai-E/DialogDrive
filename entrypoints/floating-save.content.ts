@@ -1,5 +1,7 @@
-// entrypoints/floating-save.content.ts
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// Floating save content script that injects the quick-save UI into chat pages.
 import { logger } from '../lib/logger';
+import { createTagChip, sanitizeTagLabel } from './floating-save/tagHelpers';
 
 export default defineContentScript({
   matches: [
@@ -9,7 +11,7 @@ export default defineContentScript({
   main() {
     logger.info('DialogDrive floating save button initialized');
 
-    // Instance state
+    // Tracks DOM nodes and helpers created for the floating save button lifecycle.
     let host: HTMLDivElement | null = null;
     let shadow: ShadowRoot | null = null;
     let controller: AbortController | null = null;
@@ -17,6 +19,7 @@ export default defineContentScript({
     let lastUrl = location.href;
     let restoreFocusEl: HTMLElement | null = null;
 
+    // Figures out which AI platform we are on to tag saved chats sanely.
     const detectPlatform = (url: string): 'chatgpt' | 'gemini' | 'claude' | 'deepseek' => {
       try {
         const h = new URL(url).hostname;
@@ -28,6 +31,7 @@ export default defineContentScript({
       return 'chatgpt';
     };
 
+    // Cleans up the injected UI so we can rebuild it on navigation changes.
     const teardown = () => {
       try { controller?.abort(); } catch {}
       controller = null;
@@ -38,6 +42,7 @@ export default defineContentScript({
       shadow = null;
     };
 
+    // Builds the floating action button, modal markup, and related event wiring.
     const createFloatingButton = () => {
       teardown();
       controller = new AbortController();
@@ -159,6 +164,7 @@ export default defineContentScript({
       document.body.appendChild(host);
 
       // Setup behavior in shadow DOM
+      // Short-hand selectors stay inside the shadow root to avoid page collisions.
       const q = (sel: string) => shadow!.querySelector(sel) as HTMLElement | null;
       const byId = (id: string) => shadow!.getElementById(id) as HTMLElement | null;
       const saveBtn = q('#dd-save-btn') as HTMLButtonElement | null;
@@ -185,6 +191,7 @@ export default defineContentScript({
       let isPinned = false;
       let currentWorkspace = 'General';
 
+      // Keeps the custom dropdowns in sync with what the user is viewing.
       const toggleWorkspaceDropdown = (open?: boolean) => {
         if (!workspaceContent || !workspaceTrigger) return;
         const willOpen = open ?? workspaceContent.style.display === 'none';
@@ -199,75 +206,121 @@ export default defineContentScript({
         tagTrigger.setAttribute('aria-expanded', String(willOpen));
       };
 
+      // Updates the lightweight inline pills so people can see chosen tags.
       const updateTagLabel = () => {
         if (!tagLabel) return;
         tagLabel.textContent = tags.length === 0 ? 'Select tags' : `${tags.length} selected`;
       };
 
+      // Renders visual tag chips inside the modal, respecting sanitization.
       const renderTags = () => {
         if (!tagsContainer) return;
-        tagsContainer.innerHTML = '';
-        tags.forEach(tag => {
-          const tagElement = document.createElement('div');
-          tagElement.className = 'dd-tag';
-          tagElement.innerHTML = `
-            ${tag}
-            <svg class="dd-tag-remove" viewBox="0 0 16 16" fill="currentColor" role="button" aria-label="Remove tag ${tag}"><path d="M12.854 4.854a.5.5 0 0 0 0-.708l-.708-.708a.5.5 0 0 0-.708 0L8 6.793 4.646 3.438a.5.5 0 0 0-.708 0l-.708.708a.5.5 0 0 0 0 .708L6.586 8l-3.354 3.354a.5.5 0 0 0 0 .708l.708.708a.5.5 0 0 0 .708 0L8 9.414l3.354 3.354a.5.5 0 0 0 .708 0l.708-.708a.5.5 0 0 0 0-.708L9.414 8l3.354-3.146z"/></svg>`;
-          const removeBtn = tagElement.querySelector('.dd-tag-remove');
-          removeBtn?.addEventListener('click', () => { tags = tags.filter(t => t !== tag); renderTags(); updateTagLabel(); }, { signal });
-          tagsContainer.appendChild(tagElement);
+        tagsContainer.replaceChildren();
+        // Iterate through the selected tags and draw a chip for each one.
+        tags.forEach((tag) => {
+          const safeTag = sanitizeTagLabel(tag);
+          if (!safeTag) {
+            return;
+          }
+          try {
+            const chip = createTagChip({
+              document,
+              tag: safeTag,
+              onRemove: () => {
+                tags = tags.filter(t => t !== safeTag);
+                renderTags();
+                updateTagLabel();
+              },
+              signal,
+            });
+            tagsContainer.appendChild(chip);
+          } catch (error) {
+            logger.warn('Skipping invalid tag during render', error);
+          }
         });
       };
 
+      // Builds the tag picker menu with delete actions inside the shadow DOM.
       const buildTagList = (all: string[]) => {
         if (!tagContent) return;
-        tagContent.innerHTML = '';
-        all.forEach((t) => {
+        tagContent.replaceChildren();
+        const seen = new Set<string>();
+        // Walk the entire tag catalog so we can offer deduped suggestions.
+        all.forEach((rawTag) => {
+          const safeTag = sanitizeTagLabel(rawTag);
+          if (!safeTag || seen.has(safeTag)) {
+            return;
+          }
+          seen.add(safeTag);
+
           const row = document.createElement('div');
           row.className = 'dd-select-item';
-          row.dataset.tag = t;
+          row.dataset.tag = safeTag;
+
           const check = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
           check.setAttribute('viewBox', '0 0 16 16');
           check.setAttribute('fill', 'currentColor');
           check.setAttribute('class', 'dd-select-check');
-          check.innerHTML = '<path d="M13.485 1.929a1.5 1.5 0 0 1 0 2.121L6.75 10.786l-3.536-3.536a1.5 1.5 0 1 1 2.121-2.121l1.415 1.415 5.657-5.657a1.5 1.5 0 0 1 2.121 0z" />';
+          const checkPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          checkPath.setAttribute('d', 'M13.485 1.929a1.5 1.5 0 0 1 0 2.121L6.75 10.786l-3.536-3.536a1.5 1.5 0 1 1 2.121-2.121l1.415 1.415 5.657-5.657a1.5 1.5 0 0 1 2.121 0z');
+          check.appendChild(checkPath);
+
           const spacer = document.createElement('div');
           spacer.setAttribute('class', 'dd-select-spacer');
-          row.appendChild(tags.includes(t) ? check : spacer);
+          row.appendChild(tags.includes(safeTag) ? check : spacer);
+
           const labelBtn = document.createElement('button');
           labelBtn.type = 'button';
-          labelBtn.textContent = t;
+          labelBtn.textContent = safeTag;
           labelBtn.style.cssText = 'flex:1; text-align:left; padding:2px 0; color:#292524; background:transparent; border:none;';
           labelBtn.addEventListener('click', () => {
-            if (tags.includes(t)) tags = tags.filter(x => x !== t); else tags = [...tags, t];
-            renderTags(); updateTagLabel();
+            if (tags.includes(safeTag)) {
+              tags = tags.filter(x => x !== safeTag);
+            } else {
+              tags = [...tags, safeTag];
+            }
+            renderTags();
+            updateTagLabel();
             const first = row.firstChild as HTMLElement | null;
-            if (first) { row.removeChild(first); row.insertBefore(tags.includes(t) ? check : spacer, row.firstChild); }
+            if (first) {
+              row.removeChild(first);
+              row.insertBefore(tags.includes(safeTag) ? check : spacer, row.firstChild);
+            }
           }, { signal });
           row.appendChild(labelBtn);
+
           const del = document.createElement('button');
-          del.setAttribute('aria-label', `Delete tag ${t}`);
+          del.setAttribute('aria-label', `Delete tag ${safeTag}`);
           del.className = 'dd-select-del';
-          del.innerHTML = '&times;';
+          del.textContent = String.fromCharCode(215);
           del.addEventListener('click', async (e) => {
             e.stopPropagation();
-            const ok = confirm(`Delete tag "${t}" from all items?`);
+            const ok = confirm(`Delete tag "${safeTag}" from all items?`);
             if (!ok) return;
             try {
-              const resp = await browser.runtime.sendMessage({ type: 'DELETE_TAG', tag: t });
+              const resp = await browser.runtime.sendMessage({ type: 'DELETE_TAG', tag: safeTag });
               if (resp?.success) {
-                tags = tags.filter(x => x !== t); renderTags(); updateTagLabel(); await loadWorkspacesAndTags();
-              } else { alert('Failed to delete tag'); }
-            } catch { alert('Failed to delete tag'); }
+                tags = tags.filter(x => x !== safeTag);
+                renderTags();
+                updateTagLabel();
+                await loadWorkspacesAndTags();
+              } else {
+                alert('Failed to delete tag');
+              }
+            } catch {
+              alert('Failed to delete tag');
+            }
           }, { signal });
           row.appendChild(del);
           tagContent.appendChild(row);
         });
       };
 
+      // Draws the workspace dropdown and wires in delete/migrate shortcuts.
       const buildWorkspaceList = (workspaces: string[]) => {
         if (!workspaceContent) return;
         workspaceContent.innerHTML = '';
+        // List each workspace as a selectable row in the dropdown.
         workspaces.forEach((ws) => {
           const row = document.createElement('div');
           row.className = 'dd-select-item';
@@ -301,11 +354,13 @@ export default defineContentScript({
         });
       };
 
+      // Persists which workspace the quick-save modal is targeting.
       const setWorkspace = (ws: string) => {
         currentWorkspace = ws;
         if (workspaceLabel) workspaceLabel.textContent = ws;
         // update checks
         const items = workspaceContent?.querySelectorAll('[data-ws]') || [];
+        // Update every workspace row so only the active one shows the check icon.
         items.forEach((el) => {
           const row = el as HTMLElement;
           const first = row.firstElementChild as HTMLElement | null;
@@ -314,11 +369,13 @@ export default defineContentScript({
         });
       };
 
+      // Refreshes the form fields whenever the modal opens or URL changes.
       const updateUrlTitle = () => {
         if (urlInput) urlInput.value = location.href;
         if (titleInput) titleInput.value = document.title || '';
       };
 
+      // Pulls known workspaces and tags from the background for dropdowns.
       const loadWorkspacesAndTags = async () => {
         try {
           const response = await browser.runtime.sendMessage({ type: 'GET_WORKSPACES_AND_TAGS' });
@@ -327,13 +384,17 @@ export default defineContentScript({
         } catch (error) { logger.error('Failed to load workspaces and tags:', error); }
       };
 
+      // Adds a new tag chip after sanitizing the input.
       const addTag = () => {
-        const v = (tagInput?.value || '').trim();
-        if (!v) return; if (!tags.includes(v)) tags = [...tags, v];
+        const candidate = sanitizeTagLabel(tagInput?.value || '');
+        if (!candidate) return;
+        if (!tags.includes(candidate)) tags = [...tags, candidate];
         if (tagInput) tagInput.value = '';
-        renderTags(); updateTagLabel();
+        renderTags();
+        updateTagLabel();
       };
 
+      // Opens the modal and manages focus trapping for accessibility.
       const openModal = () => {
         if (!modal) return;
         restoreFocusEl = (shadow!.activeElement as HTMLElement) || (document.activeElement as HTMLElement);
@@ -342,15 +403,18 @@ export default defineContentScript({
         updateUrlTitle();
         loadWorkspacesAndTags();
         const focusables = Array.from(modal.querySelectorAll<HTMLElement>('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(el => !el.hasAttribute('disabled'));
+        // Run through the focusable nodes so we can park focus at the top.
         (focusables[0] || modal).focus();
       };
 
+      // Closes the quick-save modal and restores focus to the trigger.
       const closeModal = () => {
         if (!modal) return;
         modal.classList.remove('show');
         const trigger = saveBtn || restoreFocusEl; trigger?.setAttribute?.('aria-expanded', 'false'); (trigger as any)?.focus?.();
       };
 
+      // Gathers the form data and asks the background page to persist it.
       const saveBookmark = async () => {
         if (!titleInput?.value.trim() || !urlInput?.value.trim()) { alert('Please enter both title and URL'); return; }
         try {
@@ -369,6 +433,7 @@ export default defineContentScript({
         } catch (error) { logger.error('Failed to save bookmark:', error); alert('Failed to save bookmark. Please try again.'); }
       };
 
+      // Pops a short-lived success toast inside the host page.
       const showSuccess = (message: string) => {
         const notification = document.createElement('div');
         notification.style.cssText = 'position:fixed; top:20px; right:20px; background:#10b981; color:white; padding:12px 16px; border-radius:8px; z-index:9999999; font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; font-size:14px;';
@@ -377,6 +442,7 @@ export default defineContentScript({
       };
 
       // Listeners
+      // Button open/close wiring keeps the modal responsive to user actions.
       saveBtn?.addEventListener('click', openModal, { signal });
       closeBtn?.addEventListener('click', closeModal, { signal });
       cancelBtn?.addEventListener('click', closeModal, { signal });
@@ -390,6 +456,7 @@ export default defineContentScript({
         if (e.key === 'Tab' && modal?.classList.contains('show')) {
           const focusables = Array.from(modal.querySelectorAll<HTMLElement>('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(el => !el.hasAttribute('disabled'));
           if (!focusables.length) return;
+          // Keep tabbing trapped inside the modal by looping focus manually.
           const first = focusables[0]; const last = focusables[focusables.length - 1];
           const active = (shadow!.activeElement as HTMLElement) || (document.activeElement as HTMLElement);
           const backwards = e.shiftKey;
@@ -399,6 +466,7 @@ export default defineContentScript({
       }, { signal });
 
       // Dropdowns
+      // Manage click toggles and add-new flows for tags/workspaces.
       tagTrigger?.addEventListener('click', (e) => { e.stopPropagation(); toggleTagDropdown(); }, { signal });
       workspaceTrigger?.addEventListener('click', (e) => { e.stopPropagation(); toggleWorkspaceDropdown(); }, { signal });
       addWorkspaceBtn?.addEventListener('click', () => {
@@ -411,6 +479,7 @@ export default defineContentScript({
       }, { signal });
 
       // Outside-click using composedPath relative to shadow host
+      // Collapse menus and modals when the user clicks elsewhere.
       window.addEventListener('pointerdown', (ev) => {
         const path = ev.composedPath();
         const insideHost = !!(host && path.includes(host));
@@ -422,6 +491,7 @@ export default defineContentScript({
       }, { signal, capture: true });
 
       // Initial data
+      // Pre-populate defaults and ensure the chip display stays in sync.
       updateUrlTitle();
       // Lazy load options on open
       updateTagLabel();

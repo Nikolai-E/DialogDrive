@@ -1,3 +1,6 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// Hook that copies text and shows a toast while debouncing repeat clicks.
+
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 

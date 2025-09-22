@@ -5,6 +5,7 @@
 - [x] Host permissions restricted to required AI domains
 - [x] Single active background script (legacy stubs neutralized)
 - [x] Build passes (`npm run build`)
+- [ ] Manifest CSP matches `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'self'`
 - [x] No TypeScript errors
 - [ ] Final manual QA on target domains
 

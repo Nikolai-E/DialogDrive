@@ -1,3 +1,6 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// Zustand store that unifies prompts, chats, filters, and destructive actions.
+
 import { create } from 'zustand';
 import type { AppStats, SortOption, ViewType } from '../types/app';
 import type { AddChatBookmark, ChatBookmark, WorkspaceItem } from '../types/chat';
@@ -5,50 +8,53 @@ import type { Prompt } from '../types/prompt';
 import { chatStorage } from './chatStorage';
 import { logger } from './logger';
 import { promptStorage } from './storage';
+import { secureStorage } from './secureStorageV2';
+import { toast } from 'sonner';
 
 type AddPrompt = Omit<Prompt, 'id' | 'created'>;
 type ContentFilter = 'all' | 'prompts' | 'chats';
 
 interface UnifiedState {
-  // Data
+  // Data.
   prompts: Prompt[];
   chats: ChatBookmark[];
   isLoading: boolean;
   error: string | null;
 
-  // Pagination
+  // Pagination.
   pageSize: number;
-  promptsCursor: string | null; // opaque cursor or ISO date id
+  promptsCursor: string | null; // Opaque cursor or ISO date id.
   chatsCursor: string | null;
   hasMorePrompts: boolean;
   hasMoreChats: boolean;
   isLoadingMorePrompts: boolean;
   isLoadingMoreChats: boolean;
 
-  // Search and filter state
+  // Search and filter state.
   searchTerm: string;
   sortBy: SortOption;
   filterTag: string;
-  selectedTags: string[]; // New: multi-tag selection (OR)
+  selectedTags: string[]; // Allow multi-tag selection (OR semantics).
   showPinned: boolean;
-  contentFilter: ContentFilter; // New: filter by content type
-  selectedWorkspace: string; // New: workspace filter
+  contentFilter: ContentFilter; // Filter by content type.
+  selectedWorkspace: string; // Filter by workspace label.
 
-  // View state
+  // View state.
   currentView: ViewType;
   editingPrompt: Prompt | null;
-  editingChat: ChatBookmark | null; // New: for editing chats
+  editingChat: ChatBookmark | null; // Track focused chat for editing.
 
-  // Derived data
+  // Derived data.
   workspaces: string[];
   allTags: string[];
-  filteredItems: WorkspaceItem[]; // Unified items
-  filteredPrompts: Prompt[]; // Backwards compatibility
+  filteredItems: WorkspaceItem[]; // Mixed prompt/chat items.
+  filteredPrompts: Prompt[]; // Backwards compatibility.
 
-  // Statistics
+  // Statistics.
   stats: AppStats;
+  lastClearedAt: string | null;
 
-  // Prompt actions (existing)
+  // Prompt actions.
   loadPrompts: (opts?: { reset?: boolean }) => Promise<void>;
   fetchMorePrompts: () => Promise<void>;
   addPrompt: (prompt: AddPrompt) => Promise<void>;
@@ -57,7 +63,7 @@ interface UnifiedState {
   togglePinPrompt: (id: string) => Promise<void>;
   incrementUsage: (id: string) => Promise<void>;
 
-  // Chat actions (new)
+  // Chat actions.
   loadChats: (opts?: { reset?: boolean }) => Promise<void>;
   fetchMoreChats: () => Promise<void>;
   addChat: (chat: AddChatBookmark) => Promise<void>;
@@ -66,30 +72,32 @@ interface UnifiedState {
   togglePinChat: (id: string) => Promise<void>;
   incrementChatAccess: (id: string) => Promise<void>;
 
-  // Search and filter actions
+  // Search and filter actions.
   setSearchTerm: (term: string) => void;
   setSortBy: (sortBy: SortOption) => void;
   setFilterTag: (tag: string) => void;
-  setSelectedTags: (tags: string[]) => void; // New
+  setSelectedTags: (tags: string[]) => void;
   setShowPinned: (show: boolean) => void;
-  setContentFilter: (filter: ContentFilter) => void; // New
-  setSelectedWorkspace: (workspace: string) => void; // New
+  setContentFilter: (filter: ContentFilter) => void;
+  setSelectedWorkspace: (workspace: string) => void;
   resetFilters: () => void;
 
-  // View actions
+  // View actions.
   setCurrentView: (view: ViewType) => void;
   setEditingPrompt: (prompt: Prompt | null) => void;
-  setEditingChat: (chat: ChatBookmark | null) => void; // New
+  setEditingChat: (chat: ChatBookmark | null) => void;
 
-  // Unified actions
-  loadAll: () => Promise<void>; // Load both prompts and chats (first page)
-  openItem: (item: WorkspaceItem) => void; // Open prompt for edit or chat in new tab
-  addWorkspace: (name: string) => void; // Add workspace label
-  deleteWorkspace: (name: string) => Promise<void>; // Delete workspace and migrate items
-  deleteTag: (tag: string) => Promise<void>; // Delete a tag from all items
+  // Unified actions.
+  loadAll: () => Promise<void>; // Load both prompts and chats (first page).
+  openItem: (item: WorkspaceItem) => void; // Open prompt for edit or chat in new tab.
+  addWorkspace: (name: string) => void; // Add workspace label.
+  deleteWorkspace: (name: string) => Promise<void>; // Delete workspace and migrate items.
+  deleteTag: (tag: string) => Promise<void>; // Delete a tag from all items.
+  clearAllData: () => Promise<void>;
 }
 
 // Convert prompt to WorkspaceItem
+// Gives the list a shared shape regardless of the underlying source.
 const promptToWorkspaceItem = (prompt: Prompt): WorkspaceItem => ({
   id: prompt.id,
   type: 'prompt',
@@ -104,6 +112,7 @@ const promptToWorkspaceItem = (prompt: Prompt): WorkspaceItem => ({
 });
 
 // Convert chat to WorkspaceItem  
+// Matches the same view model so the mixer can treat chats like prompts.
 const chatToWorkspaceItem = (chat: ChatBookmark): WorkspaceItem => ({
   id: chat.id,
   type: 'chat',
@@ -118,6 +127,7 @@ const chatToWorkspaceItem = (chat: ChatBookmark): WorkspaceItem => ({
 });
 
 // Helper to filter and sort unified items
+// Central brain for search, tag filters, pin-first ordering, etc.
 const getFilteredAndSortedItems = (
   prompts: Prompt[],
   chats: ChatBookmark[],
@@ -246,6 +256,7 @@ const getFilteredAndSortedPrompts = (
 };
 
 const calculateStats = (prompts: Prompt[], chats: ChatBookmark[]): AppStats => {
+  // Collapses key counts used on the settings screen.
   return {
     totalPrompts: prompts.length,
     totalChats: chats.length,
@@ -260,6 +271,7 @@ const calculateStats = (prompts: Prompt[], chats: ChatBookmark[]): AppStats => {
 };
 
 const updateAndFilterState = (state: UnifiedState) => {
+  // Sync derived lists, tags, workspaces, and stats anytime base data changes.
   // Combine workspaces from both prompts and chats
   const promptWorkspaces = state.prompts.map(p => p.workspace).filter(Boolean);
   const chatWorkspaces = state.chats.map(c => c.workspace).filter(Boolean);
@@ -299,6 +311,7 @@ const updateAndFilterState = (state: UnifiedState) => {
   return { ...state, workspaces, allTags, stats, filteredItems, filteredPrompts };
 };
 
+// Build the shared Zustand store that backs the popup UI.
 export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   // Initial state
   prompts: [],
@@ -339,8 +352,10 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
     totalUsage: 0,
     activeWorkspaces: 0,
   },
+  lastClearedAt: null,
 
   // Load all data (first page only)
+  // Pulls the opening batch for prompts, chats, and last-cleared meta.
   loadAll: async () => {
     try {
       set({ isLoading: true, error: null, promptsCursor: null, chatsCursor: null, hasMorePrompts: true, hasMoreChats: true });
@@ -363,7 +378,11 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
         return { items: all.slice(0, pageSize), nextCursor: all.length > pageSize ? all[pageSize - 1]?.id ?? null : null };
       };
 
-      const [pRes, cRes] = await Promise.all([loadPromptsPaged(), loadChatsPaged()]);
+      const [pRes, cRes, clearedAt] = await Promise.all([
+        loadPromptsPaged(),
+        loadChatsPaged(),
+        secureStorage.getLastClearedAt(),
+      ]);
 
       set(state => updateAndFilterState({
         ...state,
@@ -374,6 +393,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
         hasMorePrompts: !!pRes.nextCursor,
         hasMoreChats: !!cRes.nextCursor,
         isLoading: false,
+        lastClearedAt: clearedAt ?? state.lastClearedAt,
       }));
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Failed to load data';
@@ -383,6 +403,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   },
 
   // Prompt actions with pagination
+  // Supports both fresh loads and infinite scroll fetches.
   loadPrompts: async ({ reset } = { reset: false }) => {
     try {
       if (reset) set({ prompts: [], promptsCursor: null, hasMorePrompts: true });
@@ -408,6 +429,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   },
 
   fetchMorePrompts: async () => {
+    // Load next prompt page when the user scrolls for more.
     const { hasMorePrompts, isLoadingMorePrompts, pageSize, promptsCursor } = get();
     if (!hasMorePrompts || isLoadingMorePrompts) return;
     try {
@@ -518,6 +540,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   },
 
   fetchMoreChats: async () => {
+    // Append another chat page if the backend exposes pagination.
     const { hasMoreChats, isLoadingMoreChats, pageSize, chatsCursor } = get();
     if (!hasMoreChats || isLoadingMoreChats) return;
     try {
@@ -635,6 +658,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   
   // Unified actions
   openItem: (item) => {
+    // Opens the prompt editor or launches the chat tab based on item kind.
     if (item.type === 'prompt') {
       get().setEditingPrompt(item.data as Prompt);
       get().setCurrentView('form');
@@ -651,6 +675,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
     set(state => state.workspaces.includes(trimmed) ? state : { ...state, workspaces: [...state.workspaces, trimmed].sort((a,b)=>a.localeCompare(b)) });
   },
   deleteWorkspace: async (name: string) => {
+    // Moves everything back to General before dropping the workspace label.
     if (!name || name === 'General') return; // prevent deleting General
     try {
       const state = get();
@@ -688,6 +713,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
     }
   },
   deleteTag: async (tag: string) => {
+    // Strips the tag from prompts and chats everywhere it appears.
     if (!tag) return;
     try {
       const state = get();
@@ -716,6 +742,49 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
       set(s => updateAndFilterState({ ...s, prompts: updatedPrompts, chats: updatedChats }));
     } catch (err) {
       logger.error('Failed to delete tag', err);
+    }
+  },
+  clearAllData: async () => {
+    // Nukes every saved record and records the wipe timestamp.
+    try {
+      const timestamp = new Date().toISOString();
+      await secureStorage.clearAll();
+      await secureStorage.setLastClearedAt(timestamp);
+      set(state => updateAndFilterState({
+        ...state,
+        prompts: [],
+        chats: [],
+        stats: {
+          totalPrompts: 0,
+          totalChats: 0,
+          pinnedPrompts: 0,
+          totalUsage: 0,
+          activeWorkspaces: 1,
+        },
+        isLoading: false,
+        error: null,
+        promptsCursor: null,
+        chatsCursor: null,
+        hasMorePrompts: false,
+        hasMoreChats: false,
+        isLoadingMorePrompts: false,
+        isLoadingMoreChats: false,
+        searchTerm: '',
+        sortBy: 'recent',
+        filterTag: 'all',
+        selectedTags: [],
+        showPinned: false,
+        contentFilter: 'all',
+        selectedWorkspace: 'all',
+        currentView: 'list',
+        editingPrompt: null,
+        editingChat: null,
+        lastClearedAt: timestamp,
+      }));
+      toast.success('DialogDrive data deleted from this browser.');
+    } catch (err) {
+      logger.error('Failed to clear DialogDrive data', err);
+      toast.error('Could not clear DialogDrive data. Please try again.');
     }
   },
 }));

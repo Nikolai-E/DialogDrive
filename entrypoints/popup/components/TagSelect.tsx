@@ -1,5 +1,6 @@
 import { Check, ChevronDown, X } from 'lucide-react';
 import React from 'react';
+import { sanitizeTagLabel } from '../../floating-save/tagHelpers';
 
 type Props = {
   allTags: string[];
@@ -14,6 +15,30 @@ const TagSelect: React.FC<Props> = ({ allTags, value, onChange, onDeleteTag, cla
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const contentRef = React.useRef<HTMLDivElement>(null);
 
+  const sanitizedValue = React.useMemo(() => {
+    const seen = new Set<string>();
+    const result: string[] = [];
+    value.forEach(tag => {
+      const safe = sanitizeTagLabel(tag);
+      if (!safe || seen.has(safe)) return;
+      seen.add(safe);
+      result.push(safe);
+    });
+    return result;
+  }, [value]);
+
+  const sanitizedAllTags = React.useMemo(() => {
+    const seen = new Set<string>();
+    const result: string[] = [];
+    allTags.forEach(tag => {
+      const safe = sanitizeTagLabel(tag);
+      if (!safe || seen.has(safe)) return;
+      seen.add(safe);
+      result.push(safe);
+    });
+    return result;
+  }, [allTags]);
+
   React.useEffect(() => {
     const handler = (e: MouseEvent) => {
       const t = e.target as Node;
@@ -26,11 +51,14 @@ const TagSelect: React.FC<Props> = ({ allTags, value, onChange, onDeleteTag, cla
   }, []);
 
   const toggle = (tag: string) => {
-    const exists = value.includes(tag);
-    onChange(exists ? value.filter(t => t !== tag) : [...value, tag]);
+    const safeTag = sanitizeTagLabel(tag);
+    if (!safeTag) return;
+    const exists = sanitizedValue.includes(safeTag);
+    const next = exists ? sanitizedValue.filter(t => t !== safeTag) : [...sanitizedValue, safeTag];
+    onChange(next);
   };
 
-  const label = value.length === 0 ? 'Select tags' : `${value.length} selected`;
+  const label = sanitizedValue.length === 0 ? 'Select tags' : `${sanitizedValue.length} selected`;
 
   return (
     <div className={["relative inline-block w-full", className].filter(Boolean).join(' ')}>
@@ -48,11 +76,11 @@ const TagSelect: React.FC<Props> = ({ allTags, value, onChange, onDeleteTag, cla
           ref={contentRef}
           className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md outline-none p-1"
         >
-          {allTags.length === 0 && (
+          {sanitizedAllTags.length === 0 && (
             <div className="text-[11px] text-muted-foreground p-2">No tags</div>
           )}
-          {allTags.map((tag) => {
-            const selected = value.includes(tag);
+          {sanitizedAllTags.map((tag) => {
+            const selected = sanitizedValue.includes(tag);
             return (
               <div key={tag} className="group flex items-center gap-1 px-2 h-7 text-[11px] rounded hover:bg-accent/10">
                 <button
@@ -71,7 +99,7 @@ const TagSelect: React.FC<Props> = ({ allTags, value, onChange, onDeleteTag, cla
                     e.stopPropagation();
                     if (confirm(`Delete tag "${tag}" from all items?`)) {
                       onDeleteTag(tag);
-                      onChange(value.filter(t => t !== tag));
+                      onChange(sanitizedValue.filter(t => t !== tag));
                     }
                   }}
                 >

@@ -1,3 +1,4 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
 /**
  * TextCleaner — deterministic, zero‑dependency text sanitizer for TS/JS.
  *

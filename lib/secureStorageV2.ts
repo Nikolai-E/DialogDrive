@@ -17,6 +17,7 @@ const STORAGE_KEYS = {
   PROMPTS: 'dd_prompts',
   CHATS: 'dd_chats',
   PREFERENCES: 'dd_prefs',
+  LAST_CLEARED_AT: 'dd_lastClearedAt',
 } as const;
 
 export interface StorageAdapter {
@@ -99,6 +100,27 @@ export class SecureStorageV2 {
 
   async setPreferences<T>(preferences: T): Promise<void> {
     return this.sync.set(STORAGE_KEYS.PREFERENCES, preferences);
+  }
+
+  // Clear entry timestamp (local)
+  async getLastClearedAt(): Promise<string | undefined> {
+    return this.local.get<string>(STORAGE_KEYS.LAST_CLEARED_AT);
+  }
+
+  async setLastClearedAt(timestamp: string): Promise<void> {
+    await this.local.set(STORAGE_KEYS.LAST_CLEARED_AT, timestamp);
+  }
+
+  async clearAll(): Promise<void> {
+    try {
+      await Promise.all([
+        this.local.clear(),
+        this.sync.clear(),
+      ]);
+    } catch (error) {
+      logger.error('Failed to clear secure storage', error);
+      throw error;
+    }
   }
 
   // Storage info

@@ -1,3 +1,6 @@
+// An extension by Nikolai Eidheim, built with WXT + TypeScript.
+// Popup header that manages search, filtering, and quick-create menus.
+
 import { Filter, LayoutGrid, List, MessageSquare, MessageSquareText, Plus, Search, Settings as SettingsIcon, X } from 'lucide-react';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -16,6 +19,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettings, onOpenCleaner }) => {
+  // Pull relevant search/filter state so the header stays in sync with the list.
   const { searchTerm, setSearchTerm, contentFilter, setContentFilter, currentView } = useUnifiedStore();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showFilterPopover, setShowFilterPopover] = useState(false);
@@ -25,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
   const debounceRef = useRef<number | null>(null);
 
   // Setup portal root element once
+  // Creates a fixed container so menus can escape the bounded popup height.
   useLayoutEffect(() => {
     if (!portalElRef.current) {
       const el = document.createElement('div');
@@ -45,6 +50,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
   }, []);
 
   // Positioning for the dropdown relative to the button
+  // Calculate menu and filter popover positions whenever they show.
   const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({ display: 'none' });
   const [filterPopoverStyle, setFilterPopoverStyle] = useState<React.CSSProperties>({ display: 'none' });
   const filterButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -119,6 +125,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
   }, [showFilterPopover]);
 
   useEffect(() => {
+    // Close open overlays when the user presses escape or clicks away.
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setShowDropdown(false);
@@ -144,10 +151,12 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
   }, []);
 
   const setSearchTermDebounced = (val: string) => {
+    // Debounce search typing to avoid thrashing the zustand store.
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     debounceRef.current = window.setTimeout(() => setSearchTerm(val), 120);
   };
 
+  // Reusable tab chip component for toggling between prompt/chat views.
   const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ active, onClick, icon, label }) => (
     <button
       type="button"
