@@ -244,11 +244,16 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
             type="button"
             ref={buttonRef}
             onClick={() => setShowDropdown((v) => !v)}
-            className="h-7 px-2 rounded-md border border-border bg-background text-foreground hover:bg-accent/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background inline-flex items-center justify-center gap-1 transition-colors relative z-[1]"
+            className="h-7 px-2 rounded-md border border-neutral-700 text-white inline-flex items-center justify-center gap-1 transition-all relative z-[1]
+                       bg-gradient-to-b from-neutral-700 to-neutral-800
+                       hover:from-neutral-600 hover:to-neutral-700
+                       shadow-sm hover:shadow-md active:shadow-inner active:translate-y-[0.5px]
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-haspopup="menu"
             aria-expanded={showDropdown}
             aria-controls="create-menu"
             title="Create"
+            aria-label="Create"
           >
             <Plus className="h-4 w-4" />
           </button>

@@ -18,7 +18,8 @@ import TagSelect from './TagSelect';
 import { VoiceToneGenerator } from './VoiceToneGenerator';
 import WorkspaceSelect from './WorkspaceSelect';
 
-export const PromptForm: React.FC = () => {
+type PromptFormProps = { onboardingActive?: boolean };
+export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
   // Wire into the unified store to read/write prompt data.
   const {
     editingPrompt,
@@ -332,7 +333,7 @@ export const PromptForm: React.FC = () => {
               <Button
                 type="button"
                 size="sm"
-                variant="outline"
+                variant="default"
                 disabled={!newWorkspace.trim()}
                 onClick={() => {
                   const ws = newWorkspace.trim();
@@ -345,7 +346,8 @@ export const PromptForm: React.FC = () => {
                   setWorkspace(ws);
                   setNewWorkspace('');
                 }}
-                className="h-8 text-xs"
+                title="Add workspace"
+                className={`h-8 text-xs bg-black text-white hover:bg-black/90 border border-black ${onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
               >Add</Button>
             </div>
           </motion.div>
@@ -385,10 +387,11 @@ export const PromptForm: React.FC = () => {
               <Button
                 type="button"
                 size="sm"
-                variant="outline"
+                variant="default"
                 onClick={() => addTag()}
                 disabled={!sanitizeTagLabel(tagInput)}
-                className="h-8"
+                title="Add tag"
+                className={`h-8 bg-black text-white hover:bg-black/90 border border-black ${onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
               >
                 Add
               </Button>

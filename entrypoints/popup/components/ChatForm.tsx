@@ -15,7 +15,8 @@ import { sanitizeTagLabel } from '../../floating-save/tagHelpers';
 import TagSelect from './TagSelect';
 import WorkspaceSelect from './WorkspaceSelect';
 
-export const ChatForm: React.FC = () => {
+type ChatFormProps = { onboardingActive?: boolean };
+export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
   // Read chat editing state and actions from the unified store.
   const { 
     editingChat, 
@@ -293,7 +294,7 @@ export const ChatForm: React.FC = () => {
               <Button
                 type="button"
                 size="sm"
-                variant="outline"
+                variant="default"
                 disabled={!newWorkspace.trim()}
                 onClick={() => {
                   const ws = newWorkspace.trim();
@@ -305,7 +306,8 @@ export const ChatForm: React.FC = () => {
                   }
                   setNewWorkspace('');
                 }}
-                className="h-8 text-xs"
+                title="Add workspace"
+                className={`h-8 text-xs bg-black text-white hover:bg-black/90 border border-black ${onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
               >Add</Button>
             </div>
           </div>
@@ -356,11 +358,12 @@ export const ChatForm: React.FC = () => {
               />
               <Button
                 type="button"
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={handleAddTag}
                 disabled={!sanitizeTagLabel(currentTag)}
-                className="h-8"
+                title="Add tag"
+                className={`h-8 bg-black text-white hover:bg-black/90 border border-black ${onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
               >
                 Add
               </Button>
