@@ -29,7 +29,7 @@ DialogDrive helps you capture, organize, search, and reuse AI prompts and chat b
 
 ## Privacy & Data
 
-All data (prompts, bookmarks, settings, usage counts) is stored locally using browser extension storage. No external servers or analytics are contacted. See `PRIVACY_POLICY.md` for details.
+All data (prompts, bookmarks, settings, usage counts) is stored locally using browser extension storage. Content scripts do not access site `localStorage` and never inject unsafe HTML. No external servers or analytics are contacted. See `PRIVACY_POLICY.md` for details.
 
 ## Permissions Justification
 
@@ -102,7 +102,7 @@ types/            # Type definitions
 
 1. Update version in `wxt.config.ts`
 2. Update `CHANGELOG.md`
-3. `npm run build && npm run zip`
+3. Run pre-push checks (see `PRE_PUSH_REVIEW.md`), then `npm run build && npm run zip`
 4. Upload zip to Chrome Web Store Developer Dashboard
 5. Fill listing metadata (description, screenshots, privacy URL)
 6. Submit for review

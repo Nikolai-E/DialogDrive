@@ -12,10 +12,10 @@ export default defineConfig({
   manifest: {
     name: 'DialogDrive',
     description: 'Your AI Project Workspaces Extension',
-  version: '1.0.3',
+  version: '1.0.4',
     permissions: [
       'storage',
-      'tabs',
+      'activeTab',
       'clipboardWrite',
       'contextMenus',
       'notifications',
@@ -78,7 +78,12 @@ export default defineConfig({
       256: 'icon/icon-256.png'
     },
     content_security_policy: {
-      extension_pages: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'self'"
+      // Hardened CSP for extension pages; inline scripts are already blocked by MV3.
+      // Inline styles are allowed due to intentional inline styling in UI code.
+      extension_pages:
+        "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; " +
+        "script-src 'self'; style-src 'self' 'unsafe-inline'; " +
+        "img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'"
     }
   },
 });
