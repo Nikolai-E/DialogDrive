@@ -319,7 +319,8 @@ export default defineContentScript({
       // Draws the workspace dropdown and wires in delete/migrate shortcuts.
       const buildWorkspaceList = (workspaces: string[]) => {
         if (!workspaceContent) return;
-        workspaceContent.innerHTML = '';
+        // Clear previous items safely without using innerHTML.
+        workspaceContent.replaceChildren();
         // List each workspace as a selectable row in the dropdown.
         workspaces.forEach((ws) => {
           const row = document.createElement('div');
@@ -329,7 +330,9 @@ export default defineContentScript({
           check.setAttribute('viewBox', '0 0 16 16');
           check.setAttribute('fill', 'currentColor');
           check.setAttribute('class', 'dd-select-check');
-          check.innerHTML = '<path d="M13.485 1.929a1.5 1.5 0 0 1 0 2.121L6.75 10.786l-3.536-3.536a1.5 1.5 0 1 1 2.121-2.121l1.415 1.415 5.657-5.657a1.5 1.5 0 0 1 2.121 0z" />';
+          const checkPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          checkPath.setAttribute('d', 'M13.485 1.929a1.5 1.5 0 0 1 0 2.121L6.75 10.786l-3.536-3.536a1.5 1.5 0 1 1 2.121-2.121l1.415 1.415 5.657-5.657a1.5 1.5 0 0 1 2.121 0z');
+          check.appendChild(checkPath);
           const spacer = document.createElement('div');
           spacer.setAttribute('class', 'dd-select-spacer');
           row.appendChild(ws === currentWorkspace ? check : spacer);
@@ -338,7 +341,7 @@ export default defineContentScript({
           labelBtn.addEventListener('click', () => { setWorkspace(ws); toggleWorkspaceDropdown(false); }, { signal });
           row.appendChild(labelBtn);
           if (ws !== 'General') {
-            const del = document.createElement('button'); del.setAttribute('aria-label', `Delete workspace ${ws}`); del.className = 'dd-select-del'; del.innerHTML = '&times;';
+            const del = document.createElement('button'); del.setAttribute('aria-label', `Delete workspace ${ws}`); del.className = 'dd-select-del'; del.textContent = String.fromCharCode(215);
             del.addEventListener('click', async (e) => {
               e.stopPropagation();
               const ok = confirm(`Delete workspace "${ws}" and move its items to General?`);
