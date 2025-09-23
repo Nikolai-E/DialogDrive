@@ -2,7 +2,7 @@
 // Settings view that handles management tasks and data wipes.
 
 import { motion } from 'framer-motion';
-import { ArrowLeft, ExternalLink, Folder, Info, Tag, Trash2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Folder, Info, Keyboard, Tag, Trash2 } from 'lucide-react';
 import React from 'react';
 import { Button } from '../../../components/ui/button';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
@@ -54,6 +54,34 @@ export const Settings: React.FC = () => {
       </motion.div>
 
       <div className="p-4 space-y-6 flex-1 overflow-y-auto">
+        {/* Keyboard Shortcuts */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          className="space-y-3"
+        >
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Keyboard className="h-4 w-4"/> Keyboard Shortcuts</h3>
+          <ul className="space-y-1 text-sm">
+            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-2">
+              <span className="text-foreground/90">Focus search</span>
+              <span className="text-xs text-muted-foreground">Ctrl/Cmd + S (or F)</span>
+            </li>
+            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-2">
+              <span className="text-foreground/90">Bookmark chat</span>
+              <span className="text-xs text-muted-foreground">Ctrl/Cmd + B</span>
+            </li>
+            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-2">
+              <span className="text-foreground/90">New prompt</span>
+              <span className="text-xs text-muted-foreground">Ctrl/Cmd + P (or N)</span>
+            </li>
+            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-2">
+              <span className="text-foreground/90">Back to list</span>
+              <span className="text-xs text-muted-foreground">Escape</span>
+            </li>
+          </ul>
+          <p className="text-[11px] text-muted-foreground">Note: While the popup is focused, Save/Print shortcuts are intercepted to drive DialogDrive actions, not the browser.</p>
+        </motion.div>
         {/* Quick stats showing prompt usage. */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}

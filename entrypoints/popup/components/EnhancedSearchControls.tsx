@@ -39,7 +39,7 @@ export const EnhancedSearchControls: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 's' || e.key.toLowerCase() === 'f')) {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
@@ -56,7 +56,7 @@ export const EnhancedSearchControls: React.FC = () => {
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
           ref={searchInputRef}
-          placeholder="Search prompts and chats... (Ctrl+F)"
+          placeholder="Search prompts and chats..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           aria-label="Search prompts and chats"

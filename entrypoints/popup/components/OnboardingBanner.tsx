@@ -1,5 +1,5 @@
 // Lightweight first-run tip banner to help users discover key actions.
-import { Filter, Info, Plus } from 'lucide-react';
+import { Filter, Info, Plus, Keyboard } from 'lucide-react';
 import React from 'react';
 
 type Props = {
@@ -25,6 +25,10 @@ export const OnboardingBanner: React.FC<Props> = ({ onDismiss }) => {
             <li className="flex items-start gap-1.5">
               <Filter className="h-3.5 w-3.5 mt-0.5 text-primary flex-shrink-0" aria-hidden="true" />
               <span>Filter by Workspace or Tags using the chips and the filter menu.</span>
+            </li>
+            <li className="flex items-start gap-1.5">
+              <Keyboard className="h-3.5 w-3.5 mt-0.5 text-primary flex-shrink-0" aria-hidden="true" />
+              <span>Shortcuts: Focus search (Ctrl/Cmd+S or F), Bookmark chat (Ctrl/Cmd+B), New prompt (Ctrl/Cmd+P or N).</span>
             </li>
           </ul>
         </div>

@@ -234,7 +234,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
                 <X className="h-3.5 w-3.5" />
               </button>
             )}
-            <kbd className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none select-none text-[10px] px-1.5 py-0.5 rounded border border-border/80 text-muted-foreground/80 bg-muted/40">Ctrl K</kbd>
+            {/* Removed the visible shortcut hint to declutter the search box */}
           </div>
         </div>
         {/* Action Buttons */}

@@ -5,21 +5,30 @@ import { useEffect } from 'react';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 
 export function useGlobalShortcuts() {
-  const { currentView, setCurrentView, setEditingPrompt } = useUnifiedStore();
+  const { currentView, setCurrentView, setEditingPrompt, setEditingChat } = useUnifiedStore();
 
   useEffect(() => {
     // Listen for a few power-user shortcuts while the popup is open.
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+N for New Prompt
-      if (e.ctrlKey && e.key === 'n') {
+      // Ctrl/Cmd+P or N for New Prompt (intercepts Print)
+      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'p' || e.key.toLowerCase() === 'n')) {
         e.preventDefault();
+        e.stopPropagation();
         setCurrentView('form');
         setEditingPrompt(null);
       }
-      
-      // Ctrl+F to focus search
-      else if (e.ctrlKey && e.key === 'f') {
+      // Ctrl/Cmd+B for Bookmark Chat
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
         e.preventDefault();
+        e.stopPropagation();
+        setCurrentView('chat-form');
+        setEditingChat(null);
+      }
+      
+      // Ctrl/Cmd+S or F to focus search (intercepts Save Page)
+      else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 's' || e.key.toLowerCase() === 'f')) {
+        e.preventDefault();
+        e.stopPropagation();
         const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
         if (searchInput) {
           searchInput.focus();
