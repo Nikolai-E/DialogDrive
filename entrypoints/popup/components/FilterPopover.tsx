@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useUnifiedStore } from '../../../lib/unifiedStore';
-import { ChevronDown, SortAsc, Building2, Tag, Pin } from 'lucide-react';
+import { Building2, ChevronDown, Pin, SortAsc, Tag } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '../../../components/ui/button';
+import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { cn } from '../../../lib/utils';
 import type { SortOption } from '../../../types/app';
 
@@ -34,7 +34,7 @@ export const FilterPopover: React.FC = () => {
       if (workspaceRef.current && !workspaceRef.current.contains(event.target as Node)) setShowWorkspaceDropdown(false);
       if (tagsRef.current && !tagsRef.current.contains(event.target as Node)) setShowTagsDropdown(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside, { passive: true });
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 

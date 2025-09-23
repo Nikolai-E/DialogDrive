@@ -46,7 +46,7 @@ const TagSelect: React.FC<Props> = ({ allTags, value, onChange, onDeleteTag, cla
         setOpen(false);
       }
     };
-    document.addEventListener('mousedown', handler);
+    document.addEventListener('mousedown', handler, { passive: true });
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 

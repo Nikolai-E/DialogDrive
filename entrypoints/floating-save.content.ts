@@ -365,7 +365,11 @@ export default defineContentScript({
           const row = el as HTMLElement;
           const first = row.firstElementChild as HTMLElement | null;
           if (!first) return;
-          if (row.dataset.ws === ws) first.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor" class="dd-select-check"><path d="M13.485 1.929a1.5 1.5 0 0 1 0 2.121L6.75 10.786l-3.536-3.536a1.5 1.5 0 1 1 2.121-2.121l1.415 1.415 5.657-5.657a1.5 1.5 0 0 1 2.121 0z" /></svg>'; else first.innerHTML = '<div class="dd-select-spacer"></div>';
+          // Build replacement node rather than assigning innerHTML
+          const replaceWith = (row.dataset.ws === ws)
+            ? (() => { const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 16 16'); svg.setAttribute('fill', 'currentColor'); svg.setAttribute('class', 'dd-select-check'); const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', 'M13.485 1.929a1.5 1.5 0 0 1 0 2.121L6.75 10.786l-3.536-3.536a1.5 1.5 0 1 1 2.121-2.121l1.415 1.415 5.657-5.657a1.5 1.5 0 0 1 2.121 0z'); svg.appendChild(p); return svg; })()
+            : (() => { const spacer = document.createElement('div'); spacer.setAttribute('class', 'dd-select-spacer'); return spacer; })();
+          first.replaceWith(replaceWith);
         });
       };
 

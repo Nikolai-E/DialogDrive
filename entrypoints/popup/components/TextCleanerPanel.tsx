@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, ClipboardCopy, Eraser } from 'lucide-react';
+import { ClipboardCopy, Eraser } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Label } from '../../../components/ui/label';
@@ -96,9 +96,6 @@ export const TextCleanerPanel: React.FC = () => {
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCurrentView('list')}>
-              <ArrowLeft className="h-3.5 w-3.5" />
-            </Button>
             <span className="text-[12px] font-semibold">Cleaner</span>
           </div>
           <div className="flex items-center gap-1.5">

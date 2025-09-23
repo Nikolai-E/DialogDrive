@@ -20,7 +20,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettings, onOpenCleaner }) => {
   // Pull relevant search/filter state so the header stays in sync with the list.
-  const { searchTerm, setSearchTerm, contentFilter, setContentFilter, currentView } = useUnifiedStore();
+  const { searchTerm, setSearchTerm, contentFilter, setContentFilter, currentView, setCurrentView } = useUnifiedStore();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showFilterPopover, setShowFilterPopover] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -88,8 +88,8 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
     updatePosition();
     
     // Add resize listener to reposition on window resize
-    window.addEventListener('resize', updatePosition);
-    return () => window.removeEventListener('resize', updatePosition);
+  window.addEventListener('resize', updatePosition, { passive: true });
+  return () => window.removeEventListener('resize', updatePosition);
   }, [showDropdown]);
 
   useLayoutEffect(() => {
@@ -120,8 +120,8 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
     };
 
     updatePosition();
-    window.addEventListener('resize', updatePosition);
-    return () => window.removeEventListener('resize', updatePosition);
+  window.addEventListener('resize', updatePosition, { passive: true });
+  return () => window.removeEventListener('resize', updatePosition);
   }, [showFilterPopover]);
 
   useEffect(() => {
@@ -143,7 +143,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
       setShowFilterPopover(false);
     };
     window.addEventListener('keydown', onKey);
-    window.addEventListener('mousedown', onClick);
+    window.addEventListener('mousedown', onClick, { passive: true });
     return () => {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('mousedown', onClick);
@@ -201,18 +201,24 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
 
   return (
     <header className="shrink-0 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="px-2 py-1.5 flex items-center">
-        <div className="flex items-center gap-2">
+      <div className="px-2 py-1 flex items-center">
+        <button
+          type="button"
+          className="flex items-center gap-2 group"
+          onClick={() => { setCurrentView('list'); setContentFilter('all'); }}
+          title="Go to All"
+          aria-label="Go to All"
+        >
           <img
             src="/icon/icon-32.png"
             alt="DialogDrive Icon"
-            className="w-5 h-5 rounded-md shadow-sm ring-1 ring-border object-contain bg-background"
+            className="w-5 h-5 rounded-md shadow-sm ring-1 ring-border object-contain bg-background group-hover:opacity-90"
             draggable={false}
           />
-          <h1 className="text-[12px] font-semibold tracking-tight text-foreground select-none">DialogDrive</h1>
-        </div>
+          <h1 className="text-[12px] font-semibold tracking-tight text-foreground select-none group-hover:underline">DialogDrive</h1>
+        </button>
         {/* Compact Search */}
-        <div className="flex-1 mx-2 max-w-[240px]">
+        <div className="flex-1 mx-2 max-w-[236px]">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/80 z-10" />
             <Input
@@ -220,7 +226,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTermDebounced(e.target.value)}
-              className={cn('pl-7 pr-12 h-7 text-[12px] rounded-md placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background')}
+              className={cn('pl-7 pr-12 h-7 text-[13px] rounded-md placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background')}
               aria-label="Search prompts and chats"
               aria-live="polite"
             />
@@ -282,12 +288,12 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
         </div>
       </div>
       {/* Segmented Tabs */}
-      <div className="px-2 pb-2 pt-0">
+      <div className="px-2 pb-1.5 pt-0">
         <div className="relative w-full">
           <div role="tablist" aria-label="Views" className="grid grid-cols-4 gap-1 p-1 rounded-md bg-muted/40 border border-border">
-            <TabButton active={contentFilter === 'all'} onClick={() => setContentFilter('all')} icon={<LayoutGrid className="h-3.5 w-3.5" />} label="All" />
-            <TabButton active={contentFilter === 'prompts'} onClick={() => setContentFilter('prompts')} icon={<List className="h-3.5 w-3.5" />} label="Prompts" />
-            <TabButton active={contentFilter === 'chats'} onClick={() => setContentFilter('chats')} icon={<MessageSquare className="h-3.5 w-3.5" />} label="Chats" />
+            <TabButton active={contentFilter === 'all'} onClick={() => { setCurrentView('list'); setContentFilter('all'); }} icon={<LayoutGrid className="h-3.5 w-3.5" />} label="All" />
+            <TabButton active={contentFilter === 'prompts'} onClick={() => { setCurrentView('list'); setContentFilter('prompts'); }} icon={<List className="h-3.5 w-3.5" />} label="Prompts" />
+            <TabButton active={contentFilter === 'chats'} onClick={() => { setCurrentView('list'); setContentFilter('chats'); }} icon={<MessageSquare className="h-3.5 w-3.5" />} label="Chats" />
             <TabButton active={currentView === 'cleaner'} onClick={() => onOpenCleaner && onOpenCleaner()} icon={<MessageSquareText className="h-3.5 w-3.5" />} label="Cleaner" />
           </div>
         </div>

@@ -129,14 +129,14 @@ export const UnifiedList: React.FC = () => {
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
       {/* Quick filters showing top workspaces and tags. */}
-      <div className="px-2 pt-1.5 pb-1 border-b bg-background/80 backdrop-blur-sm">
-        <div className="flex gap-1.5 items-center overflow-x-auto whitespace-nowrap scrollbar-thin pb-1">
+      <div className="px-2 pt-1 pb-0.5 border-b bg-background/80 backdrop-blur-sm">
+        <div className="flex gap-1 items-center overflow-x-auto whitespace-nowrap scrollbar-thin pb-0.5">
           {topWorkspaces.map(ws => (
             <button
               type="button"
               key={ws}
               onClick={() => setSelectedWorkspace(selectedWorkspace === ws ? 'all' : ws)}
-              className={cn('px-2.5 py-1 rounded-full text-[10px] border transition-colors shrink-0',
+              className={cn('px-2 py-0.5 rounded-full text-[11px] border transition-colors shrink-0',
                 selectedWorkspace === ws ? 'bg-black text-white border-black' : 'bg-muted/50 hover:bg-muted border-border')}
             >{ws}</button>
           ))}
@@ -145,12 +145,12 @@ export const UnifiedList: React.FC = () => {
               type="button"
               key={tag}
               onClick={() => toggleTag(tag)}
-              className={cn('px-2.5 py-1 rounded-full text-[10px] border transition-colors shrink-0',
+              className={cn('px-2 py-0.5 rounded-full text-[11px] border transition-colors shrink-0',
                 activeTags.includes(tag) ? 'bg-black text-white border-black' : 'bg-muted/50 hover:bg-muted border-border')}
             >#{tag}</button>
           ))}
           {(topTags.length === 0 && topWorkspaces.length === 0) && (
-            <span className="text-[10px] text-muted-foreground">Add tags & workspaces to enable quick filters</span>
+            <span className="text-[11px] text-muted-foreground">Add tags & workspaces to enable quick filters</span>
           )}
         </div>
       </div>
@@ -181,24 +181,24 @@ export const UnifiedList: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-background">
-            <div className="bg-card rounded-full p-4 shadow-sm border border-border mb-4">
+          <div className="flex flex-col items-center justify-center h-full text-center p-6 bg-background">
+            <div className="bg-card rounded-full p-3.5 shadow-sm border border-border mb-3.5">
               {getEmptyStateContent().icon}
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">
+            <h3 className="text-[15px] font-semibold text-foreground mb-1.5">
               {getEmptyStateContent().title}
             </h3>
-            <p className="text-muted-foreground mb-6 max-w-sm">
+            <p className="text-muted-foreground mb-5 max-w-sm text-[13px]">
               {getEmptyStateContent().description}
             </p>
-            <div className="flex gap-3">
+            <div className="flex gap-2.5">
               {(() => {
                 const empty = getEmptyStateContent();
                 return (
                   <button
                     type="button"
                     onClick={() => setCurrentView(empty.actionView)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors font-medium shadow-sm"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-accent text-accent-foreground rounded-md hover:bg-accent/90 transition-colors font-medium shadow-sm text-[13px]"
                   >
                     {contentFilter === 'chats' ? <MessageSquare className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
                     {empty.actionLabel}

@@ -23,7 +23,7 @@ Total: 580px
 - **Framework**: React 19.1.0 with TypeScript 5.8.3
 - **Build tool**: WXT v0.20.6 for cross-browser compatibility
 - **Styling**: Inline styles (more reliable than CSS frameworks in extensions)
-- **Storage**: Dual strategy (browser.storage.local + localStorage fallback)
+- **Storage**: Chrome extension storage only (browser.storage.local for data, browser.storage.sync for lightweight preferences) — no site localStorage access from content scripts
 
 ### Phase 2A (Organization Features)
 - **Categories**: 8 predefined categories for prompt organization
@@ -37,12 +37,9 @@ Total: 580px
 
 ### Storage Strategy
 ```typescript
-// Dual storage approach for maximum compatibility
-try {
-  await browser.storage.local.set(data);
-} catch (error) {
-  localStorage.setItem(key, JSON.stringify(data));
-}
+// Single-source of truth using extension storage
+await browser.storage.local.set(data);
+const { key } = await browser.storage.local.get('key');
 ```
 
 ### Content Script Integration
@@ -108,13 +105,16 @@ npm run build  # Creates .output/ directory with extension files
 
 ## Error Handling Patterns
 
-### Storage Fallbacks
+### Storage Reliability
 ```typescript
-// Always provide localStorage fallback
+// Use try/catch to surface errors; do not fall back to site storage from content scripts
 try {
-  await browser.storage.local.get(key);
+  const value = await browser.storage.local.get(key);
+  return value[key];
 } catch (error) {
-  return JSON.parse(localStorage.getItem(key) || '[]');
+  // Log and propagate; callers should handle empty state gracefully
+  console.error('storage.local.get failed', error);
+  return undefined;
 }
 ```
 

@@ -2,16 +2,16 @@
 // Settings view that handles management tasks and data wipes.
 
 import { motion } from 'framer-motion';
-import { ArrowLeft, ExternalLink, Folder, Info, Keyboard, Tag, Trash2 } from 'lucide-react';
+import { ExternalLink, Folder, Info, Keyboard, Slash, Tag, Trash2 } from 'lucide-react';
 import React from 'react';
 import { Button } from '../../../components/ui/button';
+import type { PickerTrigger } from '../../../lib/constants';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import type { Prompt } from '../../../types/prompt';
 
 export const Settings: React.FC = () => {
   // Tap into shared store to surface stats and destructive actions.
   const {
-    setCurrentView,
     prompts,
     workspaces,
     allTags,
@@ -25,6 +25,28 @@ export const Settings: React.FC = () => {
   const [showClearModal, setShowClearModal] = React.useState(false);
   const [confirmationText, setConfirmationText] = React.useState('');
   const [isClearing, setIsClearing] = React.useState(false);
+  const [pickerTrigger, setPickerTrigger] = React.useState<PickerTrigger>('doubleSlash');
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const prefs: any = (await (await import('../../../lib/secureStorageV2')).secureStorage.getPreferences()) || {};
+        if (!mounted) return;
+        setPickerTrigger(prefs.pickerTrigger || 'doubleSlash');
+      } catch {}
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const updatePickerTrigger = async (mode: PickerTrigger) => {
+    setPickerTrigger(mode);
+    try {
+      const { secureStorage } = await import('../../../lib/secureStorageV2');
+      const prefs: any = (await secureStorage.getPreferences()) || {};
+      await secureStorage.setPreferences({ ...prefs, pickerTrigger: mode });
+    } catch {}
+  };
 
   // Simple aggregate counters for the quick stats cards.
   const stats = {
@@ -35,93 +57,103 @@ export const Settings: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="flex items-center p-4 border-b border-border"
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 mr-3 hover:bg-muted rounded-xl"
-          onClick={() => setCurrentView('list')}
-          aria-label="Back"
+      <div className="px-3 pt-2 pb-3 space-y-4 flex-1 overflow-y-auto">
+        {/* Prompt Picker Trigger */}
+        <motion.div
+          initial={{ y: 12, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.25 }}
+          className="space-y-2"
         >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h2 className="text-lg font-semibold text-foreground">Settings</h2>
-      </motion.div>
-
-      <div className="p-4 space-y-6 flex-1 overflow-y-auto">
+          <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2"><Slash className="h-4 w-4"/> Prompt Picker Trigger</h3>
+          <div className="text-[12.5px] text-foreground/80">Choose how to open the in-page picker on ChatGPT.</div>
+          <div className="inline-flex rounded-lg border border-border overflow-hidden">
+            <button
+              className={`px-3 py-2 text-[13px] ${pickerTrigger === 'none' ? 'bg-primary text-primary-foreground' : 'bg-background text-foreground'}`}
+              aria-pressed={pickerTrigger === 'none'}
+              onClick={() => updatePickerTrigger('none')}
+            >None</button>
+            <button
+              className={`px-3 py-2 text-[13px] border-l border-border ${pickerTrigger === 'doubleSlash' ? 'bg-primary text-primary-foreground' : 'bg-background text-foreground'}`}
+              aria-pressed={pickerTrigger === 'doubleSlash'}
+              onClick={() => updatePickerTrigger('doubleSlash')}
+           >// (double slash)</button>
+            <button
+              className={`px-3 py-2 text-[13px] border-l border-border ${pickerTrigger === 'backslash' ? 'bg-primary text-primary-foreground' : 'bg-background text-foreground'}`}
+              aria-pressed={pickerTrigger === 'backslash'}
+              onClick={() => updatePickerTrigger('backslash')}
+            >\ (backslash)</button>
+          </div>
+          <div className="text-[12px] text-muted-foreground">Tip: If double slashes appear in your text often, pick backslash or none.</div>
+        </motion.div>
         {/* Keyboard Shortcuts */}
         <motion.div
-          initial={{ y: 20, opacity: 0 }}
+          initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.4 }}
-          className="space-y-3"
+          transition={{ duration: 0.25 }}
+          className="space-y-2"
         >
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Keyboard className="h-4 w-4"/> Keyboard Shortcuts</h3>
-          <ul className="space-y-1 text-sm">
-            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-2">
+          <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2"><Keyboard className="h-4 w-4"/> Keyboard Shortcuts</h3>
+          <ul className="space-y-1.5 text-[13px]">
+            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-1.5">
               <span className="text-foreground/90">Focus search</span>
-              <span className="text-xs text-muted-foreground">Ctrl/Cmd + S (or F)</span>
+              <span className="text-xs text-muted-foreground">Ctrl/Cmd + S</span>
             </li>
-            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-2">
+            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-1.5">
               <span className="text-foreground/90">Bookmark chat</span>
               <span className="text-xs text-muted-foreground">Ctrl/Cmd + B</span>
             </li>
-            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-2">
+            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-1.5">
               <span className="text-foreground/90">New prompt</span>
-              <span className="text-xs text-muted-foreground">Ctrl/Cmd + P (or N)</span>
+              <span className="text-xs text-muted-foreground">Ctrl/Cmd + P</span>
             </li>
-            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-2">
+            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-1.5">
               <span className="text-foreground/90">Back to list</span>
               <span className="text-xs text-muted-foreground">Escape</span>
             </li>
           </ul>
-          <p className="text-[11px] text-muted-foreground">Note: While the popup is focused, Save/Print shortcuts are intercepted to drive DialogDrive actions, not the browser.</p>
+          <p className="text-[12px] text-muted-foreground">Note: While the popup is focused, Save/Print shortcuts are intercepted to drive DialogDrive actions, not the browser.</p>
         </motion.div>
         {/* Quick stats showing prompt usage. */}
         <motion.div
-          initial={{ y: 20, opacity: 0 }}
+          initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="space-y-3"
+          transition={{ duration: 0.25, delay: 0.05 }}
+          className="space-y-2"
         >
-          <h3 className="text-sm font-semibold text-foreground">Quick Stats</h3>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="p-3 rounded-xl bg-primary/10 text-center border border-primary/20">
-              <div className="text-2xl font-bold text-primary">{stats.totalPrompts}</div>
-              <div className="text-xs text-primary/70">Prompts</div>
+          <h3 className="text-[14.5px] font-semibold text-foreground">Quick Stats</h3>
+          <div className="grid grid-cols-3 gap-2.5">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-center border border-primary/20">
+              <div className="text-[20px] font-bold text-primary">{stats.totalPrompts}</div>
+              <div className="text-[12px] text-primary/70">Prompts</div>
             </div>
-            <div className="p-3 rounded-xl bg-amber-50 text-center border border-amber-200">
-              <div className="text-2xl font-bold text-amber-600">{stats.pinnedPrompts}</div>
-              <div className="text-xs text-amber-600/70">Pinned</div>
+            <div className="p-2.5 rounded-xl bg-amber-50 text-center border border-amber-200">
+              <div className="text-[20px] font-bold text-amber-600">{stats.pinnedPrompts}</div>
+              <div className="text-[12px] text-amber-600/70">Pinned</div>
             </div>
-            <div className="p-3 rounded-xl bg-green-50 text-center border border-green-200">
-              <div className="text-2xl font-bold text-green-600">{stats.totalUsage}</div>
-              <div className="text-xs text-green-600/70">Uses</div>
+            <div className="p-2.5 rounded-xl bg-green-50 text-center border border-green-200">
+              <div className="text-[20px] font-bold text-green-600">{stats.totalUsage}</div>
+              <div className="text-[12px] text-green-600/70">Uses</div>
             </div>
           </div>
         </motion.div>
 
         {/* Manage workspaces created by the user. */}
         <motion.div
-          initial={{ y: 20, opacity: 0 }}
+          initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="space-y-3"
+          transition={{ duration: 0.25, delay: 0.1 }}
+          className="space-y-2"
         >
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Folder className="h-4 w-4"/> Manage Workspaces</h3>
-          <div className="space-y-2">
+          <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2"><Folder className="h-4 w-4"/> Manage Workspaces</h3>
+          <div className="space-y-1.5">
             {workspaces.filter(w => w !== 'General').length === 0 ? (
               <p className="text-xs text-muted-foreground">No custom workspaces yet.</p>
             ) : (
               <ul className="space-y-1">
                 {/* List every custom workspace with a delete affordance. */}
                 {workspaces.filter(w => w !== 'General').map(ws => (
-                  <li key={ws} className="flex items-center justify-between text-sm bg-muted/30 rounded-md px-3 py-2">
+                  <li key={ws} className="flex items-center justify-between text-[13px] bg-muted/30 rounded-md px-3 py-1.5">
                     <span>{ws}</span>
                     <Button variant="destructive" size="sm" className="h-7 px-2 text-[11px]" onClick={() => deleteWorkspace(ws)}>
                       <Trash2 className="h-3.5 w-3.5 mr-1"/> Delete
@@ -135,20 +167,20 @@ export const Settings: React.FC = () => {
 
         {/* Manage tags applied across prompts and chats. */}
         <motion.div
-          initial={{ y: 20, opacity: 0 }}
+          initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.35 }}
-          className="space-y-3"
+          transition={{ duration: 0.25, delay: 0.15 }}
+          className="space-y-2"
         >
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Tag className="h-4 w-4"/> Manage Tags</h3>
-          <div className="space-y-2">
+          <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2"><Tag className="h-4 w-4"/> Manage Tags</h3>
+          <div className="space-y-1.5">
             {allTags.length === 0 ? (
               <p className="text-xs text-muted-foreground">No tags yet.</p>
             ) : (
-              <ul className="grid grid-cols-2 gap-2">
+              <ul className="grid grid-cols-2 gap-1.5">
                 {/* Surface each tag with a remove button for quick pruning. */}
                 {allTags.map(tag => (
-                  <li key={tag} className="flex items-center justify-between text-sm bg-muted/30 rounded-md px-3 py-2">
+                  <li key={tag} className="flex items-center justify-between text-[13px] bg-muted/30 rounded-md px-3 py-1.5">
                     <span>#{tag}</span>
                     <Button variant="destructive" size="sm" className="h-7 px-2 text-[11px]" onClick={() => deleteTag(tag)}>
                       <Trash2 className="h-3.5 w-3.5 mr-1"/> Delete
@@ -162,18 +194,18 @@ export const Settings: React.FC = () => {
 
         {/* Extension Info */}
         <motion.div
-          initial={{ y: 20, opacity: 0 }}
+          initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.4 }}
-          className="space-y-3"
+          transition={{ duration: 0.25, delay: 0.2 }}
+          className="space-y-2"
         >
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Info className="h-4 w-4" /> Privacy & Data</h3>
-          <div className="space-y-3 text-sm leading-relaxed">
-            <p className="text-muted-foreground">
+          <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2"><Info className="h-4 w-4" /> Privacy & Data</h3>
+          <div className="space-y-2.5 text-[13px] leading-relaxed">
+            <p className="text-foreground/85">
               DialogDrive is designed to keep your saved prompts, chat snippets (including URLs), workspaces, tags, usage counts, and UI preferences on this device only. We do not send that content to DialogDrive-operated servers, and if we ever offered optional cloud sync, we would ask you first.
             </p>
-            <div className="flex items-start gap-2 text-xs text-muted-foreground">
-              <Info className="mt-0.5 h-3.5 w-3.5 text-foreground/70" />
+            <div className="flex items-start gap-2 text-[12.5px] text-foreground/80">
+              <Info className="mt-0.5 h-3.5 w-3.5 text-foreground/80" />
               <span>
                 Depending on your Chrome profile, Google Sync may back up lightweight preferences (for example, layout choices). The Clear Local Data control removes the copies DialogDrive stores locally and issues a wipe request for any synced entries.
               </span>
@@ -181,7 +213,7 @@ export const Settings: React.FC = () => {
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
-                className="h-8 text-xs"
+                className="h-8 text-[12.5px]"
                 onClick={() => browser.tabs.create({ url: 'https://chromewebstore.google.com/detail/dialogdrive' })}
               >
                 <ExternalLink className="h-3.5 w-3.5 mr-2" /> Chrome Web Store Listing
@@ -192,29 +224,29 @@ export const Settings: React.FC = () => {
 
         {/* Clear Local Data */}
         <motion.div
-          initial={{ y: 20, opacity: 0 }}
+          initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.45 }}
-          className="space-y-3"
+          transition={{ duration: 0.25, delay: 0.25 }}
+          className="space-y-2"
         >
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Trash2 className="h-4 w-4" /> Clear Local Data</h3>
-          <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 space-y-3">
-            <p className="text-xs text-destructive/90 leading-relaxed">
+          <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2"><Trash2 className="h-4 w-4" /> Clear Local Data</h3>
+          <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 space-y-2.5">
+            <p className="text-[13px] text-destructive/90 leading-relaxed">
               Erase all prompts, chats, workspaces, tags, preferences, and usage counters saved on this browser in one step.
             </p>
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center justify-between text-[12.5px] text-foreground/80">
               <span>Last cleared:</span>
               <span className="font-medium text-foreground">{lastClearedAt ? new Date(lastClearedAt).toLocaleString() : '—'}</span>
             </div>
             <Button
               variant="destructive"
-              className="w-full h-9"
+              className="w-full h-9 text-[13px]"
               onClick={() => { setConfirmationText(''); setShowClearModal(true); }}
             >
               Wipe DialogDrive Data
             </Button>
-            <div className="flex items-start gap-2 text-[11px] text-muted-foreground leading-relaxed">
-              <Info className="mt-0.5 h-3.5 w-3.5 text-foreground/70" />
+            <div className="flex items-start gap-2 text-[12.5px] text-foreground/80 leading-relaxed">
+              <Info className="mt-0.5 h-3.5 w-3.5 text-foreground/80" />
               <span>
                 If Chrome Sync is enabled, Google may back up lightweight preferences (for example, layout settings). Clearing local data also requests removal of those synced copies.
               </span>
@@ -225,17 +257,17 @@ export const Settings: React.FC = () => {
 
       {showClearModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur">
-          <div className="w-[360px] rounded-xl border border-destructive/30 bg-card shadow-lg p-5 space-y-4">
+          <div className="w-[360px] rounded-xl border border-destructive/30 bg-card shadow-lg p-4 space-y-3.5">
             <div className="space-y-2">
-              <h4 className="text-base font-semibold text-foreground">Type DELETE to confirm</h4>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <h4 className="text-[15px] font-semibold text-foreground">Type DELETE to confirm</h4>
+              <p className="text-[13px] text-foreground/85 leading-relaxed">
                 This removes every saved prompt, chat, workspace, tag, usage count, and preference from DialogDrive on this browser. There is no undo.
               </p>
             </div>
             <input
               type="text"
               autoFocus
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-[13px]"
               placeholder="DELETE"
               value={confirmationText}
               onChange={(event) => setConfirmationText(event.target.value.toUpperCase())}
@@ -284,7 +316,7 @@ export const Settings: React.FC = () => {
                 Cancel
               </Button>
             </div>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[12.5px] text-foreground/80">
               Tip: If you only need to remove a workspace or tag, use the lists above instead.
             </p>
           </div>

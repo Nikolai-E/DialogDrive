@@ -17,7 +17,15 @@ export class ChatGPTAdapter extends BasePlatformAdapter {
       // Probe a few known selectors before falling back to the clipboard.
       const possibleSelectors = [
         '#prompt-textarea',
-        'textarea[placeholder*="Message"]',
+        'textarea#prompt-textarea',
+        'textarea[placeholder*="Message" i]',
+        'textarea[aria-label*="message" i]',
+        '[contenteditable="true"][role="textbox"]',
+        '[contenteditable="true"][data-testid="textbox"]',
+        'div[contenteditable="true"][data-lexical-editor]',
+        'div[data-testid="prosemirror-editor"]',
+        '[data-slate-editor="true"]',
+        'textarea',
         '[contenteditable="true"]'
       ];
       
@@ -34,12 +42,25 @@ export class ChatGPTAdapter extends BasePlatformAdapter {
       
       // Try to paste
       if (input instanceof HTMLTextAreaElement) {
+        input.focus();
         input.value = text;
         input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
         return true;
       } else if (input.isContentEditable) {
+        input.focus();
         input.textContent = text;
         input.dispatchEvent(new Event('input', { bubbles: true }));
+        try {
+          input.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, inputType: 'insertFromPaste', data: text }));
+        } catch {}
+        // Place caret at end
+        const range = document.createRange();
+        range.selectNodeContents(input);
+        range.collapse(false);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
         return true;
       }
       

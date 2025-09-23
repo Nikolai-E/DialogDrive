@@ -10,8 +10,8 @@ export function useGlobalShortcuts() {
   useEffect(() => {
     // Listen for a few power-user shortcuts while the popup is open.
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl/Cmd+P or N for New Prompt (intercepts Print)
-      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'p' || e.key.toLowerCase() === 'n')) {
+      // Ctrl/Cmd+P for New Prompt (intercepts Print)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
         e.preventDefault();
         e.stopPropagation();
         setCurrentView('form');
@@ -25,8 +25,8 @@ export function useGlobalShortcuts() {
         setEditingChat(null);
       }
       
-      // Ctrl/Cmd+S or F to focus search (intercepts Save Page)
-      else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 's' || e.key.toLowerCase() === 'f')) {
+      // Ctrl/Cmd+S to focus search (intercepts Save Page)
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         e.stopPropagation();
         const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;

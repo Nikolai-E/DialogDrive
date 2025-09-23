@@ -4,11 +4,11 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '../../../components/ui/select';
 import { Switch } from '../../../components/ui/switch';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
@@ -39,7 +39,7 @@ export const EnhancedSearchControls: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 's' || e.key.toLowerCase() === 'f')) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
@@ -50,7 +50,7 @@ export const EnhancedSearchControls: React.FC = () => {
   }, []);
 
   return (
-    <div className="px-4 py-3 space-y-3 bg-gray-50 border-b border-gray-200">
+    <div className="px-3 py-2 space-y-2.5 bg-gray-50 border-b border-gray-200 text-[13px]">
       {/* Search Input - LOCKED SPECIFICATION */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -60,7 +60,7 @@ export const EnhancedSearchControls: React.FC = () => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           aria-label="Search prompts and chats"
-          className="pl-10 pr-10 h-10 bg-white border-gray-300 rounded-lg text-sm placeholder:text-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+          className="pl-9 pr-9 h-9 bg-white border-gray-300 rounded-md text-[13px] placeholder:text-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
         />
         {searchTerm && (
           <Button
@@ -68,7 +68,7 @@ export const EnhancedSearchControls: React.FC = () => {
             size="icon"
             onClick={() => setSearchTerm('')}
             aria-label="Clear search"
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -76,7 +76,7 @@ export const EnhancedSearchControls: React.FC = () => {
       </div>
 
       {/* Enhanced Controls Row */}
-      <div className="grid grid-cols-2 gap-2">
+  <div className="grid grid-cols-2 gap-2">
         {/* Left Column */}
         <div className="space-y-2">
           {/* Content Type Filter */}
@@ -86,7 +86,7 @@ export const EnhancedSearchControls: React.FC = () => {
               <MessageSquare className="h-3.5 w-3.5 text-gray-500" />
             </div>
             <Select value={contentFilter} onValueChange={(value) => setContentFilter(value as typeof contentFilter)}>
-              <SelectTrigger className="h-8 px-3 bg-white border-gray-300 rounded-md text-sm flex-1">
+              <SelectTrigger className="h-8 px-2.5 bg-white border-gray-300 rounded-md text-[13px] flex-1">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-lg border-gray-200 shadow-lg">
@@ -111,7 +111,7 @@ export const EnhancedSearchControls: React.FC = () => {
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-gray-500" />
             <Select value={selectedWorkspace} onValueChange={setSelectedWorkspace}>
-              <SelectTrigger className="h-8 px-3 bg-white border-gray-300 rounded-md text-sm flex-1">
+              <SelectTrigger className="h-8 px-2.5 bg-white border-gray-300 rounded-md text-[13px] flex-1">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-lg border-gray-200 shadow-lg">
@@ -130,7 +130,7 @@ export const EnhancedSearchControls: React.FC = () => {
           <div className="flex items-center gap-2">
             <SortAsc className="h-4 w-4 text-gray-500" />
             <Select value={sortBy} onValueChange={(value: string) => setSortBy(value as any)}>
-              <SelectTrigger className="h-8 px-3 bg-white border-gray-300 rounded-md text-sm flex-1">
+              <SelectTrigger className="h-8 px-2.5 bg-white border-gray-300 rounded-md text-[13px] flex-1">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-lg border-gray-200 shadow-lg">
@@ -146,7 +146,7 @@ export const EnhancedSearchControls: React.FC = () => {
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
               <Select value={filterTag} onValueChange={setFilterTag}>
-                <SelectTrigger className="h-8 px-3 bg-white border-gray-300 rounded-md text-sm flex-1">
+                <SelectTrigger className="h-8 px-2.5 bg-white border-gray-300 rounded-md text-[13px] flex-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-lg border-gray-200 shadow-lg">
@@ -165,7 +165,7 @@ export const EnhancedSearchControls: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Pin className="h-4 w-4 text-gray-500" />
-          <Label htmlFor="pinned-filter" className="text-sm text-gray-700 font-medium">
+          <Label htmlFor="pinned-filter" className="text-[13px] text-gray-700 font-medium">
             Show Pinned Only
           </Label>
         </div>
@@ -179,12 +179,12 @@ export const EnhancedSearchControls: React.FC = () => {
 
       {/* Clear Filters */}
       {hasActiveFilters && (
-        <div className="pt-1">
+        <div className="pt-0.5">
           <Button
             variant="ghost"
             size="sm"
             onClick={resetFilters}
-            className="h-8 px-3 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md"
+            className="h-8 px-3 text-[13px] text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md"
           >
             <X className="h-4 w-4 mr-2" />
             Clear all filters

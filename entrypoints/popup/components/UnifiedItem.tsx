@@ -182,7 +182,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
   };
 
   return (
-    <div className="mx-2 my-1" role="button" tabIndex={0}
+    <div className="mx-2 my-0.5" role="button" tabIndex={0}
       onClick={handleCardClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -193,7 +193,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
     >
       <div
         className={cn(
-          'relative rounded-md px-2.5 py-2.5 select-none border border-border/60',
+          'relative rounded-md px-2.5 py-2 select-none border border-border/60',
           'bg-card hover:bg-card/80',
           'transition-colors'
         )}
@@ -201,8 +201,8 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
         <div className="flex items-center gap-2.5 min-w-0">
           {/* title and meta should truncate cleanly */}
           <div className="min-w-0 flex-1">
-            <div className="text-[12px] font-medium text-foreground truncate">{item.title}</div>
-            <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1.5">
+            <div className="text-[13px] font-medium text-foreground truncate">{item.title}</div>
+            <div className="text-[12px] text-muted-foreground truncate flex items-center gap-1.5">
               {getTypeIcon()}
               <span className="truncate">{item.workspace || 'General'}</span>
             </div>

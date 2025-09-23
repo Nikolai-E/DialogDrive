@@ -65,3 +65,7 @@ export const FEATURE_FLAGS = {
   ENABLE_CHAIN_EXECUTION: false,
   ENABLE_ANALYTICS: false,
 } as const;
+
+// Prompt picker triggers (shared types)
+export const PICKER_TRIGGERS = ['none', 'doubleSlash', 'backslash'] as const;
+export type PickerTrigger = typeof PICKER_TRIGGERS[number];
