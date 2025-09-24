@@ -36,7 +36,7 @@ All data (prompts, bookmarks, settings, usage counts) is stored locally using br
 | Permission                         | Reason                                             |
 | ---------------------------------- | -------------------------------------------------- |
 | `storage`                          | Persist prompts, bookmarks, settings               |
-| `tabs`                             | Query active tab for paste/capture workflows        |
+| `activeTab`                        | Temporarily access the active tab for paste/capture workflows |
 | `clipboardWrite`                   | Copy/paste prompt fallback                         |
 | `contextMenus`                     | Quick save selection, paste latest prompt          |
 | `notifications`                    | User feedback after save actions                   |

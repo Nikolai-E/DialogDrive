@@ -146,7 +146,8 @@ export const TextCleanerPanel: React.FC = () => {
             <div className="absolute inset-0 overflow-auto rounded-md border border-input bg-muted/30 p-2 text-[12px] whitespace-pre-wrap font-mono leading-5" aria-hidden>
               <DiffView original={raw} cleaned={result.text} />
             </div>
-            <Textarea id="clean" value={result.text} readOnly className="absolute inset-0 opacity-0" />
+            {/* Transparent overlay for easy select+copy; disable pointer events so scroll hits the diff below */}
+            <Textarea id="clean" value={result.text} readOnly className="absolute inset-0 opacity-0 pointer-events-none" />
           </div>
         </div>
       </div>

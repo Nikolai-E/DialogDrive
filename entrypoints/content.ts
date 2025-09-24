@@ -1000,12 +1000,11 @@ function setupPromptPicker() {
   // Removed redundant get/set helpers to reduce duplication
 
   // Removed caret helpers as unused
-  // Cleanup on pagehide/unload
+  // Cleanup on pagehide (avoid beforeunload to preserve BFCache)
   const cleanup = () => {
     try { document.removeEventListener('keydown', onKeyDown, true); } catch {}
     try { document.removeEventListener('input', onInput, true); } catch {}
     try { mo.disconnect(); } catch {}
   };
   window.addEventListener('pagehide', cleanup, { once: true });
-  window.addEventListener('beforeunload', cleanup, { once: true });
 }
