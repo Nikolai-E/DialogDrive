@@ -3,36 +3,25 @@ import { ClipboardCopy, Eraser } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Label } from '../../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
+import { Switch } from '../../../components/ui/switch';
 import { Textarea } from '../../../components/ui/textarea';
 import { secureStorage } from '../../../lib/secureStorageV2';
 import { cleanText, defaultCleanOptions, type CleanOptions } from '../../../lib/textCleaner';
-import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { useCopyToClipboard } from '../hooks/useCopyToClipboard';
 
 export const TextCleanerPanel: React.FC = () => {
-  const { setCurrentView } = useUnifiedStore();
   const [raw, setRaw] = useState('');
   const [opts, setOpts] = useState<CleanOptions>({
     ...defaultCleanOptions,
-    normalizeUnicode: true,
-    normalizeWhitespace: true,
-    normalizePunctuation: true,
-    stripInvisible: true,
-    preserveCodeBlocks: true,
-    stripNonKeyboardSymbols: false,
-    flattenMarkdown: false,
-    redactURLs: false,
-    transliterateDiacritics: false,
-    removeAIMarkers: { conservative: true, aggressive: false },
-    debug: false,
+    symbolMap: { ...defaultCleanOptions.symbolMap },
   });
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [descriptionVisible, setDescriptionVisible] = useState(true);
 
   const { isCopied, copyToClipboard } = useCopyToClipboard();
 
   const result = useMemo(() => cleanText(raw, opts), [raw, opts]);
-
-  const toggleKey = (key: keyof CleanOptions) => () =>
-    setOpts((o) => ({ ...o, [key]: !(o as any)[key] } as CleanOptions));
 
   // Load saved cleaner options on mount
   useEffect(() => {
@@ -40,40 +29,33 @@ export const TextCleanerPanel: React.FC = () => {
     (async () => {
       try {
         const prefs = (await secureStorage.getPreferences<any>()) || {};
-        const saved = prefs?.cleanerOptions as Partial<CleanOptions> | undefined;
-        if (alive && saved) {
-          setOpts((o) => ({
-            ...o,
-            ...saved,
-            removeAIMarkers: {
-              conservative: saved.removeAIMarkers?.conservative ?? o.removeAIMarkers.conservative,
-              aggressive: saved.removeAIMarkers?.aggressive ?? o.removeAIMarkers.aggressive,
-            },
-            ellipsisMode: (saved as any).ellipsisMode ?? o.ellipsisMode,
-          }));
-        }
+        const saved = prefs?.cleanerOptions;
+        if (!alive || !saved) return;
+        const migrated = migrateLegacyOptions(saved);
+        if (!migrated) return;
+        setOpts((current) => ({ ...current, ...migrated }));
       } catch {
         // ignore
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
 
   // Persist cleaner options when they change (lightweight object)
   useEffect(() => {
     const toSave = {
-      normalizeUnicode: opts.normalizeUnicode,
-      stripInvisible: opts.stripInvisible,
-      normalizeWhitespace: opts.normalizeWhitespace,
-      normalizePunctuation: opts.normalizePunctuation,
-      stripNonKeyboardSymbols: opts.stripNonKeyboardSymbols,
-      transliterateDiacritics: opts.transliterateDiacritics,
-      flattenMarkdown: opts.flattenMarkdown,
+      tidyStructure: opts.tidyStructure,
+      tone: opts.tone,
       preserveCodeBlocks: opts.preserveCodeBlocks,
-      redactURLs: opts.redactURLs,
-      removeAIMarkers: opts.removeAIMarkers,
+      stripSymbols: opts.stripSymbols,
+      redactContacts: opts.redactContacts,
+      transliterateLatin: opts.transliterateLatin,
       ellipsisMode: opts.ellipsisMode,
-    } as Partial<CleanOptions>;
+      symbolMap: opts.symbolMap,
+      aiPhraseBlacklist: opts.aiPhraseBlacklist,
+    } satisfies Partial<CleanOptions>;
 
     (async () => {
       try {
@@ -83,66 +65,117 @@ export const TextCleanerPanel: React.FC = () => {
         // ignore
       }
     })();
-  }, [opts.normalizeUnicode, opts.stripInvisible, opts.normalizeWhitespace, opts.normalizePunctuation, opts.stripNonKeyboardSymbols, opts.transliterateDiacritics, opts.flattenMarkdown, opts.preserveCodeBlocks, opts.redactURLs, opts.removeAIMarkers.conservative, opts.removeAIMarkers.aggressive, opts.ellipsisMode]);
+  }, [
+    opts.tidyStructure,
+    opts.tone,
+    opts.preserveCodeBlocks,
+    opts.stripSymbols,
+    opts.redactContacts,
+    opts.transliterateLatin,
+    opts.ellipsisMode,
+    opts.symbolMap,
+    opts.aiPhraseBlacklist,
+  ]);
 
   return (
     <div className="relative flex flex-col h-full text-[12px]">
-      {/* Compact two-line header with actions and option pills */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.12 }}
-        className="px-2 py-1 border-b bg-background/80"
+        className="px-2 py-2 border-b bg-background/80"
       >
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[12px] font-semibold">Cleaner</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Button size="xs" variant="outline" withIcon onClick={() => setRaw('')}>
-              <Eraser className="h-3.5 w-3.5" /> Clear
-            </Button>
-            <Button size="xs" withIcon className="bg-foreground text-white hover:opacity-90" onClick={() => copyToClipboard(result.text)} disabled={!result.text}>
-              <ClipboardCopy className="h-3.5 w-3.5" /> {isCopied ? 'Copied' : 'Copy'}
-            </Button>
-          </div>
-        </div>
+        <DescriptionBlock
+          onToggle={() => setShowAdvanced((prev) => !prev)}
+          label={showAdvanced ? 'Hide advanced' : 'Advanced options'}
+          descriptionVisible={descriptionVisible}
+          onToggleDescription={() => setDescriptionVisible((prev) => !prev)}
+        />
 
-        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
-          <TogglePill active={opts.normalizeUnicode} onClick={toggleKey('normalizeUnicode')}>Unicode</TogglePill>
-          <TogglePill active={opts.normalizeWhitespace} onClick={toggleKey('normalizeWhitespace')}>Whitespace</TogglePill>
-          <TogglePill active={opts.normalizePunctuation} onClick={toggleKey('normalizePunctuation')}>Punct</TogglePill>
-          <TogglePill active={opts.stripInvisible} onClick={toggleKey('stripInvisible')}>Invisible</TogglePill>
-          <TogglePill active={opts.preserveCodeBlocks} onClick={toggleKey('preserveCodeBlocks')}>Code</TogglePill>
-          <TogglePill
-            active={opts.removeAIMarkers.conservative}
-            onClick={() => setOpts((o) => ({ ...o, removeAIMarkers: { ...o.removeAIMarkers, conservative: !o.removeAIMarkers.conservative } }))}
-          >
-            AI
-          </TogglePill>
-          <div className="ml-1 inline-flex items-center gap-1">
-            <span className="text-muted-foreground">Ellipsis</span>
-            <div className="inline-flex rounded-md border border-input overflow-hidden">
-              <Button size="xs" variant={opts.ellipsisMode === 'dots' ? 'secondary' : 'outline'} className="h-6 px-2 text-foreground" onClick={() => setOpts((o) => ({ ...o, ellipsisMode: 'dots' }))}>...</Button>
-              <Button size="xs" variant={opts.ellipsisMode === 'dot' ? 'secondary' : 'outline'} className="h-6 px-2 text-foreground" onClick={() => setOpts((o) => ({ ...o, ellipsisMode: 'dot' }))}>.</Button>
-            </div>
+        {showAdvanced && (
+          <div className="mt-2 space-y-2 rounded-md border border-muted bg-muted/10 p-2">
+            <AdvancedRow
+              title="Structure tidy"
+              description="Softens markdown scaffolding (bullets, step labels, headings) without changing your paragraphs."
+              control={<Switch checked={opts.tidyStructure} onCheckedChange={(checked) => setOpts((prev) => ({ ...prev, tidyStructure: checked }))} aria-label="Toggle structure tidy" />}
+            />
+            <AdvancedRow
+              title="Tone scrub"
+              description="Removes AI-sounding intros/outros and filler. Gentle keeps more nuance; Assertive is stricter."
+              control={(
+                <Select value={opts.tone} onValueChange={(value) => setOpts((prev) => ({ ...prev, tone: value as CleanOptions['tone'] }))}>
+                  <SelectTrigger className="h-7 w-[116px] px-2 text-[11px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="text-[11px]">
+                    <SelectItem value="off">Off</SelectItem>
+                    <SelectItem value="gentle">Gentle</SelectItem>
+                    <SelectItem value="assertive">Assertive</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <AdvancedRow
+              title="Preserve code"
+              description="Skip edits inside fenced code blocks and inline `code`."
+              control={<Switch checked={opts.preserveCodeBlocks} onCheckedChange={(checked) => setOpts((prev) => ({ ...prev, preserveCodeBlocks: checked }))} aria-label="Toggle preserve code" />}
+            />
+            <AdvancedRow
+              title="Strip symbols"
+              description="Remove emojis and non-keyboard symbols unless overridden by a custom map."
+              control={<Switch checked={opts.stripSymbols} onCheckedChange={(checked) => setOpts((prev) => ({ ...prev, stripSymbols: checked }))} aria-label="Toggle strip symbols" />}
+            />
+            <AdvancedRow
+              title="Redact contacts"
+              description="Replace URLs and email addresses with <URL> / <EMAIL>."
+              control={<Switch checked={opts.redactContacts} onCheckedChange={(checked) => setOpts((prev) => ({ ...prev, redactContacts: checked }))} aria-label="Toggle redact contacts" />}
+            />
+            <AdvancedRow
+              title="Strip accents"
+              description="Remove combining accents in Latin text (résumé → resume)."
+              control={<Switch checked={opts.transliterateLatin} onCheckedChange={(checked) => setOpts((prev) => ({ ...prev, transliterateLatin: checked }))} aria-label="Toggle strip accents" />}
+            />
+            <AdvancedRow
+              title="Ellipsis style"
+              description="Choose how … characters render in the cleaned output."
+              control={(
+                <div className="inline-flex rounded-md border border-input">
+                  <Button size="xs" variant={opts.ellipsisMode === 'dots' ? 'secondary' : 'outline'} className="h-7 px-3" onClick={() => setOpts((prev) => ({ ...prev, ellipsisMode: 'dots' }))}>...</Button>
+                  <Button size="xs" variant={opts.ellipsisMode === 'dot' ? 'secondary' : 'outline'} className="h-7 px-3" onClick={() => setOpts((prev) => ({ ...prev, ellipsisMode: 'dot' }))}>.</Button>
+                </div>
+              )}
+            />
           </div>
-          <div className="ml-auto text-[11px] text-muted-foreground">
-            {result.report.changes} changes in {result.report.elapsedMs} ms
-          </div>
-        </div>
+        )}
       </motion.div>
 
       {/* Vertical layout: Input on first row (smaller), Cleaned on second row (expands) */}
-      <div className="flex-1 flex flex-col gap-2 p-2 min-h-0">
-        <div className="flex flex-col">
+      <div className="flex-1 grid grid-rows-[auto,1fr] gap-2 p-2 min-h-0">
+        <div className="flex flex-col min-h-[140px]">
           <Label htmlFor="raw" className="mb-1">Input</Label>
-          <Textarea id="raw" value={raw} onChange={(e) => setRaw(e.target.value)} placeholder="Paste text here" className="h-32 text-[12px]" />
+          <Textarea
+            id="raw"
+            value={raw}
+            onChange={(e) => setRaw(e.target.value)}
+            placeholder="Paste text here"
+            className="flex-1 min-h-[120px] resize-y text-[12px]"
+          />
         </div>
-        <div className="flex flex-col min-h-0 flex-1">
-          <Label htmlFor="clean" className="mb-1">Cleaned</Label>
+        <div className="flex flex-col min-h-0">
+          <div className="flex items-center justify-between mb-1">
+            <Label htmlFor="clean">Cleaned</Label>
+            <div className="flex items-center gap-1.5 text-[11px]">
+              <span className="text-muted-foreground">{result.report.changes} adjustments</span>
+              <Button size="xs" variant="outline" withIcon onClick={() => setRaw('')}>
+                <Eraser className="h-3.5 w-3.5" /> Clear
+              </Button>
+              <Button size="xs" withIcon className="bg-foreground text-white hover:opacity-90" onClick={() => copyToClipboard(result.text)} disabled={!result.text}>
+                <ClipboardCopy className="h-3.5 w-3.5" /> {isCopied ? 'Copied' : 'Copy'}
+              </Button>
+            </div>
+          </div>
           {/* Diff-highlighted view layered under a transparent textarea for easy copying and selection */}
-          <div className="relative flex-1 min-h-[200px]">
+          <div className="relative flex-1 min-h-[240px]">
             <div className="absolute inset-0 overflow-auto rounded-md border border-input bg-muted/30 p-2 text-[12px] whitespace-pre-wrap font-mono leading-5" aria-hidden>
               <DiffView original={raw} cleaned={result.text} />
             </div>
@@ -157,16 +190,83 @@ export const TextCleanerPanel: React.FC = () => {
 
 export default TextCleanerPanel;
 
-// Small pill-like toggle built from Button
-const TogglePill: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode }> = ({ active, onClick, children }) => (
-  <Button
-    size="xs"
-    variant={active ? 'secondary' : 'outline'}
-    className="h-6 px-2 text-foreground"
-    onClick={onClick}
-  >
-    {children}
-  </Button>
+function migrateLegacyOptions(saved: any): Partial<CleanOptions> | null {
+  if (!saved || typeof saved !== 'object') return null;
+
+  if ('standardize' in saved || 'tone' in saved) {
+    const next = { ...saved } as Partial<CleanOptions>;
+    if (typeof next.tone === 'string' && !['off', 'gentle', 'assertive'].includes(next.tone)) {
+      delete next.tone;
+    }
+    return next;
+  }
+
+  const migrated: Partial<CleanOptions> = {};
+
+  if (typeof saved?.flattenMarkdown === 'boolean') migrated.tidyStructure = saved.flattenMarkdown;
+
+  const legacyTone = saved?.removeAIMarkers;
+  if (legacyTone && typeof legacyTone === 'object') {
+    migrated.tone = legacyTone.aggressive ? 'assertive' : legacyTone.conservative ? 'gentle' : 'off';
+  }
+
+  if (typeof saved?.preserveCodeBlocks === 'boolean') migrated.preserveCodeBlocks = saved.preserveCodeBlocks;
+  if (typeof saved?.stripNonKeyboardSymbols === 'boolean') migrated.stripSymbols = saved.stripNonKeyboardSymbols;
+  if (typeof saved?.redactURLs === 'boolean') migrated.redactContacts = saved.redactURLs;
+  if (typeof saved?.transliterateDiacritics === 'boolean') migrated.transliterateLatin = saved.transliterateDiacritics;
+  if (typeof saved?.ellipsisMode === 'string') migrated.ellipsisMode = saved.ellipsisMode;
+  if (Array.isArray(saved?.aiPhraseBlacklist)) migrated.aiPhraseBlacklist = [...saved.aiPhraseBlacklist];
+  if (saved?.symbolMap && typeof saved.symbolMap === 'object') migrated.symbolMap = { ...saved.symbolMap };
+
+  return Object.keys(migrated).length ? migrated : null;
+}
+
+const AdvancedRow: React.FC<{ title: string; description: string; control: React.ReactNode }> = ({ title, description, control }) => (
+  <div className="flex items-start justify-between gap-3">
+    <div className="space-y-0.5">
+      <p className="text-[11px] font-medium text-foreground">{title}</p>
+      <p className="max-w-[360px] text-[10px] leading-snug text-muted-foreground">{description}</p>
+    </div>
+    <div className="shrink-0">{control}</div>
+  </div>
+);
+
+const DescriptionBlock: React.FC<{
+  onToggle: () => void;
+  label: string;
+  descriptionVisible: boolean;
+  onToggleDescription: () => void;
+}> = ({ onToggle, label, descriptionVisible, onToggleDescription }) => (
+  <div className="space-y-1 text-[11px] text-muted-foreground">
+    {descriptionVisible && (
+      <div className="rounded-md border border-dashed border-muted bg-muted/20 p-2 leading-snug">
+        <div className="flex items-center justify-between gap-2 text-foreground">
+          <p className="font-medium">What this cleaner does</p>
+          <button className="text-[10px] underline underline-offset-2" onClick={onToggleDescription}>
+            Hide
+          </button>
+        </div>
+        <ul className="mt-1 list-disc space-y-0.5 pl-4">
+          <li>Converts smart quotes to straight quotes and normalizes punctuation.</li>
+          <li>Removes hidden Unicode, non-breaking spaces, and stray control characters.</li>
+          <li>Turns em/en dashes into commas for natural sentence flow.</li>
+          <li>Collapses double spaces while preserving paragraph breaks.</li>
+          <li>Keeps standard ASCII, emojis, and readable formatting intact.</li>
+        </ul>
+      </div>
+    )}
+    {!descriptionVisible && (
+      <button className="text-[10px] font-medium text-foreground underline underline-offset-2" onClick={onToggleDescription}>
+        Show what this cleaner does
+      </button>
+    )}
+    <div className="flex items-center justify-between">
+      <span>{/* spacer for alignment */}</span>
+      <Button size="xs" variant="ghost" className="h-6 px-2" onClick={onToggle}>
+        {label}
+      </Button>
+    </div>
+  </div>
 );
 
 // Lightweight word-level diff view highlighting changes in the cleaned text
