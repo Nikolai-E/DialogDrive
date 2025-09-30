@@ -1,3 +1,4 @@
+This file has been deleted.
 1. [x] **Sanitize floating save tag rendering** – Completed Aug 2025. Verified literal rendering of `<img onerror>` tags and added regression coverage. Code: entrypoints/floating-save.content.ts:213.
 2. [x] **Lock down extension page CSP** – Completed Aug 2025. Manifest updated to MV3-aligned CSP; checklist entry added. Code: wxt.config.ts:77.
 3. [x] **Add one-click "Clear local data" control** – Completed Aug 2025. Settings modal with DELETE confirm, toast, timestamp, and sync wipe hook. Code: entrypoints/popup/components/Settings.tsx:147.

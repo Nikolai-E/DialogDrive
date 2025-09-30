@@ -1,3 +1,4 @@
+This file has been deleted.
 # Pre‑push Review — DialogDrive (v1.0.3)
 
 Date: 2025-09-23

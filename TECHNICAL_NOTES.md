@@ -1,3 +1,4 @@
+This file has been deleted.
 # DialogDrive - Technical Documentation
 
 ## Browser Extension Popup Constraints

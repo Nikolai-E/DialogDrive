@@ -1,10 +1,10 @@
 // An extension by Nikolai Eidheim, built with WXT + TypeScript.
 // Main popup shell that ties together prompts, chats, and settings.
 
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Toaster } from 'sonner';
 import { logger } from '../../lib/logger';
-import { secureStorage } from '../../lib/secureStorageV2';
+import { usePrefsStore } from '../../lib/prefsStore';
 import { useUnifiedStore } from '../../lib/unifiedStore';
 import './App.css';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -41,21 +41,14 @@ const App: React.FC = () => {
     setEditingChat,
   } = useUnifiedStore();
 
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const prefsRehydrated = usePrefsStore((state) => state._rehydrated);
+  const onboardingDismissed = usePrefsStore((state) => state.onboardingDismissed);
+  const dismissOnboarding = usePrefsStore((state) => state.dismissOnboarding);
 
   useEffect(() => {
     // Load prompts and chats when the popup first opens.
     logger.info('App mounted, loading all data...');
     loadAll();
-    // Fetch preference to see if we should show the first-run banner
-    (async () => {
-      try {
-        const prefs: any = (await secureStorage.getPreferences()) || {};
-        setShowOnboarding(!prefs?.onboardingDismissed);
-      } catch {
-        setShowOnboarding(true);
-      }
-    })();
   }, [loadAll]);
 
   // Registers keyboard shortcuts so users can drive the popup quickly.
@@ -90,21 +83,17 @@ const App: React.FC = () => {
         {/* Onboarding inline arrow overlay removed per request */}
         {/* Single scroll container; prevent nested scrolling */}
         <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent px-2.5 py-2">
-          {showOnboarding && currentView === 'list' && (
+          {prefsRehydrated && !onboardingDismissed && currentView === 'list' && (
             <OnboardingBanner
               onDismiss={async () => {
-                try {
-                  const prefs: any = (await secureStorage.getPreferences()) || {};
-                  await secureStorage.setPreferences({ ...prefs, onboardingDismissed: true });
-                } catch {}
-                setShowOnboarding(false);
+                dismissOnboarding();
               }}
             />
           )}
           {currentView === 'list' && <UnifiedList />}
           <Suspense fallback={<div className="py-6 text-center text-muted-foreground">Loading...</div>}>
-            {currentView === 'form' && <PromptForm onboardingActive={showOnboarding} />}
-            {currentView === 'chat-form' && <ChatForm onboardingActive={showOnboarding} />}
+            {currentView === 'form' && <PromptForm onboardingActive={prefsRehydrated && !onboardingDismissed} />}
+            {currentView === 'chat-form' && <ChatForm onboardingActive={prefsRehydrated && !onboardingDismissed} />}
             {currentView === 'settings' && <Settings />}
             {currentView === 'cleaner' && <TextCleanerPanel />}
           </Suspense>

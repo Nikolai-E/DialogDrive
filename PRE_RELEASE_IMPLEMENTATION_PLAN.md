@@ -1,3 +1,4 @@
+This file has been deleted.
 # DialogDrive Pre-Release Implementation Plan
 
 This revision expands the PRE_RELEASE_TODO items into actionable work while keeping DialogDrive fast, privacy-forward, and policy compliant. Each section highlights where we should pause and have the user (you) perform hands-on verification before continuing.

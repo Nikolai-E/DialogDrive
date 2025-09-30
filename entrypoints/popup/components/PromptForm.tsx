@@ -3,15 +3,19 @@
 
 import { motion } from 'framer-motion';
 import { ArrowLeft, ChevronDown, Clock, Hash, Loader2, Wand2, X } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Switch } from '../../../components/ui/switch';
 import { Textarea } from '../../../components/ui/textarea';
+import { useDraftStore, type DraftRecord, type PromptDraftData } from '../../../lib/draftStore';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
+import { useAutosaveDraft } from '../../../lib/useAutosaveDraft';
+import { formatRelativeTime } from '../../../lib/utils';
 import type { Prompt } from '../../../types/prompt';
 import { sanitizeTagLabel } from '../../floating-save/tagHelpers';
 import TagSelect from './TagSelect';
@@ -49,6 +53,58 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
   const tagDropdownRef = useRef<HTMLDivElement>(null);
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const workspaceDropdownRef = useRef<HTMLDivElement>(null);
+
+  const draftId = editingPrompt ? `prompt:${editingPrompt.id}` : 'prompt:new';
+  const finalizeDraft = useDraftStore((state) => state.finalizeDraft);
+  const [resumedDraftAt, setResumedDraftAt] = useState<number | null>(null);
+
+  const handleDraftHydrated = useCallback((payload: PromptDraftData, record: DraftRecord<'prompt'>) => {
+    setTitle(payload.title ?? '');
+    setText(payload.text ?? '');
+    setWorkspace(payload.workspace ?? 'General');
+    setTags(Array.isArray(payload.tags) ? [...payload.tags] : []);
+    setIncludeTimestamp(Boolean(payload.includeTimestamp));
+    setResumedDraftAt(record.updatedAt);
+  }, []);
+
+  const draftPayload = useMemo(() => ({
+    title,
+    text,
+    workspace,
+    tags,
+    includeTimestamp,
+  }), [title, text, workspace, tags, includeTimestamp]);
+
+  const {
+    hydrated: draftHydrated,
+    conflict: draftConflict,
+    flush: flushDraft,
+    discard: discardDraft,
+    saveImmediate,
+    clearConflict: clearDraftConflict,
+  } = useAutosaveDraft({
+    id: draftId,
+    type: 'prompt',
+    data: draftPayload,
+    onHydrated: handleDraftHydrated,
+  });
+
+  const handleApplyRemoteDraft = useCallback(() => {
+    if (!draftConflict || draftConflict.remote.type !== 'prompt') return;
+    const payload = draftConflict.remote.data as PromptDraftData;
+    setTitle(payload.title ?? '');
+    setText(payload.text ?? '');
+    setWorkspace(payload.workspace ?? 'General');
+    setTags(Array.isArray(payload.tags) ? [...payload.tags] : []);
+    setIncludeTimestamp(Boolean(payload.includeTimestamp));
+    setResumedDraftAt(draftConflict.remote.updatedAt);
+    saveImmediate(payload);
+    clearDraftConflict();
+  }, [draftConflict, saveImmediate, clearDraftConflict]);
+
+  const handleDismissConflict = useCallback(() => {
+    clearDraftConflict();
+  }, [clearDraftConflict]);
 
   const tagInputRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
@@ -111,7 +167,9 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
   }, [allTags]);
 
   useEffect(() => {
-    // When a prompt is selected for edit, hydrate the form fields.
+    clearDraftConflict();
+    // When a prompt is selected for edit, hydrate the form fields from the entity.
+    // For a new prompt, avoid resetting fields so hydrated draft data (if any) isn't clobbered.
     if (editingPrompt) {
       setTitle(editingPrompt.title);
       setText(editingPrompt.text);
@@ -119,14 +177,8 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
       const safeTags = (editingPrompt.tags || []).map(t => sanitizeTagLabel(t).toLowerCase()).filter(Boolean);
       setTags(Array.from(new Set(safeTags)));
       setIncludeTimestamp(editingPrompt.includeTimestamp);
-    } else {
-      setTitle('');
-      setText('');
-      setWorkspace('General');
-      setTags([]);
-      setIncludeTimestamp(false);
     }
-  }, [editingPrompt]);
+  }, [editingPrompt, clearDraftConflict]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     // Validate and persist the prompt back into storage.
@@ -138,6 +190,7 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
 
     setIsSubmitting(true);
     try {
+      await flushDraft();
       const promptData = {
         title: title.trim(),
         text: text.trim(),
@@ -149,15 +202,18 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
         lastUsed: editingPrompt?.lastUsed,
       };
 
-      if (editingPrompt) {
-        await updatePrompt({ ...editingPrompt, ...promptData });
-        toast.success('Prompt updated successfully!');
-      } else {
-        await addPrompt(promptData as Omit<Prompt, 'id' | 'created'>);
-        toast.success('Prompt created successfully!');
-      }
-      
-      handleClose();
+      await finalizeDraft(draftId, async () => {
+        if (editingPrompt) {
+          await updatePrompt({ ...editingPrompt, ...promptData });
+          toast.success('Prompt updated successfully!');
+        } else {
+          await addPrompt(promptData as Omit<Prompt, 'id' | 'created'>);
+          toast.success('Prompt created successfully!');
+        }
+      });
+      discardDraft();
+      setResumedDraftAt(null);
+      handleClose(false);
     } catch (error) {
       toast.error(`Failed to save prompt: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
@@ -165,10 +221,33 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
     }
   };
 
-  const handleClose = () => {
+  const handleClose = (preserveDraft: boolean = true) => {
     // Return to the list view and clear editing state.
+    if (preserveDraft) {
+      saveImmediate();
+    }
     setEditingPrompt(null);
     setCurrentView('list');
+  };
+
+  const handleCancel = async () => {
+    // Confirm before discarding current draft and leaving the form.
+    // If user confirms, discard any autosaved draft and navigate back without saving.
+    const hasContent = (title.trim().length + text.trim().length + tags.length) > 0 || includeTimestamp;
+    const shouldAsk = true; // Always ask to protect user input.
+    let proceed = true;
+    if (shouldAsk && hasContent) {
+  // Use native confirm for simplicity and reliability in tests.
+  proceed = window.confirm('Discard your unsaved changes?');
+    }
+    if (!proceed) return;
+    try {
+      await discardDraft();
+      setResumedDraftAt(null);
+    } finally {
+      setEditingPrompt(null);
+      setCurrentView('list');
+    }
   };
 
   const addTag = (tagToAdd?: string) => {
@@ -212,7 +291,7 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
           variant="ghost"
           size="icon"
           className="h-7 w-7 mr-1.5"
-          onClick={handleClose}
+          onClick={() => handleClose()}
           aria-label="Back"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -230,6 +309,26 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
         className="flex flex-col flex-1 overflow-hidden"
       >
         <div className="flex-1 p-3 space-y-3 overflow-y-auto scrollbar-thin">
+          {draftHydrated && resumedDraftAt && !draftConflict && (
+            <Alert className="text-[12px] border-emerald-300/60 bg-emerald-50 text-emerald-900">
+              <AlertTitle>Draft resumed</AlertTitle>
+              <AlertDescription>
+                Restored your unsaved changes from {formatRelativeTime(resumedDraftAt)}.
+              </AlertDescription>
+            </Alert>
+          )}
+          {draftConflict && (
+            <Alert variant="destructive" className="text-[12px]">
+              <AlertTitle>Draft updated elsewhere</AlertTitle>
+              <AlertDescription className="flex flex-col gap-2">
+                <span>Another window saved new edits {formatRelativeTime(draftConflict.remote.updatedAt)}.</span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="secondary" onClick={handleApplyRemoteDraft}>Use remote</Button>
+                  <Button size="sm" variant="outline" onClick={handleDismissConflict}>Keep mine</Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -474,7 +573,7 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
             transition={{ duration: 0.15 }}
             className="flex items-center justify-between gap-2.5 p-2 border-t bg-background/80 backdrop-blur-sm"
           >
-            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting} className="h-8 px-3">
+            <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting} className="h-8 px-3">
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting} className="min-w-[110px] h-8 bg-black text-white hover:bg-black/90 border border-black">
@@ -493,3 +592,4 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
     </div>
   );
 };
+

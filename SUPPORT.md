@@ -1,3 +1,4 @@
+This file has been deleted.
 # Support
 
 For questions, bugs, or feature requests:

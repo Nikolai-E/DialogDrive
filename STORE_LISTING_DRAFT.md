@@ -1,3 +1,4 @@
+This file has been deleted.
 # Store Listing Draft
 
 ## Proposed Name

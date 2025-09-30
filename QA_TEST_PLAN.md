@@ -1,3 +1,4 @@
+This file has been deleted.
 # QA Test Plan
 
 ## Environments

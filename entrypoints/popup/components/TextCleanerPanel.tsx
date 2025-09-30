@@ -1,81 +1,33 @@
 import { motion } from 'framer-motion';
 import { ClipboardCopy, Eraser } from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { Switch } from '../../../components/ui/switch';
 import { Textarea } from '../../../components/ui/textarea';
-import { secureStorage } from '../../../lib/secureStorageV2';
+import { usePrefsStore } from '../../../lib/prefsStore';
 import { cleanText, defaultCleanOptions, type CleanOptions } from '../../../lib/textCleaner';
 import { useCopyToClipboard } from '../hooks/useCopyToClipboard';
 
 export const TextCleanerPanel: React.FC = () => {
   const [raw, setRaw] = useState('');
-  const [opts, setOpts] = useState<CleanOptions>({
-    ...defaultCleanOptions,
-    symbolMap: { ...defaultCleanOptions.symbolMap },
-  });
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [descriptionVisible, setDescriptionVisible] = useState(true);
+  const cleanerOptions = usePrefsStore((state) => state.cleanerOptions);
+  const setCleanerOptions = usePrefsStore((state) => state.setCleanerOptions);
+  const cleanerTipsVisible = usePrefsStore((state) => state.cleanerTipsVisible);
+  const setCleanerTipsVisible = usePrefsStore((state) => state.setCleanerTipsVisible);
+  const prefsHydrated = usePrefsStore((state) => state._rehydrated);
 
   const { isCopied, copyToClipboard } = useCopyToClipboard();
 
-  const result = useMemo(() => cleanText(raw, opts), [raw, opts]);
+  const opts = useMemo(() => ({
+    ...cleanerOptions,
+    symbolMap: { ...cleanerOptions.symbolMap },
+    aiPhraseBlacklist: [...cleanerOptions.aiPhraseBlacklist],
+  }), [cleanerOptions]);
 
-  // Load saved cleaner options on mount
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const prefs = (await secureStorage.getPreferences<any>()) || {};
-        const saved = prefs?.cleanerOptions;
-        if (!alive || !saved) return;
-        const migrated = migrateLegacyOptions(saved);
-        if (!migrated) return;
-        setOpts((current) => ({ ...current, ...migrated }));
-      } catch {
-        // ignore
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  // Persist cleaner options when they change (lightweight object)
-  useEffect(() => {
-    const toSave = {
-      tidyStructure: opts.tidyStructure,
-      tone: opts.tone,
-      preserveCodeBlocks: opts.preserveCodeBlocks,
-      stripSymbols: opts.stripSymbols,
-      redactContacts: opts.redactContacts,
-      transliterateLatin: opts.transliterateLatin,
-      ellipsisMode: opts.ellipsisMode,
-      symbolMap: opts.symbolMap,
-      aiPhraseBlacklist: opts.aiPhraseBlacklist,
-    } satisfies Partial<CleanOptions>;
-
-    (async () => {
-      try {
-        const prefs = (await secureStorage.getPreferences<any>()) || {};
-        await secureStorage.setPreferences({ ...prefs, cleanerOptions: toSave });
-      } catch {
-        // ignore
-      }
-    })();
-  }, [
-    opts.tidyStructure,
-    opts.tone,
-    opts.preserveCodeBlocks,
-    opts.stripSymbols,
-    opts.redactContacts,
-    opts.transliterateLatin,
-    opts.ellipsisMode,
-    opts.symbolMap,
-    opts.aiPhraseBlacklist,
-  ]);
+  const result = useMemo(() => cleanText(raw, { ...defaultCleanOptions, ...opts }), [raw, opts]);
 
   return (
     <div className="relative flex flex-col h-full text-[12px]">
@@ -88,8 +40,8 @@ export const TextCleanerPanel: React.FC = () => {
         <DescriptionBlock
           onToggle={() => setShowAdvanced((prev) => !prev)}
           label={showAdvanced ? 'Hide advanced' : 'Advanced options'}
-          descriptionVisible={descriptionVisible}
-          onToggleDescription={() => setDescriptionVisible((prev) => !prev)}
+          descriptionVisible={prefsHydrated && cleanerTipsVisible}
+          onToggleDescription={() => setCleanerTipsVisible(!usePrefsStore.getState().cleanerTipsVisible)}
         />
 
         {showAdvanced && (
@@ -97,13 +49,13 @@ export const TextCleanerPanel: React.FC = () => {
             <AdvancedRow
               title="Structure tidy"
               description="Softens markdown scaffolding (bullets, step labels, headings) without changing your paragraphs."
-              control={<Switch checked={opts.tidyStructure} onCheckedChange={(checked) => setOpts((prev) => ({ ...prev, tidyStructure: checked }))} aria-label="Toggle structure tidy" />}
+              control={<Switch checked={opts.tidyStructure} onCheckedChange={(checked) => setCleanerOptions({ tidyStructure: checked })} aria-label="Toggle structure tidy" />}
             />
             <AdvancedRow
               title="Tone scrub"
               description="Removes AI-sounding intros/outros and filler. Gentle keeps more nuance; Assertive is stricter."
               control={(
-                <Select value={opts.tone} onValueChange={(value) => setOpts((prev) => ({ ...prev, tone: value as CleanOptions['tone'] }))}>
+                <Select value={opts.tone} onValueChange={(value) => setCleanerOptions({ tone: value as CleanOptions['tone'] })}>
                   <SelectTrigger className="h-7 w-[116px] px-2 text-[11px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -118,30 +70,30 @@ export const TextCleanerPanel: React.FC = () => {
             <AdvancedRow
               title="Preserve code"
               description="Skip edits inside fenced code blocks and inline `code`."
-              control={<Switch checked={opts.preserveCodeBlocks} onCheckedChange={(checked) => setOpts((prev) => ({ ...prev, preserveCodeBlocks: checked }))} aria-label="Toggle preserve code" />}
+              control={<Switch checked={opts.preserveCodeBlocks} onCheckedChange={(checked) => setCleanerOptions({ preserveCodeBlocks: checked })} aria-label="Toggle preserve code" />}
             />
             <AdvancedRow
               title="Strip symbols"
               description="Remove emojis and non-keyboard symbols unless overridden by a custom map."
-              control={<Switch checked={opts.stripSymbols} onCheckedChange={(checked) => setOpts((prev) => ({ ...prev, stripSymbols: checked }))} aria-label="Toggle strip symbols" />}
+              control={<Switch checked={opts.stripSymbols} onCheckedChange={(checked) => setCleanerOptions({ stripSymbols: checked })} aria-label="Toggle strip symbols" />}
             />
             <AdvancedRow
               title="Redact contacts"
               description="Replace URLs and email addresses with <URL> / <EMAIL>."
-              control={<Switch checked={opts.redactContacts} onCheckedChange={(checked) => setOpts((prev) => ({ ...prev, redactContacts: checked }))} aria-label="Toggle redact contacts" />}
+              control={<Switch checked={opts.redactContacts} onCheckedChange={(checked) => setCleanerOptions({ redactContacts: checked })} aria-label="Toggle redact contacts" />}
             />
             <AdvancedRow
               title="Strip accents"
               description="Remove combining accents in Latin text (résumé → resume)."
-              control={<Switch checked={opts.transliterateLatin} onCheckedChange={(checked) => setOpts((prev) => ({ ...prev, transliterateLatin: checked }))} aria-label="Toggle strip accents" />}
+              control={<Switch checked={opts.transliterateLatin} onCheckedChange={(checked) => setCleanerOptions({ transliterateLatin: checked })} aria-label="Toggle strip accents" />}
             />
             <AdvancedRow
               title="Ellipsis style"
               description="Choose how … characters render in the cleaned output."
               control={(
                 <div className="inline-flex rounded-md border border-input">
-                  <Button size="xs" variant={opts.ellipsisMode === 'dots' ? 'secondary' : 'outline'} className="h-7 px-3" onClick={() => setOpts((prev) => ({ ...prev, ellipsisMode: 'dots' }))}>...</Button>
-                  <Button size="xs" variant={opts.ellipsisMode === 'dot' ? 'secondary' : 'outline'} className="h-7 px-3" onClick={() => setOpts((prev) => ({ ...prev, ellipsisMode: 'dot' }))}>.</Button>
+                  <Button size="xs" variant={opts.ellipsisMode === 'dots' ? 'secondary' : 'outline'} className="h-7 px-3" onClick={() => setCleanerOptions({ ellipsisMode: 'dots' })}>...</Button>
+                  <Button size="xs" variant={opts.ellipsisMode === 'dot' ? 'secondary' : 'outline'} className="h-7 px-3" onClick={() => setCleanerOptions({ ellipsisMode: 'dot' })}>.</Button>
                 </div>
               )}
             />
@@ -189,37 +141,6 @@ export const TextCleanerPanel: React.FC = () => {
 };
 
 export default TextCleanerPanel;
-
-function migrateLegacyOptions(saved: any): Partial<CleanOptions> | null {
-  if (!saved || typeof saved !== 'object') return null;
-
-  if ('standardize' in saved || 'tone' in saved) {
-    const next = { ...saved } as Partial<CleanOptions>;
-    if (typeof next.tone === 'string' && !['off', 'gentle', 'assertive'].includes(next.tone)) {
-      delete next.tone;
-    }
-    return next;
-  }
-
-  const migrated: Partial<CleanOptions> = {};
-
-  if (typeof saved?.flattenMarkdown === 'boolean') migrated.tidyStructure = saved.flattenMarkdown;
-
-  const legacyTone = saved?.removeAIMarkers;
-  if (legacyTone && typeof legacyTone === 'object') {
-    migrated.tone = legacyTone.aggressive ? 'assertive' : legacyTone.conservative ? 'gentle' : 'off';
-  }
-
-  if (typeof saved?.preserveCodeBlocks === 'boolean') migrated.preserveCodeBlocks = saved.preserveCodeBlocks;
-  if (typeof saved?.stripNonKeyboardSymbols === 'boolean') migrated.stripSymbols = saved.stripNonKeyboardSymbols;
-  if (typeof saved?.redactURLs === 'boolean') migrated.redactContacts = saved.redactURLs;
-  if (typeof saved?.transliterateDiacritics === 'boolean') migrated.transliterateLatin = saved.transliterateDiacritics;
-  if (typeof saved?.ellipsisMode === 'string') migrated.ellipsisMode = saved.ellipsisMode;
-  if (Array.isArray(saved?.aiPhraseBlacklist)) migrated.aiPhraseBlacklist = [...saved.aiPhraseBlacklist];
-  if (saved?.symbolMap && typeof saved.symbolMap === 'object') migrated.symbolMap = { ...saved.symbolMap };
-
-  return Object.keys(migrated).length ? migrated : null;
-}
 
 const AdvancedRow: React.FC<{ title: string; description: string; control: React.ReactNode }> = ({ title, description, control }) => (
   <div className="flex items-start justify-between gap-3">

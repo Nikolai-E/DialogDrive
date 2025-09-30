@@ -1,3 +1,4 @@
+This file has been deleted.
 # DialogDrive Release Plan (v1.0.x)
 
 This plan finalizes DialogDrive for Chrome Web Store submission. It focuses on accessibility (focus management and control labeling), cleanup of remaining global event listeners in the floating UI, and improving the Text Cleaner to better remove AI markers and visualize whitespace changes. It also consolidates general pre‑submission checks.

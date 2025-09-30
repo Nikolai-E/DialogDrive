@@ -1,3 +1,4 @@
+This file has been deleted.
 # Project Audit Notes
 
 ## Overview

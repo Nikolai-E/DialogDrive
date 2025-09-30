@@ -1,3 +1,4 @@
+This file has been deleted.
 # DialogDrive Refactoring Task List
 
 ## ✅ COMPLETED TASKS

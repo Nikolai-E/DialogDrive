@@ -1,4 +1,5 @@
-﻿BLOCK
+﻿This file has been deleted.
+BLOCK
 
 - Top blockers:
   - TODO 1: Floating save modal allows unsanitized HTML, violating MV3 security expectations.

@@ -1,3 +1,4 @@
+This file has been deleted.
 # Chrome Web Store Launch Checklist
 
 ## Technical

@@ -1,3 +1,4 @@
+This file has been deleted.
 # DialogDrive Cleanup Verification Checklist
 
 ## ✅ Files Removed

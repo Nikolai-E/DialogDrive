@@ -6,6 +6,7 @@ import { ExternalLink, Folder, Info, Keyboard, Slash, Tag, Trash2 } from 'lucide
 import React from 'react';
 import { Button } from '../../../components/ui/button';
 import type { PickerTrigger } from '../../../lib/constants';
+import { usePrefsStore } from '../../../lib/prefsStore';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import type { Prompt } from '../../../types/prompt';
 
@@ -25,27 +26,12 @@ export const Settings: React.FC = () => {
   const [showClearModal, setShowClearModal] = React.useState(false);
   const [confirmationText, setConfirmationText] = React.useState('');
   const [isClearing, setIsClearing] = React.useState(false);
-  const [pickerTrigger, setPickerTrigger] = React.useState<PickerTrigger>('doubleSlash');
+  const pickerTrigger = usePrefsStore((state) => state.pickerTrigger);
+  const setPickerTrigger = usePrefsStore((state) => state.setPickerTrigger);
+  const prefsRehydrated = usePrefsStore((state) => state._rehydrated);
 
-  React.useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const prefs: any = (await (await import('../../../lib/secureStorageV2')).secureStorage.getPreferences()) || {};
-        if (!mounted) return;
-        setPickerTrigger(prefs.pickerTrigger || 'doubleSlash');
-      } catch {}
-    })();
-    return () => { mounted = false; };
-  }, []);
-
-  const updatePickerTrigger = async (mode: PickerTrigger) => {
+  const updatePickerTrigger = (mode: PickerTrigger) => {
     setPickerTrigger(mode);
-    try {
-      const { secureStorage } = await import('../../../lib/secureStorageV2');
-      const prefs: any = (await secureStorage.getPreferences()) || {};
-      await secureStorage.setPreferences({ ...prefs, pickerTrigger: mode });
-    } catch {}
   };
 
   // Simple aggregate counters for the quick stats cards.

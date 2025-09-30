@@ -1,3 +1,4 @@
+This file has been deleted.
 # DialogDrive – Improvement Plan
 
 Status: living document. Tracks immediate fixes, quick wins, and roadmap.

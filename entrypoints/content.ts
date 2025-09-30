@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { logger } from '../lib/logger';
 import { extractPlaceholders, replacePlaceholders } from '../lib/placeholders';
 import { platformManager } from '../lib/platforms/manager';
+import { usePrefsStore, waitForPrefsHydration } from '../lib/prefsStore';
 import { secureStorage } from '../lib/secureStorageV2';
 
 type PromptItem = {
@@ -29,7 +30,7 @@ export default defineContentScript({
     const PingMsg = z.object({ type: z.literal('PING') });
     const ContentMsg = z.union([PasteMsg, CaptureMsg, PingMsg]);
 
-    browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  browser.runtime.onMessage.addListener((message: unknown, _sender: unknown, sendResponse: (response: unknown) => void) => {
       (async () => {
         const parsed = ContentMsg.safeParse(message);
         if (!parsed.success) {
@@ -99,15 +100,31 @@ function setupPromptPicker() {
   let formEl: HTMLDivElement | null = null;
   let pickerTrigger: 'none' | 'doubleSlash' | 'backslash' = 'doubleSlash';
 
-  // Load picker trigger preference once (sync namespace preferred)
+  // Load picker trigger preference and keep it in sync with persisted store
   (async () => {
     try {
-      const prefs: any = (await secureStorage.getPreferences<any>()) || {};
+      const hydrated = await waitForPrefsHydration();
+      if (!hydrated) {
+        logger.warn('DialogDrive: Prefs hydration timed out; using defaults for picker trigger');
+      }
+      const prefs = usePrefsStore.getState();
       if (prefs.pickerTrigger === 'none' || prefs.pickerTrigger === 'backslash' || prefs.pickerTrigger === 'doubleSlash') {
         pickerTrigger = prefs.pickerTrigger;
       }
-    } catch {}
+    } catch (error) {
+      logger.warn('DialogDrive: Failed to hydrate picker trigger prefs', error as Error);
+    }
   })();
+
+  const unsubscribePicker = usePrefsStore.subscribe((state, previousState) => {
+    const trigger = state.pickerTrigger;
+    if (previousState && previousState.pickerTrigger === trigger) return;
+    if (trigger === 'none' || trigger === 'backslash' || trigger === 'doubleSlash') {
+      pickerTrigger = trigger;
+    }
+  });
+
+  window.addEventListener('beforeunload', unsubscribePicker);
   // caret tracking not needed yet; we'll derive value from DOM when needed
 
   // Safe extension API detection using globalThis to avoid TS errors in isolated context

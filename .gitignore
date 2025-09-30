@@ -22,3 +22,47 @@ web-ext.config.ts
 *.njsproj
 *.sln
 *.sw?
+
+# OS/Editor
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Vite/Build
+dist
+build
+.vite
+*.tsbuildinfo
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+.playwright/**
+
+# Env/Secrets
+.env
+.env.*
+!.env.example
+
+# Packaging artifacts
+*.zip
+*.tar.gz
+
+# Temporary
+temp/
+tmp/
+coverage/
+
+# Ignore internal planning/instructions by pattern
+/*PLAN*.md
+/*_PLAN*.md
+/*TODO*.md
+/*CHECKLIST*.md
+/*INSTRUCTIONS*.md
+/*APPROVAL*.md
+/*NOTES*.md
+/*SUMMARY*.md
+/*DRAFT*.md
+/*REVIEW*.md

@@ -68,6 +68,18 @@ Build production bundle:
 npm run build
 ```
 
+Run end-to-end tests (Playwright):
+
+```
+npm run test:e2e
+```
+
+Launch tests in headed mode during development:
+
+```
+npm run test:e2e:headed
+```
+
 Generate store zip:
 
 ```

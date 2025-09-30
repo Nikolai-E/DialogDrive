@@ -33,7 +33,9 @@
     "entrypoints/**/*",
     "lib/**/*",
     "types/**/*",
-    "components/**/*"
+    "components/**/*",
+    "tests/**/*",
+    "playwright.config.ts"
   ],
   "exclude": ["node_modules", ".wxt"]
 }

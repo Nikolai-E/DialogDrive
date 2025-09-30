@@ -2,54 +2,109 @@
 // Chat bookmark form for saving AI conversations with tags and workspaces.
 
 import { ArrowLeft, Link, Save, X } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Switch } from '../../../components/ui/switch';
+import { useDraftStore, type ChatDraftData, type DraftRecord } from '../../../lib/draftStore';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
+import { useAutosaveDraft } from '../../../lib/useAutosaveDraft';
+import { formatRelativeTime } from '../../../lib/utils';
 import { AddChatBookmark } from '../../../types/chat';
 import { sanitizeTagLabel } from '../../floating-save/tagHelpers';
 import TagSelect from './TagSelect';
 import WorkspaceSelect from './WorkspaceSelect';
 
+const DEFAULT_FORM: AddChatBookmark = {
+  title: '',
+  url: '',
+  platform: 'chatgpt',
+  workspace: 'General',
+  tags: [],
+  isPinned: false,
+};
+
 type ChatFormProps = { onboardingActive?: boolean };
 export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
-  // Read chat editing state and actions from the unified store.
-  const { 
-    editingChat, 
-    setEditingChat, 
-    setCurrentView, 
-    addChat, 
+  const {
+    editingChat,
+    setEditingChat,
+    setCurrentView,
+    addChat,
     updateChat,
-  workspaces,
-  allTags,
-  deleteTag
+    workspaces,
+    allTags,
+    deleteTag,
   } = useUnifiedStore();
 
-  // Keep the mutable form data in local state for easier inputs.
-  const [formData, setFormData] = useState<AddChatBookmark>({
-    title: '',
-    url: '',
-    platform: 'chatgpt',
-  workspace: 'General',
-    tags: [],
-    isPinned: false
+  const [formData, setFormData] = useState<AddChatBookmark>(() => ({ ...DEFAULT_FORM }));
+  const [currentTag, setCurrentTag] = useState('');
+  const [newWorkspace, setNewWorkspace] = useState('');
+  const [resumedDraftAt, setResumedDraftAt] = useState<number | null>(null);
+
+  const draftId = editingChat ? `chat:${editingChat.id}` : 'chat:new';
+  const finalizeDraft = useDraftStore((state) => state.finalizeDraft);
+
+  const handleDraftHydrated = useCallback((payload: ChatDraftData, record: DraftRecord<'chat'>) => {
+    setFormData({
+      title: payload.title ?? '',
+      url: payload.url ?? '',
+      platform: payload.platform ?? 'chatgpt',
+      workspace: payload.workspace ?? 'General',
+      tags: Array.isArray(payload.tags) ? [...payload.tags] : [],
+      isPinned: Boolean(payload.isPinned),
+    });
+    setResumedDraftAt(record.updatedAt);
+  }, []);
+
+  const draftPayload = useMemo<ChatDraftData>(() => ({
+    title: formData.title ?? '',
+    url: formData.url ?? '',
+    workspace: formData.workspace ?? 'General',
+    tags: Array.isArray(formData.tags) ? [...formData.tags] : [],
+    platform: formData.platform ?? 'chatgpt',
+    isPinned: Boolean(formData.isPinned),
+  }), [formData]);
+
+  const {
+    hydrated: draftHydrated,
+    conflict: draftConflict,
+    flush: flushDraft,
+    discard: discardDraft,
+    saveImmediate,
+    clearConflict: clearDraftConflict,
+  } = useAutosaveDraft({
+    id: draftId,
+    type: 'chat',
+    data: draftPayload,
+    onHydrated: handleDraftHydrated,
   });
 
-  const [currentTag, setCurrentTag] = useState('');
-  const [showPlatformDropdown, setShowPlatformDropdown] = useState(false);
-  const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
-  const [newWorkspace, setNewWorkspace] = useState('');
-  const [showTagDropdown, setShowTagDropdown] = useState(false);
-  const tagDropdownRef = useRef<HTMLDivElement>(null);
-  const platformRef = useRef<HTMLDivElement>(null);
-  const workspaceRef = useRef<HTMLDivElement>(null);
+  const handleApplyRemoteDraft = useCallback(() => {
+    if (!draftConflict || draftConflict.remote.type !== 'chat') return;
+    const payload = draftConflict.remote.data as ChatDraftData;
+    setFormData({
+      title: payload.title ?? '',
+      url: payload.url ?? '',
+      platform: payload.platform ?? 'chatgpt',
+      workspace: payload.workspace ?? 'General',
+      tags: Array.isArray(payload.tags) ? [...payload.tags] : [],
+      isPinned: Boolean(payload.isPinned),
+    });
+    setResumedDraftAt(draftConflict.remote.updatedAt);
+    saveImmediate(payload);
+    clearDraftConflict();
+  }, [draftConflict, saveImmediate, clearDraftConflict]);
 
-  const normalizedAllTags = React.useMemo(() => {
-    // Normalize tags for dropdown suggestions and duplicate checks.
+  const handleDismissConflict = useCallback(() => {
+    clearDraftConflict();
+  }, [clearDraftConflict]);
+
+  const normalizedAllTags = useMemo(() => {
     const seen = new Set<string>();
     const result: string[] = [];
     allTags.forEach((tag: string) => {
@@ -62,33 +117,23 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
   }, [allTags]);
 
   useEffect(() => {
-    // Hydrate the form when editing an existing chat bookmark.
+    clearDraftConflict();
     if (editingChat) {
-      const safeTags = (editingChat.tags || []).map(t => sanitizeTagLabel(t).toLowerCase()).filter(Boolean);
+      const safeTags = (editingChat.tags || [])
+        .map((tag) => sanitizeTagLabel(tag).toLowerCase())
+        .filter(Boolean);
       setFormData({
         title: editingChat.title,
         url: editingChat.url,
         platform: editingChat.platform,
         workspace: editingChat.workspace,
         tags: Array.from(new Set(safeTags)),
-        isPinned: editingChat.isPinned
-      });
-    } else {
-      // Reset the form for a new chat bookmark.
-      setFormData({
-        title: '',
-        url: '',
-        platform: 'chatgpt',
-        workspace: 'General',
-        tags: [],
-        isPinned: false
+        isPinned: editingChat.isPinned,
       });
     }
-  }, [editingChat]);
+  }, [editingChat, clearDraftConflict]);
 
-  // Auto-detect the platform instead of manual selection.
   const detectPlatform = (url: string): 'chatgpt' | 'gemini' | 'claude' | 'deepseek' => {
-    // Infers the chat provider from the URL so the user doesn't need to.
     try {
       const host = new URL(url).hostname;
       if (host.includes('chatgpt') || host.includes('openai')) return 'chatgpt';
@@ -100,7 +145,6 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    // Validate user input and persist the bookmark.
     e.preventDefault();
 
     const title = formData.title.trim();
@@ -127,7 +171,13 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
     }
 
     const workspace = (formData.workspace || 'General').trim() || 'General';
-    const tags = Array.from(new Set((formData.tags || []).map((tag) => sanitizeTagLabel(tag).toLowerCase()).filter(Boolean)));
+    const tags = Array.from(
+      new Set(
+        (formData.tags || [])
+          .map((tag) => sanitizeTagLabel(tag).toLowerCase())
+          .filter(Boolean),
+      ),
+    );
 
     const base = {
       ...formData,
@@ -143,106 +193,123 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
     }));
 
     try {
+      await flushDraft();
       const platform = detectPlatform(normalizedUrl);
-      if (editingChat) {
-        await updateChat({
-          ...editingChat,
-          ...base,
-          platform,
-        });
-        toast.success('Bookmark updated!');
-      } else {
-        await addChat({ ...base, platform });
-        toast.success('Bookmark added!');
-      }
-
-      setCurrentView('list');
-      setEditingChat(null);
+      await finalizeDraft(draftId, async () => {
+        if (editingChat) {
+          await updateChat({
+            ...editingChat,
+            ...base,
+            platform,
+          });
+          toast.success('Bookmark updated!');
+        } else {
+          await addChat({ ...base, platform });
+          toast.success('Bookmark added!');
+        }
+      });
+  discardDraft();
+  setResumedDraftAt(null);
+  handleClose();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save bookmark';
       toast.error(message);
     }
-
   };
 
-  const handleCancel = () => {
-    // Close the form and return to the list view.
+  const handleClose = () => {
+    // Preserve draft and navigate back to list
+    saveImmediate();
     setCurrentView('list');
     setEditingChat(null);
   };
 
+  const handleCancel = async () => {
+    // Confirm before discarding current draft
+    const hasContent = Boolean((formData.title || '').trim() || (formData.url || '').trim() || (formData.tags || []).length || formData.isPinned);
+    let proceed = true;
+    if (hasContent) {
+      proceed = window.confirm('Discard your unsaved changes?');
+    }
+    if (!proceed) return;
+    try {
+      await discardDraft();
+      setResumedDraftAt(null);
+    } finally {
+      setCurrentView('list');
+      setEditingChat(null);
+    }
+  };
+
   const handleAddTag = () => {
-    // Adds a sanitized tag to the pending chat bookmark.
     const safeTag = sanitizeTagLabel(currentTag).toLowerCase();
     if (safeTag && !(formData.tags || []).includes(safeTag)) {
-      setFormData(prev => ({ ...prev, tags: [...(prev.tags || []), safeTag] }));
+      setFormData((prev) => ({ ...prev, tags: [...(prev.tags || []), safeTag] }));
       setCurrentTag('');
     }
   };
-  
+
   const handleRemoveTag = (tagToRemove: string) => {
-    // Remove a tag chip from the chat bookmark.
     const safeTag = sanitizeTagLabel(tagToRemove).toLowerCase();
-    setFormData(prev => ({ ...prev, tags: (prev.tags || []).filter(tag => tag !== safeTag) }));
+    setFormData((prev) => ({
+      ...prev,
+      tags: (prev.tags || []).filter((tag) => tag !== safeTag),
+    }));
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    // Convert the current input into a tag when pressing enter.
     if (e.key === 'Enter') {
       e.preventDefault();
       handleAddTag();
     }
   };
 
-  const handlePlatformSelect = (platform: 'chatgpt' | 'gemini' | 'claude') => {
-    setFormData(prev => ({ ...prev, platform }));
-    setShowPlatformDropdown(false);
-  };
-
-  const handleWorkspaceSelect = (workspace: string) => {
-    setFormData(prev => ({ ...prev, workspace }));
-    setShowWorkspaceDropdown(false);
-  };
-
-  // Handle clicks outside dropdowns
-  useEffect(() => {
-    // Collapses dropdown menus if the user clicks elsewhere.
-    const handleClickOutside = (event: MouseEvent) => {
-      if (platformRef.current && !platformRef.current.contains(event.target as Node)) {
-        setShowPlatformDropdown(false);
-      }
-  // workspace dropdown handled by Select internally
-      if (tagDropdownRef.current && !tagDropdownRef.current.contains(event.target as Node)) {
-        setShowTagDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside, { passive: true });
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   return (
     <div className="flex flex-col h-full bg-background text-[12px]">
-      {/* Header */}
-      <div className="flex items-center gap-2 px-2.5 py-2 border-b bg-background/80 backdrop-blur-sm">
+      <div className="flex items-center p-2 border-b bg-background/80 backdrop-blur-sm">
         <Button
           variant="ghost"
           size="icon"
-          onClick={handleCancel}
-          className="h-7 w-7 p-0"
+          className="h-7 w-7 mr-1.5"
+          onClick={() => handleClose()}
           aria-label="Back"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h2 className="text-sm font-semibold">
-          {editingChat ? 'Edit Bookmark' : 'Add Bookmark'}
+          {editingChat ? 'Edit Chat Bookmark' : 'Create Chat Bookmark'}
         </h2>
       </div>
 
-      {/* Form */}
-      <div className="flex-1 overflow-y-auto p-3">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {/* URL Input */}
+      <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-3 space-y-3">
+          {draftHydrated && resumedDraftAt && !draftConflict && (
+            <Alert className="text-[12px] border-emerald-300/60 bg-emerald-50 text-emerald-900">
+              <AlertTitle>Draft resumed</AlertTitle>
+              <AlertDescription>
+                Restored your unsaved changes from {formatRelativeTime(resumedDraftAt)}.
+              </AlertDescription>
+            </Alert>
+          )}
+          {draftConflict && (
+            <Alert variant="destructive" className="text-[12px]">
+              <AlertTitle>Draft updated elsewhere</AlertTitle>
+              <AlertDescription className="flex flex-col gap-2">
+                <span>
+                  Another window saved new edits {formatRelativeTime(draftConflict.remote.updatedAt)}.
+                </span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="secondary" onClick={handleApplyRemoteDraft}>
+                    Use remote
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleDismissConflict}>
+                    Keep mine
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="url" className="text-[12px] font-medium">
               URL
@@ -254,13 +321,12 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
                 type="url"
                 placeholder="https://..."
                 value={formData.url}
-                onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, url: e.target.value }))}
                 className="pl-8 pr-3 h-8 text-[12px]"
               />
             </div>
           </div>
 
-          {/* Title Input */}
           <div className="space-y-1.5">
             <Label htmlFor="title" className="text-[12px] font-medium">
               Title *
@@ -269,18 +335,19 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
               id="title"
               placeholder="Enter a descriptive title..."
               value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
               required
               className="h-8 text-[12px]"
             />
           </div>
 
-          {/* Workspace (platform selection removed) */}
           <div className="space-y-1.5">
-            <Label htmlFor="workspace" className="text-[12px] font-medium">Workspace</Label>
+            <Label htmlFor="workspace" className="text-[12px] font-medium">
+              Workspace
+            </Label>
             <WorkspaceSelect
               value={formData.workspace}
-              onChange={(v) => setFormData(prev => ({ ...prev, workspace: v }))}
+              onChange={(value) => setFormData((prev) => ({ ...prev, workspace: value }))}
               id="workspace"
               className="shadow-sm h-8 text-[12px]"
             />
@@ -299,55 +366,39 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
                 onClick={() => {
                   const ws = newWorkspace.trim();
                   if (ws && !workspaces.includes(ws)) {
-                    (useUnifiedStore.getState().addWorkspace)(ws);
-                    setFormData(prev => ({ ...prev, workspace: ws }));
+                    useUnifiedStore.getState().addWorkspace(ws);
+                    setFormData((prev) => ({ ...prev, workspace: ws }));
                   } else if (ws) {
-                    setFormData(prev => ({ ...prev, workspace: ws }));
+                    setFormData((prev) => ({ ...prev, workspace: ws }));
                   }
                   setNewWorkspace('');
                 }}
                 title="Add workspace"
-                className={`h-8 text-xs bg-black text-white hover:bg-black/90 border border-black ${onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
-              >Add</Button>
+                className={`h-8 text-xs bg-black text-white hover:bg-black/90 border border-black ${
+                  onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
+                }`}
+              >
+                Add
+              </Button>
             </div>
           </div>
 
-          {/* Description removed (optional) */}
-
-          {/* Tags */}
           <div className="space-y-1.5">
             <Label className="text-[12px] font-medium">Tags</Label>
             <TagSelect
               allTags={normalizedAllTags}
               value={formData.tags || []}
-              onChange={(next) => setFormData(prev => ({ ...prev, tags: next }))}
+              onChange={(next) => setFormData((prev) => ({ ...prev, tags: next }))}
               onDeleteTag={(tag) => {
                 const safeTag = sanitizeTagLabel(tag).toLowerCase();
                 if (!safeTag) return;
                 deleteTag(safeTag);
-                setFormData(prev => ({ ...prev, tags: (prev.tags||[]).filter(t=>t!==safeTag) }));
+                setFormData((prev) => ({
+                  ...prev,
+                  tags: (prev.tags || []).filter((item) => item !== safeTag),
+                }));
               }}
             />
-            <div className="flex flex-wrap gap-1">
-              {['chatgpt','gemini','claude','deepseek'].map(p => {
-                const active = (formData.tags || []).includes(p);
-                return (
-                  <Button
-                    key={p}
-                    type="button"
-                    size="sm"
-                    variant={active ? 'default' : 'outline'}
-                    className="h-6 px-2 text-[10px]"
-                    onClick={() => setFormData(prev => {
-                      const existing = prev.tags || [];
-                      return ({ ...prev, tags: active ? existing.filter(t=>t!==p) : [...existing, p] });
-                    })}
-                  >
-                    {p}
-                  </Button>
-                );
-              })}
-            </div>
             <div className="flex gap-1.5">
               <Input
                 placeholder="Add a tag..."
@@ -363,7 +414,9 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
                 onClick={handleAddTag}
                 disabled={!sanitizeTagLabel(currentTag)}
                 title="Add tag"
-                className={`h-8 bg-black text-white hover:bg-black/90 border border-black ${onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
+                className={`h-8 bg-black text-white hover:bg-black/90 border border-black ${
+                  onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
+                }`}
               >
                 Add
               </Button>
@@ -380,7 +433,6 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
             )}
           </div>
 
-          {/* Pin Toggle */}
           <div className="flex items-center justify-between">
             <Label htmlFor="pin" className="text-[12px] font-medium">
               Pin this bookmark
@@ -388,22 +440,25 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
             <Switch
               id="pin"
               checked={formData.isPinned}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isPinned: checked }))}
+              onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isPinned: checked }))}
             />
           </div>
-        </form>
-      </div>
+        </div>
 
-      {/* Footer Actions */}
-      <div className="flex items-center justify-between gap-2.5 px-3 py-2 border-t bg-background/80 backdrop-blur-sm">
-        <Button type="button" variant="outline" onClick={handleCancel} className="h-8 px-3">
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={!formData.title.trim()} className="h-8 px-3 bg-black text-white hover:bg-black/90 border border-black">
-          <Save className="h-4 w-4 mr-1.5" />
-          {editingChat ? 'Update' : 'Save'}
-        </Button>
-      </div>
+        <div className="flex items-center justify-between gap-2.5 px-3 py-2 border-t bg-background/80 backdrop-blur-sm">
+          <Button type="button" variant="outline" onClick={handleCancel} className="h-8 px-3">
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={!formData.title.trim()}
+            className="h-8 px-3 bg-black text-white hover:bg-black/90 border border-black"
+          >
+            <Save className="h-4 w-4 mr-1.5" />
+            {editingChat ? 'Update' : 'Save'}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 };

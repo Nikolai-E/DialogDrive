@@ -13,43 +13,48 @@
 			"isBackground": false,
 			"problemMatcher": [
 				"$tsc"
-      ]
-    },
-
-    {
-      "label": "Clean Project",
-      "type": "shell",
-      "command": "npm run clean && npm install",
-      "group": {
-        "kind": "build",
-        "isDefault": false
-      },
-      "problemMatcher": []
-    },
-    
-    {
-      "label": "Fix All TypeScript Errors",
-      "type": "npm",
-      "script": "compile",
-      "group": "build",
-      "problemMatcher": "$tsc"
-    },
-    {
-      "label": "Build Extension",
-      "type": "npm",
-      "script": "build",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Dev Mode",
-      "type": "npm",
-      "script": "dev",
-      "isBackground": true,
-      "problemMatcher": []
-    }
-		]
+			]
+		},
+		{
+			"label": "Clean Project",
+			"type": "shell",
+			"command": "npm run clean && npm install",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Fix All TypeScript Errors",
+			"type": "npm",
+			"script": "compile",
+			"group": "build",
+			"problemMatcher": "$tsc"
+		},
+		{
+			"label": "Build Extension",
+			"type": "npm",
+			"script": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Dev Mode",
+			"type": "npm",
+			"script": "dev",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Clean Project (PS)",
+			"type": "shell",
+			"command": "npm run clean; npm install",
+			"isBackground": false,
+			"group": "build"
+		}
+	]
 }

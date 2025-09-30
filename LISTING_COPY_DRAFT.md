@@ -1,4 +1,5 @@
-﻿# Store Listing Copy Draft
+﻿This file has been deleted.
+# Store Listing Copy Draft
 
 **Title:** DialogDrive Prompt Hub
 **Tagline:** Save and reuse ChatGPT prompts without leaving your tab.
