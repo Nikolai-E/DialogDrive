@@ -14,7 +14,7 @@ test.describe('Prompt cancel clears draft', () => {
     const page = await openPopup(context, extensionUrl);
 
     // Open New Prompt
-    await page.getByRole('button', { name: 'Create' }).click();
+  await page.locator('button[aria-controls="create-menu"]').click();
     await page.getByRole('menuitem', { name: /new prompt/i }).click();
 
     await expect(page.getByRole('heading', { name: /create new prompt/i })).toBeVisible();
@@ -33,7 +33,7 @@ test.describe('Prompt cancel clears draft', () => {
     await expect(page.getByRole('heading', { name: 'DialogDrive' })).toBeVisible();
 
     // Re-open New Prompt; fields should not contain prior draft
-    await page.getByRole('button', { name: 'Create' }).click();
+  await page.locator('button[aria-controls="create-menu"]').click();
     await page.getByRole('menuitem', { name: /new prompt/i }).click();
 
     await expect(page.getByRole('heading', { name: /create new prompt/i })).toBeVisible();

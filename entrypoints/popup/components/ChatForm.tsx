@@ -268,13 +268,15 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
     <div className="flex flex-col h-full bg-background text-[12px]">
       <div className="flex items-center p-2 border-b bg-background/80 backdrop-blur-sm">
         <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 mr-1.5"
+          variant="default"
+          size="xs"
+          className="h-7 mr-1.5 bg-black text-white hover:bg-black/90 border border-black"
           onClick={() => handleClose()}
           aria-label="Back"
+          withIcon
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back
         </Button>
         <h2 className="text-sm font-semibold">
           {editingChat ? 'Edit Chat Bookmark' : 'Create Chat Bookmark'}

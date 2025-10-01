@@ -74,6 +74,12 @@ Run end-to-end tests (Playwright):
 npm run test:e2e
 ```
 
+### UI notes (Oct 2025)
+
+- Tabs: All, Prompts, Chats, Library. Library lists premade prompts you can add.
+- Tools: The old Cleaner moved under the Tools dropdown as "Text Tools" (same functionality).
+- Fresh installs start with empty Prompts/Chats; use Library to seed examples.
+
 Launch tests in headed mode during development:
 
 ```

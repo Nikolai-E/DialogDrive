@@ -61,16 +61,15 @@ const createInitialPrompts = (): Prompt[] => [
   }
 ];
 
-// Initialize storage with default data.
+// Initialize storage without seeding default prompts.
 export const initializeStorage = async (): Promise<void> => {
   try {
     const existingPrompts = await secureStorage.getPrompts<Prompt[]>();
-    
-    if (!existingPrompts || existingPrompts.length === 0) {
-      const initialPrompts = createInitialPrompts();
-      await secureStorage.setPrompts(initialPrompts);
-      logger.info('Initialized storage with default prompts');
-      logStorageAction('Initialize storage', true);
+    // Do not seed any default prompts; keep initial state empty per new Library design.
+    if (!existingPrompts) {
+      await secureStorage.setPrompts([]);
+      logger.info('Initialized storage with empty prompt list');
+      logStorageAction('Initialize storage (empty)', true);
     }
 
     // Set storage version.

@@ -162,7 +162,7 @@ const DescriptionBlock: React.FC<{
     {descriptionVisible && (
       <div className="rounded-md border border-dashed border-muted bg-muted/20 p-2 leading-snug">
         <div className="flex items-center justify-between gap-2 text-foreground">
-          <p className="font-medium">What this cleaner does</p>
+          <p className="font-medium">What these text tools do</p>
           <button className="text-[10px] underline underline-offset-2" onClick={onToggleDescription}>
             Hide
           </button>
@@ -178,7 +178,7 @@ const DescriptionBlock: React.FC<{
     )}
     {!descriptionVisible && (
       <button className="text-[10px] font-medium text-foreground underline underline-offset-2" onClick={onToggleDescription}>
-        Show what this cleaner does
+        Show what these text tools do
       </button>
     )}
     <div className="flex items-center justify-between">

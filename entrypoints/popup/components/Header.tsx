@@ -1,7 +1,7 @@
 // An extension by Nikolai Eidheim, built with WXT + TypeScript.
 // Popup header that manages search, filtering, and quick-create menus.
 
-import { Filter, LayoutGrid, List, MessageSquare, MessageSquareText, Plus, Search, Settings as SettingsIcon, X } from 'lucide-react';
+import { Filter, Hammer, LayoutGrid, List, MessageSquare, Plus, Search, Settings as SettingsIcon, X } from 'lucide-react';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 // Remove Button import usage in this file; we will use raw <button> for explicit styling
@@ -16,9 +16,10 @@ interface HeaderProps {
   onNewChat: () => void;
   onSettings: () => void;
   onOpenCleaner?: () => void;
+  onOpenLibrary?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettings, onOpenCleaner }) => {
+export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettings, onOpenCleaner, onOpenLibrary }) => {
   // Pull relevant search/filter state so the header stays in sync with the list.
   const { searchTerm, setSearchTerm, contentFilter, setContentFilter, currentView, setCurrentView } = useUnifiedStore();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -53,6 +54,9 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
   // Calculate menu and filter popover positions whenever they show.
   const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({ display: 'none' });
   const [filterPopoverStyle, setFilterPopoverStyle] = useState<React.CSSProperties>({ display: 'none' });
+  const [showToolsMenu, setShowToolsMenu] = useState(false);
+  const toolsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [toolsMenuStyle, setToolsMenuStyle] = useState<React.CSSProperties>({ display: 'none' });
   const filterButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useLayoutEffect(() => {
@@ -91,6 +95,32 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
   window.addEventListener('resize', updatePosition, { passive: true });
   return () => window.removeEventListener('resize', updatePosition);
   }, [showDropdown]);
+
+  // Position the Tools dropdown
+  useLayoutEffect(() => {
+    if (!showToolsMenu || !toolsButtonRef.current || !portalElRef.current) {
+      setToolsMenuStyle((s) => ({ ...s, display: 'none' }));
+      return;
+    }
+
+    const updatePosition = () => {
+      const btn = toolsButtonRef.current;
+      if (!btn) return;
+
+      const rect = btn.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const menuWidth = 176; // w-44
+      const top = Math.round(rect.bottom + 4);
+      let left = Math.round(rect.right - menuWidth);
+      if (left < 4) left = 4;
+      if (left + menuWidth > viewportWidth - 4) left = viewportWidth - menuWidth - 4;
+
+      setToolsMenuStyle({ position: 'fixed', top, left, width: menuWidth, pointerEvents: 'auto', display: 'block' });
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition, { passive: true });
+    return () => window.removeEventListener('resize', updatePosition);
+  }, [showToolsMenu]);
 
   useLayoutEffect(() => {
     if (!showFilterPopover || !filterButtonRef.current || !portalElRef.current) {
@@ -141,6 +171,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
 
       setShowDropdown(false);
       setShowFilterPopover(false);
+      setShowToolsMenu(false);
     };
     window.addEventListener('keydown', onKey);
     window.addEventListener('mousedown', onClick, { passive: true });
@@ -159,6 +190,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
   // Reusable tab chip component for toggling between prompt/chat views.
   const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ active, onClick, icon, label }) => (
     <button
+      role="tab"
       type="button"
       onClick={onClick}
       className={cn(
@@ -167,7 +199,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
         'motion-safe:transition-colors motion-safe:duration-150',
         active ? 'bg-accent text-accent-foreground shadow-inner' : 'text-muted-foreground hover:bg-accent/10 hover:text-foreground'
       )}
-      aria-pressed={active}
+      aria-selected={active}
       aria-current={active ? 'page' : undefined}
     >
       <span className="inline-flex items-center gap-1.5">
@@ -193,7 +225,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
           onClick={() => { setShowDropdown(false); onNewChat(); }}
           className="w-full h-8 text-left text-xs px-2 rounded hover:bg-accent/10 inline-flex items-center gap-2 text-foreground transition-colors"
         >
-          <MessageSquareText className="h-3.5 w-3.5" />
+          <MessageSquare className="h-3.5 w-3.5" />
           Bookmark Chat
         </button>
       </div>
@@ -275,7 +307,21 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
           >
             <Filter className="h-4 w-4" />
           </button>
-          {/* Settings button with explicit light styling */}
+          {/* Tools dropdown (icon-only), placed to the left of Settings */}
+          <button
+            type="button"
+            ref={toolsButtonRef}
+            onClick={() => setShowToolsMenu((v) => !v)}
+            className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:bg-accent/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background inline-flex items-center justify-center border border-transparent"
+            aria-haspopup="menu"
+            aria-expanded={showToolsMenu}
+            aria-controls="tools-menu"
+            title="Tools"
+            aria-label="Tools"
+          >
+            <Hammer className="h-4 w-4" />
+          </button>
+          {/* Settings button */}
           <button
             type="button"
             onClick={onSettings}
@@ -294,11 +340,27 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
             <TabButton active={contentFilter === 'all'} onClick={() => { setCurrentView('list'); setContentFilter('all'); }} icon={<LayoutGrid className="h-3.5 w-3.5" />} label="All" />
             <TabButton active={contentFilter === 'prompts'} onClick={() => { setCurrentView('list'); setContentFilter('prompts'); }} icon={<List className="h-3.5 w-3.5" />} label="Prompts" />
             <TabButton active={contentFilter === 'chats'} onClick={() => { setCurrentView('list'); setContentFilter('chats'); }} icon={<MessageSquare className="h-3.5 w-3.5" />} label="Chats" />
-            <TabButton active={currentView === 'cleaner'} onClick={() => onOpenCleaner && onOpenCleaner()} icon={<MessageSquareText className="h-3.5 w-3.5" />} label="Cleaner" />
+            <TabButton active={currentView === 'library'} onClick={() => onOpenLibrary && onOpenLibrary()} icon={<List className="h-3.5 w-3.5" />} label="Library" />
           </div>
         </div>
       </div>
       {menu}
+      {showToolsMenu && portalElRef.current && createPortal(
+        <div data-dd-menu style={toolsMenuStyle}>
+          <div id="tools-menu" role="menu" className="bg-background border border-border rounded-md shadow-lg p-1 z-[70] min-w-[176px]">
+            <button
+              role="menuitem"
+              onClick={() => { setShowToolsMenu(false); onOpenCleaner && onOpenCleaner(); }}
+              className="w-full h-8 text-left text-xs px-2 rounded hover:bg-accent/10 inline-flex items-center gap-2 text-foreground transition-colors"
+            >
+              {/* Reuse generic icon */}
+              <Hammer className="h-3.5 w-3.5" />
+              Text Tools
+            </button>
+          </div>
+        </div>,
+        portalElRef.current
+      )}
       {showFilterPopover && portalElRef.current && createPortal(
         <div style={filterPopoverStyle}>
           <FilterPopover />

@@ -14,7 +14,7 @@ test.describe('Chat bookmark cancel clears draft', () => {
     const page = await openPopup(context, extensionUrl);
 
   // Open New Chat (menu item labeled 'Bookmark Chat')
-    await page.getByRole('button', { name: 'Create' }).click();
+  await page.locator('button[aria-controls="create-menu"]').click();
   await page.getByRole('menuitem', { name: /bookmark chat/i }).click();
 
     await expect(page.getByRole('heading', { name: /create chat bookmark/i })).toBeVisible();
@@ -33,7 +33,7 @@ test.describe('Chat bookmark cancel clears draft', () => {
     await expect(page.getByRole('heading', { name: 'DialogDrive' })).toBeVisible();
 
   // Re-open New Chat; fields should be empty
-    await page.getByRole('button', { name: 'Create' }).click();
+  await page.locator('button[aria-controls="create-menu"]').click();
   await page.getByRole('menuitem', { name: /bookmark chat/i }).click();
 
     await expect(page.getByRole('heading', { name: /create chat bookmark/i })).toBeVisible();

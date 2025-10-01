@@ -30,6 +30,10 @@ const TextCleanerPanel = React.lazy(async () => {
   const mod = await import('./components/TextCleanerPanel');
   return { default: mod.TextCleanerPanel };
 });
+const Library = React.lazy(async () => {
+  const mod = await import('./components/Library');
+  return { default: mod.Library };
+});
 
 const App: React.FC = () => {
   // Pull reactive state/actions from the unified store.
@@ -69,6 +73,9 @@ const App: React.FC = () => {
   const handleOpenCleaner = () => {
     setCurrentView('cleaner');
   };
+  const handleOpenLibrary = () => {
+    setCurrentView('library');
+  };
 
   return (
     <ErrorBoundary>
@@ -79,6 +86,7 @@ const App: React.FC = () => {
           onNewChat={handleNewChat}
           onSettings={handleShowSettings} 
           onOpenCleaner={handleOpenCleaner}
+          onOpenLibrary={handleOpenLibrary}
         />
         {/* Onboarding inline arrow overlay removed per request */}
         {/* Single scroll container; prevent nested scrolling */}
@@ -96,6 +104,7 @@ const App: React.FC = () => {
             {currentView === 'chat-form' && <ChatForm onboardingActive={prefsRehydrated && !onboardingDismissed} />}
             {currentView === 'settings' && <Settings />}
             {currentView === 'cleaner' && <TextCleanerPanel />}
+            {currentView === 'library' && <Library />}
           </Suspense>
         </div>
         {/* Toasts */}

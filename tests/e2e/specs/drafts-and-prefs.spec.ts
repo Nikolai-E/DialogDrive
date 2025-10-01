@@ -28,7 +28,7 @@ test.describe('Draft restore and prefs persistence', () => {
     const page = await openPopup(context, extensionUrl);
 
     // Open New Prompt
-    await page.getByRole('button', { name: 'Create' }).click();
+  await page.locator('button[aria-controls="create-menu"]').click();
     await page.getByRole('menuitem', { name: /new prompt/i }).click();
 
     await expect(page.getByRole('heading', { name: /create new prompt/i })).toBeVisible();
@@ -40,7 +40,7 @@ test.describe('Draft restore and prefs persistence', () => {
     await page.getByRole('button', { name: /back/i }).click();
 
     // Re-open prompt create, expect alert or fields hydrated
-    await page.getByRole('button', { name: 'Create' }).click();
+  await page.locator('button[aria-controls="create-menu"]').click();
     await page.getByRole('menuitem', { name: /new prompt/i }).click();
 
     // Either the banner or the fields must reflect saved data
@@ -53,13 +53,13 @@ test.describe('Draft restore and prefs persistence', () => {
   test('cleaner tips visibility persists across sessions', async ({ context, extensionUrl }) => {
     const page = await openPopup(context, extensionUrl);
 
-  // Navigate to the cleaner tab via header nav
+    // Open Text Tools via Tools dropdown
     await expect(page.getByRole('heading', { name: 'DialogDrive' })).toBeVisible();
-  // Open cleaner (the control is a button labeled "Cleaner")
-  await page.getByRole('button', { name: /cleaner/i }).click();
+    await page.getByRole('button', { name: /tools/i }).click();
+    await page.getByRole('menuitem', { name: /text tools/i }).click();
 
     // If tips are showing, hide them; if hidden, show then hide
-    const showButton = page.getByRole('button', { name: /show what this cleaner does/i });
+  const showButton = page.getByRole('button', { name: /show what these text tools do/i });
     const hideButton = page.getByRole('button', { name: /hide/i });
 
     if (await showButton.isVisible()) {
@@ -74,8 +74,9 @@ test.describe('Draft restore and prefs persistence', () => {
   // Reload popup and ensure hidden remains hidden
   await page.reload();
 
-  await page.getByRole('button', { name: /cleaner/i }).click();
-  // After hydration the description block should not be present; the Show button should be visible
-  await expect(page.getByRole('button', { name: /show what this cleaner does/i })).toBeVisible();
+    await page.getByRole('button', { name: /tools/i }).click();
+    await page.getByRole('menuitem', { name: /text tools/i }).click();
+    // After hydration the description block should not be present; the Show button should be visible
+    await expect(page.getByRole('button', { name: /show what these text tools do/i })).toBeVisible();
   });
 });
