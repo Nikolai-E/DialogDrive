@@ -9,36 +9,33 @@ async function openPopup(context: any, extensionUrl: string) {
   return page;
 }
 
-test.describe('Prompt cancel clears draft', () => {
-  test('cancel discards draft after confirmation', async ({ context, extensionUrl }) => {
+test.describe('Prompt Back button preserves draft', () => {
+  test('Back button preserves draft and can be resumed', async ({ context, extensionUrl }) => {
     const page = await openPopup(context, extensionUrl);
 
     // Open New Prompt
-  await page.locator('button[aria-controls="create-menu"]').click();
+    await page.locator('button[aria-controls="create-menu"]').click();
     await page.getByRole('menuitem', { name: /new prompt/i }).click();
 
     await expect(page.getByRole('heading', { name: /create new prompt/i })).toBeVisible();
 
-    await page.getByLabel('Title').fill('Cancel Me');
-    await page.getByLabel('Prompt Text').fill('Some text to discard');
+    await page.getByLabel('Title').fill('Draft Prompt');
+    await page.getByLabel('Prompt Text').fill('Some text to preserve');
 
-    // Stub confirm to always accept for this test, then click Cancel
-    await page.evaluate(() => {
-      // @ts-ignore
-      window.confirm = () => true;
-    });
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    // Click Back (no confirmation needed, preserves draft automatically)
+    await page.getByRole('button', { name: /back/i }).click();
 
     // Back on home
     await expect(page.getByRole('heading', { name: 'DialogDrive' })).toBeVisible();
 
-    // Re-open New Prompt; fields should not contain prior draft
-  await page.locator('button[aria-controls="create-menu"]').click();
+    // Re-open New Prompt; fields should contain prior draft
+    await page.locator('button[aria-controls="create-menu"]').click();
     await page.getByRole('menuitem', { name: /new prompt/i }).click();
 
     await expect(page.getByRole('heading', { name: /create new prompt/i })).toBeVisible();
 
-    await expect(page.getByLabel('Title')).toHaveValue('');
-    await expect(page.getByLabel('Prompt Text')).toHaveValue('');
+    // Draft should be restored
+    await expect(page.getByLabel('Title')).toHaveValue('Draft Prompt');
+    await expect(page.getByLabel('Prompt Text')).toHaveValue('Some text to preserve');
   });
 });

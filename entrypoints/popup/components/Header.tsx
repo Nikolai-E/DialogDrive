@@ -560,116 +560,119 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
           </Button>
         </div>
       </div>
-      <div className="pl-1.75 pr-1.75 pb-2.5 space-y-1.6">
-        <div role="tablist" aria-label="Views" className="grid grid-cols-[0.9fr_1.05fr_1fr_1fr_1.05fr] gap-0">
-          <TabButton
-            active={contentFilter === 'all'}
-            onClick={() => {
-              setCurrentView('list');
-              setContentFilter('all');
-            }}
-            icon={<LayoutGrid className="h-3.5 w-3.5" />}
-            label="All"
-            className="w-full justify-center"
-          />
-          <TabButton
-            active={contentFilter === 'prompts'}
-            onClick={() => {
-              setCurrentView('list');
-              setContentFilter('prompts');
-            }}
-            icon={<List className="h-3.5 w-3.5" />}
-            label="Prompts"
-            className="w-full justify-center"
-          />
-          <TabButton
-            active={contentFilter === 'chats'}
-            onClick={() => {
-              setCurrentView('list');
-              setContentFilter('chats');
-            }}
-            icon={<MessageSquare className="h-3.5 w-3.5" />}
-            label="Chats"
-            className="w-full justify-center"
-          />
-          <TabButton
-            active={currentView === 'library'}
-            onClick={() => onOpenLibrary && onOpenLibrary()}
-            icon={<List className="h-3.5 w-3.5" />}
-            label="Library"
-            className="w-full justify-center"
-          />
-          <TabButton
-            active={activeMenu === 'tools'}
-            onClick={() => toggleMenu('tools')}
-            icon={<Hammer className="h-3.5 w-3.5" />}
-            label="Tools"
-            ariaHaspopup
-            ariaExpanded={activeMenu === 'tools'}
-            ariaControls={activeMenu === 'tools' ? 'tools-menu' : undefined}
-            buttonRef={toolsButtonRef}
-            className="w-full justify-center"
-          />
-        </div>
-        <div className="my-2 border-t border-border/40" />
-        <div className="flex flex-wrap items-center gap-1.75 mx-2.5">
-          <button
-            type="button"
-            ref={sortButtonRef}
-            onClick={() => toggleMenu('sort')}
-            className={cn(filterButtonClass, 'flex-1 basis-0 min-w-[0]', (activeMenu === 'sort' || isCustomSort) && filterButtonActiveClass)}
-            aria-haspopup="menu"
-            aria-expanded={activeMenu === 'sort'}
-            aria-controls={activeMenu === 'sort' ? 'sort-menu' : undefined}
-          >
-            <SortAsc className="h-3.5 w-3.5" />
-            <span className="truncate">{sortOptions.find(opt => opt.value === sortBy)?.label || 'Sort'}</span>
-            <ChevronDown className="h-3 w-3 opacity-70 transition-transform data-[state=open]:rotate-180" data-state={activeMenu === 'sort' ? 'open' : 'closed'} />
-          </button>
-
-          <button
-            type="button"
-            ref={workspaceButtonRef}
-            onClick={() => toggleMenu('workspace')}
-            className={cn(filterButtonClass, 'flex-1 basis-0 min-w-[0]', (activeMenu === 'workspace' || isWorkspaceScoped) && filterButtonActiveClass)}
-            aria-haspopup="menu"
-            aria-expanded={activeMenu === 'workspace'}
-            aria-controls={activeMenu === 'workspace' ? 'workspace-menu' : undefined}
-          >
-            <span className="truncate max-w-[110px]">{selectedWorkspace === 'all' ? 'Workspace' : selectedWorkspace}</span>
-            <ChevronDown className="h-3 w-3 opacity-70 transition-transform data-[state=open]:rotate-180" data-state={activeMenu === 'workspace' ? 'open' : 'closed'} />
-          </button>
-
-          {allTags.length > 0 && (
+      {/* Hide tabs and filters when in form/chat-form views */}
+      {currentView !== 'form' && currentView !== 'chat-form' && (
+        <div className="pl-1.75 pr-1.75 pb-2.5 space-y-1.6">
+          <div role="tablist" aria-label="Views" className="grid grid-cols-[0.9fr_1.05fr_1fr_1fr_1.05fr] gap-0">
+            <TabButton
+              active={contentFilter === 'all'}
+              onClick={() => {
+                setCurrentView('list');
+                setContentFilter('all');
+              }}
+              icon={<LayoutGrid className="h-3.5 w-3.5" />}
+              label="All"
+              className="w-full justify-center"
+            />
+            <TabButton
+              active={contentFilter === 'prompts'}
+              onClick={() => {
+                setCurrentView('list');
+                setContentFilter('prompts');
+              }}
+              icon={<List className="h-3.5 w-3.5" />}
+              label="Prompts"
+              className="w-full justify-center"
+            />
+            <TabButton
+              active={contentFilter === 'chats'}
+              onClick={() => {
+                setCurrentView('list');
+                setContentFilter('chats');
+              }}
+              icon={<MessageSquare className="h-3.5 w-3.5" />}
+              label="Chats"
+              className="w-full justify-center"
+            />
+            <TabButton
+              active={currentView === 'library'}
+              onClick={() => onOpenLibrary && onOpenLibrary()}
+              icon={<List className="h-3.5 w-3.5" />}
+              label="Library"
+              className="w-full justify-center"
+            />
+            <TabButton
+              active={activeMenu === 'tools'}
+              onClick={() => toggleMenu('tools')}
+              icon={<Hammer className="h-3.5 w-3.5" />}
+              label="Tools"
+              ariaHaspopup
+              ariaExpanded={activeMenu === 'tools'}
+              ariaControls={activeMenu === 'tools' ? 'tools-menu' : undefined}
+              buttonRef={toolsButtonRef}
+              className="w-full justify-center"
+            />
+          </div>
+          <div className="my-2 border-t border-border/40" />
+          <div className="flex flex-wrap items-center gap-1.75 mx-2.5">
             <button
               type="button"
-              ref={tagButtonRef}
-              onClick={() => toggleMenu('tag')}
-              className={cn(filterButtonClass, 'flex-1 basis-0 min-w-[0]', (activeMenu === 'tag' || isTagScoped) && filterButtonActiveClass)}
+              ref={sortButtonRef}
+              onClick={() => toggleMenu('sort')}
+              className={cn(filterButtonClass, 'flex-1 basis-0 min-w-[0]', (activeMenu === 'sort' || isCustomSort) && filterButtonActiveClass)}
               aria-haspopup="menu"
-              aria-expanded={activeMenu === 'tag'}
-              aria-controls={activeMenu === 'tag' ? 'tag-menu' : undefined}
+              aria-expanded={activeMenu === 'sort'}
+              aria-controls={activeMenu === 'sort' ? 'sort-menu' : undefined}
             >
-              <span className="truncate max-w-[90px]">{filterTag === 'all' ? 'Tag' : filterTag}</span>
-              <ChevronDown className="h-3 w-3 opacity-70 transition-transform data-[state=open]:rotate-180" data-state={activeMenu === 'tag' ? 'open' : 'closed'} />
+              <SortAsc className="h-3.5 w-3.5" />
+              <span className="truncate">{sortOptions.find(opt => opt.value === sortBy)?.label || 'Sort'}</span>
+              <ChevronDown className="h-3 w-3 opacity-70 transition-transform data-[state=open]:rotate-180" data-state={activeMenu === 'sort' ? 'open' : 'closed'} />
             </button>
-          )}
 
-          <button
-            type="button"
-            onClick={() => {
-              setShowPinned(!showPinned);
-              setActiveMenu(null);
-            }}
-            className={cn(filterButtonClass, 'flex-1 basis-0 min-w-[0]', isPinnedActive && filterButtonActiveClass)}
-            aria-pressed={isPinnedActive}
-            title={isPinnedActive ? 'Showing only pinned items' : 'Showing all items'}
-          >
-            <Pin className={cn('h-3.5 w-3.5 transition-colors', isPinnedActive ? 'text-accent-foreground' : 'text-muted-foreground')} />
-            <span className="truncate">Pinned</span>
-          </button>
+            <button
+              type="button"
+              ref={workspaceButtonRef}
+              onClick={() => toggleMenu('workspace')}
+              className={cn(filterButtonClass, 'flex-1 basis-0 min-w-[0]', (activeMenu === 'workspace' || isWorkspaceScoped) && filterButtonActiveClass)}
+              aria-haspopup="menu"
+              aria-expanded={activeMenu === 'workspace'}
+              aria-controls={activeMenu === 'workspace' ? 'workspace-menu' : undefined}
+            >
+              <span className="truncate max-w-[110px]">{selectedWorkspace === 'all' ? 'Workspace' : selectedWorkspace}</span>
+              <ChevronDown className="h-3 w-3 opacity-70 transition-transform data-[state=open]:rotate-180" data-state={activeMenu === 'workspace' ? 'open' : 'closed'} />
+            </button>
+
+            {allTags.length > 0 && (
+              <button
+                type="button"
+                ref={tagButtonRef}
+                onClick={() => toggleMenu('tag')}
+                className={cn(filterButtonClass, 'flex-1 basis-0 min-w-[0]', (activeMenu === 'tag' || isTagScoped) && filterButtonActiveClass)}
+                aria-haspopup="menu"
+                aria-expanded={activeMenu === 'tag'}
+                aria-controls={activeMenu === 'tag' ? 'tag-menu' : undefined}
+              >
+                <span className="truncate max-w-[90px]">{filterTag === 'all' ? 'Tag' : filterTag}</span>
+                <ChevronDown className="h-3 w-3 opacity-70 transition-transform data-[state=open]:rotate-180" data-state={activeMenu === 'tag' ? 'open' : 'closed'} />
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowPinned(!showPinned);
+                setActiveMenu(null);
+              }}
+              className={cn(filterButtonClass, 'flex-1 basis-0 min-w-[0]', isPinnedActive && filterButtonActiveClass)}
+              aria-pressed={isPinnedActive}
+              title={isPinnedActive ? 'Showing only pinned items' : 'Showing all items'}
+            >
+              <Pin className={cn('h-3.5 w-3.5 transition-colors', isPinnedActive ? 'text-accent-foreground' : 'text-muted-foreground')} />
+              <span className="truncate">Pinned</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
       {menu}
       {filterMenu}
     </header>

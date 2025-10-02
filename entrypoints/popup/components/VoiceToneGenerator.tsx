@@ -447,9 +447,16 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
   return (
     <div className="absolute inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
       <div className="bg-background border rounded-lg shadow-lg w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col" role="dialog" aria-modal="true" aria-label="Voice & Tone Generator">
-        <div className="p-4 pb-2 border-b flex items-center gap-2">
-            <Wand2 className="h-5 w-5 text-blue-600" />
-            <h2 className="text-lg font-semibold">Voice & Tone Generator</h2>
+        <div className="p-4 pb-3 border-b">
+          <div className="flex items-start gap-2">
+            <Wand2 className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div>
+              <h2 className="text-lg font-semibold">Voice & Tone Generator</h2>
+              <p className="mt-0.5 text-[12px] text-muted-foreground">
+                Pick a vibe and a few guardrails, and DialogDrive builds the prompt that makes the AI answer in that voice.
+              </p>
+            </div>
+          </div>
         </div>
         {/* Progress */}
         <div className="px-4 pt-2">
@@ -498,7 +505,7 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                 type="button"
                 size="sm"
                 onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
-                className="text-xs bg-black text-white hover:bg-black/90 border border-black"
+                className="text-xs bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21]"
               >
                 Next <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
@@ -507,7 +514,7 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                 type="button"
                 size="sm"
                 onClick={handleGenerate}
-                className="text-xs bg-black text-white hover:bg-black/90 border border-black"
+                className="text-xs bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21]"
               >
                 Generate Prompt
               </Button>

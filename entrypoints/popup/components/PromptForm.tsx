@@ -230,26 +230,6 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
     setCurrentView('list');
   };
 
-  const handleCancel = async () => {
-    // Confirm before discarding current draft and leaving the form.
-    // If user confirms, discard any autosaved draft and navigate back without saving.
-    const hasContent = (title.trim().length + text.trim().length + tags.length) > 0 || includeTimestamp;
-    const shouldAsk = true; // Always ask to protect user input.
-    let proceed = true;
-    if (shouldAsk && hasContent) {
-  // Use native confirm for simplicity and reliability in tests.
-  proceed = window.confirm('Discard your unsaved changes?');
-    }
-    if (!proceed) return;
-    try {
-      await discardDraft();
-      setResumedDraftAt(null);
-    } finally {
-      setEditingPrompt(null);
-      setCurrentView('list');
-    }
-  };
-
   const addTag = (tagToAdd?: string) => {
     // Sanitize and add a custom tag to the prompt.
     const candidate = sanitizeTagLabel(tagToAdd ?? tagInput).toLowerCase();
@@ -290,7 +270,7 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
         <Button
           variant="default"
           size="xs"
-          className="h-7 mr-1.5 bg-black text-white hover:bg-black/90 border border-black"
+          className="h-7 mr-1.5 bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21]"
           onClick={() => handleClose()}
           aria-label="Back"
           withIcon
@@ -448,7 +428,7 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
                   setNewWorkspace('');
                 }}
                 title="Add workspace"
-                className={`h-8 text-xs bg-black text-white hover:bg-black/90 border border-black ${onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
+                className={`h-8 text-xs bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21] ${onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
               >Add</Button>
             </div>
           </motion.div>
@@ -492,7 +472,7 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
                 onClick={() => addTag()}
                 disabled={!sanitizeTagLabel(tagInput)}
                 title="Add tag"
-                className={`h-8 bg-black text-white hover:bg-black/90 border border-black ${onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
+                className={`h-8 bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21] ${onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
               >
                 Add
               </Button>
@@ -510,7 +490,7 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
                     size="sm" 
                     variant="outline" 
                     onClick={() => addTag(tag)} 
-                    className="h-6 text-xs hover:bg-primary hover:text-primary-foreground transition-colors"
+                    className="h-6 text-xs hover:bg-[#1f1f21] hover:text-white transition-colors"
                   >
                     {tag}
                   </Button>
@@ -573,12 +553,9 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
           initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.15 }}
-            className="flex items-center justify-between gap-2.5 p-2 border-t bg-background/80 backdrop-blur-sm"
+            className="flex items-center justify-end gap-2.5 px-3 py-2 border-t bg-background/80 backdrop-blur-sm"
           >
-            <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting} className="h-8 px-3">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting} className="min-w-[110px] h-8 bg-black text-white hover:bg-black/90 border border-black">
+            <Button type="submit" disabled={isSubmitting} className="min-w-[110px] h-8 bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21]">
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {editingPrompt ? 'Update' : 'Create'}
             </Button>

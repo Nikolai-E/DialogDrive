@@ -224,23 +224,6 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
     setEditingChat(null);
   };
 
-  const handleCancel = async () => {
-    // Confirm before discarding current draft
-    const hasContent = Boolean((formData.title || '').trim() || (formData.url || '').trim() || (formData.tags || []).length || formData.isPinned);
-    let proceed = true;
-    if (hasContent) {
-      proceed = window.confirm('Discard your unsaved changes?');
-    }
-    if (!proceed) return;
-    try {
-      await discardDraft();
-      setResumedDraftAt(null);
-    } finally {
-      setCurrentView('list');
-      setEditingChat(null);
-    }
-  };
-
   const handleAddTag = () => {
     const safeTag = sanitizeTagLabel(currentTag).toLowerCase();
     if (safeTag && !(formData.tags || []).includes(safeTag)) {
@@ -270,7 +253,7 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
         <Button
           variant="default"
           size="xs"
-          className="h-7 mr-1.5 bg-black text-white hover:bg-black/90 border border-black"
+          className="h-7 mr-1.5 bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21]"
           onClick={() => handleClose()}
           aria-label="Back"
           withIcon
@@ -376,7 +359,7 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
                   setNewWorkspace('');
                 }}
                 title="Add workspace"
-                className={`h-8 text-xs bg-black text-white hover:bg-black/90 border border-black ${
+                className={`h-8 text-xs bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21] ${
                   onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
                 }`}
               >
@@ -416,7 +399,7 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
                 onClick={handleAddTag}
                 disabled={!sanitizeTagLabel(currentTag)}
                 title="Add tag"
-                className={`h-8 bg-black text-white hover:bg-black/90 border border-black ${
+                className={`h-8 bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21] ${
                   onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
                 }`}
               >
@@ -447,14 +430,11 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2.5 px-3 py-2 border-t bg-background/80 backdrop-blur-sm">
-          <Button type="button" variant="outline" onClick={handleCancel} className="h-8 px-3">
-            Cancel
-          </Button>
+        <div className="flex items-center justify-end gap-2.5 px-3 py-2 border-t bg-background/80 backdrop-blur-sm">
           <Button
             type="submit"
             disabled={!formData.title.trim()}
-            className="h-8 px-3 bg-black text-white hover:bg-black/90 border border-black"
+            className="h-8 px-3 bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21]"
           >
             <Save className="h-4 w-4 mr-1.5" />
             {editingChat ? 'Update' : 'Save'}

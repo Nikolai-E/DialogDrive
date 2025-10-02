@@ -51,7 +51,7 @@ const ErrorFallback: React.FC<{ error?: Error }> = ({ error }) => (
     )}
     <button
       onClick={() => window.location.reload()}
-      className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+      className="mt-4 px-4 py-2 bg-[#1f1f21] text-white rounded hover:bg-[#1f1f21]/94 transition-colors"
     >
       Reload Extension
     </button>

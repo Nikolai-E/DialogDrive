@@ -9,35 +9,33 @@ async function openPopup(context: any, extensionUrl: string) {
   return page;
 }
 
-test.describe('Chat bookmark cancel clears draft', () => {
-  test('cancel discards chat draft after confirmation', async ({ context, extensionUrl }) => {
+test.describe('Chat bookmark Back button preserves draft', () => {
+  test('Back button preserves chat draft and can be resumed', async ({ context, extensionUrl }) => {
     const page = await openPopup(context, extensionUrl);
 
-  // Open New Chat (menu item labeled 'Bookmark Chat')
-  await page.locator('button[aria-controls="create-menu"]').click();
-  await page.getByRole('menuitem', { name: /bookmark chat/i }).click();
+    // Open New Chat (menu item labeled 'Bookmark Chat')
+    await page.locator('button[aria-controls="create-menu"]').click();
+    await page.getByRole('menuitem', { name: /bookmark chat/i }).click();
 
     await expect(page.getByRole('heading', { name: /create chat bookmark/i })).toBeVisible();
 
     await page.getByLabel('URL').fill('https://chat.openai.com/c/abc');
-    await page.getByLabel('Title').fill('Discard Me');
+    await page.getByLabel('Title').fill('Draft Bookmark');
 
-    // Stub confirm to accept, then Cancel
-    await page.evaluate(() => {
-      // @ts-ignore
-      window.confirm = () => true;
-    });
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    // Click Back (no confirmation, preserves draft automatically)
+    await page.getByRole('button', { name: /back/i }).click();
 
     // Back to home
     await expect(page.getByRole('heading', { name: 'DialogDrive' })).toBeVisible();
 
-  // Re-open New Chat; fields should be empty
-  await page.locator('button[aria-controls="create-menu"]').click();
-  await page.getByRole('menuitem', { name: /bookmark chat/i }).click();
+    // Re-open New Chat; fields should contain the draft
+    await page.locator('button[aria-controls="create-menu"]').click();
+    await page.getByRole('menuitem', { name: /bookmark chat/i }).click();
 
     await expect(page.getByRole('heading', { name: /create chat bookmark/i })).toBeVisible();
-    await expect(page.getByLabel('URL')).toHaveValue('');
-    await expect(page.getByLabel('Title')).toHaveValue('');
+    
+    // Draft should be restored
+    await expect(page.getByLabel('URL')).toHaveValue('https://chat.openai.com/c/abc');
+    await expect(page.getByLabel('Title')).toHaveValue('Draft Bookmark');
   });
 });

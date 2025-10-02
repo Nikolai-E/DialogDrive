@@ -102,7 +102,7 @@ export const PromptList: React.FC = () => {
             </p>
             <button
               onClick={() => setCurrentView('form')}
-              className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium shadow-sm text-sm"
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#1f1f21] text-white rounded-md hover:bg-[#1f1f21]/94 transition-colors font-medium shadow-sm text-sm"
             >
               <Plus className="h-4 w-4" />
               Create Prompt

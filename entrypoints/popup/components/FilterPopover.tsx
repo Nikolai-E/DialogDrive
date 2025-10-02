@@ -85,7 +85,7 @@ export const FilterPopover: React.FC = () => {
           variant={showPinned ? 'default' : 'outline'}
           size="sm"
           onClick={() => setShowPinned(!showPinned)}
-          className={cn('h-8 w-full gap-1.5', showPinned ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground border-border hover:bg-muted/60')}
+          className={cn('h-8 w-full gap-1.5', showPinned ? 'bg-[#1f1f21] text-white' : 'bg-card text-foreground border-border hover:bg-muted/60')}
           aria-pressed={showPinned}
         >
           <Pin className="h-3.5 w-3.5" />
