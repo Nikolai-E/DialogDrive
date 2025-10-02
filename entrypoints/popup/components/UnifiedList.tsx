@@ -24,8 +24,10 @@ export const UnifiedList: React.FC = () => {
   const virtualizer = useVirtualizer({
     count: filteredItems.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 52, // Fixed height from UI spec
-    overscan: 5,
+    estimateSize: () => 72,
+    overscan: 6,
+    getItemKey: (index) => filteredItems[index]?.id ?? index,
+    measureElement: (el) => el?.getBoundingClientRect().height ?? 0,
   });
 
   const virtualItems = virtualizer.getVirtualItems();
@@ -33,10 +35,10 @@ export const UnifiedList: React.FC = () => {
   if (isLoading) {
     // Friendly loading state while prompts/chats stream in.
     return (
-      <div className="flex items-center justify-center h-full bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-accent" />
-          <p className="text-muted-foreground font-medium">Loading your content...</p>
+      <div className="flex items-center justify-center h-full">
+        <div className="flex flex-col items-center gap-3 rounded-[var(--radius)] border border-border/60 bg-card/90 px-6 py-5 text-center shadow-sm">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <p className="text-[12.5px] text-muted-foreground">Loading your content…</p>
         </div>
       </div>
     );
@@ -45,8 +47,8 @@ export const UnifiedList: React.FC = () => {
   if (error) {
     // Bubble up any load errors so the user can retry later.
     return (
-      <div className="p-4 bg-background">
-        <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
+      <div className="p-3">
+        <Alert variant="destructive" className="border-destructive/25 bg-destructive/10">
           <Info className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
@@ -86,8 +88,8 @@ export const UnifiedList: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background overflow-hidden">
-      <div className="flex-1 overflow-y-auto bg-card" ref={parentRef}>
+    <div className="flex flex-col h-full overflow-hidden">
+      <div ref={parentRef} className="flex-1 overflow-y-auto scrollbar-thin">
         {filteredItems.length > 0 ? (
           <div
             style={{
@@ -100,6 +102,7 @@ export const UnifiedList: React.FC = () => {
             {virtualItems.map((virtualItem) => (
               <div
                 key={virtualItem.key}
+                ref={virtualizer.measureElement}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -114,14 +117,14 @@ export const UnifiedList: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-center p-6 bg-background">
-            <div className="bg-card rounded-full p-3.5 shadow-sm border border-border mb-3.5">
+          <div className="flex flex-col items-center justify-center h-full text-center p-6">
+            <div className="rounded-full border border-border/70 bg-card px-3.5 py-3 shadow-sm mb-3">
               {getEmptyStateContent().icon}
             </div>
-            <h3 className="text-[15px] font-semibold text-foreground mb-1.5">
+            <h3 className="text-[13.5px] font-semibold text-foreground mb-1">
               {getEmptyStateContent().title}
             </h3>
-            <p className="text-muted-foreground mb-5 max-w-sm text-[13px]">
+            <p className="text-muted-foreground mb-4 max-w-sm text-[11.5px] leading-relaxed">
               {getEmptyStateContent().description}
             </p>
             <div className="flex gap-2.5">
@@ -131,7 +134,7 @@ export const UnifiedList: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setCurrentView(empty.actionView)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-accent text-accent-foreground rounded-md hover:bg-accent/90 transition-colors font-medium shadow-sm text-[13px]"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-[12px] font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
                   >
                     {contentFilter === 'chats' ? <MessageSquare className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
                     {empty.actionLabel}

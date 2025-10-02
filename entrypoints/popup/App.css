@@ -4,53 +4,55 @@
 
 @layer base {
   :root {
-    /* Neutral beige theme matching design - increased separation */
-    --background: 30 12% 92%;
-    --card: 30 16% 96%;            /* slightly brighter for surface separation */
-    --sidebar-bg: 30 10% 90%;
-    --popover: 30 16% 96%;
-    --divider: 0 0% 78%;           /* darker divider */
-    --input: 30 16% 96%;
+    /* Neutral, Apple-inspired palette with defined surface steps */
+    --background: 36 40% 96%;
+    --card: 36 34% 98%;
+    --popover: 36 38% 99%;
+    --input: 36 30% 94%;
+    --surface-subtle: 34 26% 92%;
+    --surface-contrast: 24 18% 88%;
 
     /* Typography */
-    --foreground: 0 0% 9%;
-    --card-foreground: 0 0% 9%;
-    --popover-foreground: 0 0% 9%;
-    --text-secondary: 0 0% 42%;    /* slightly darker for readability */
-    --muted-foreground: 0 0% 42%;
+    --foreground: 24 24% 16%;
+    --card-foreground: 24 24% 16%;
+    --popover-foreground: 24 24% 16%;
+    --text-secondary: 24 16% 40%;
+    --muted-foreground: 24 14% 42%;
     --text-inverted: 0 0% 100%;
 
     /* Accents */
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 100%;
-    --accent: 25 14% 86%;          /* a touch darker for hover/active */
-    --accent-foreground: 0 0% 9%;
+    --primary: 214 24% 28%;
+    --primary-foreground: 0 0% 98%;
+    --accent: 26 36% 82%;
+    --accent-foreground: 24 24% 18%;
 
     /* Status */
-    --success: 142 50% 38%;
-    --success-foreground: 0 0% 100%;
-    --warning: 35 91% 55%;
-    --warning-foreground: 0 0% 9%;
-    --destructive: 0 75% 55%;
+    --success: 142 45% 38%;
+    --success-foreground: 0 0% 98%;
+    --warning: 32 94% 58%;
+    --warning-foreground: 28 60% 16%;
+    --destructive: 355 68% 52%;
     --destructive-foreground: 0 0% 100%;
 
     /* Secondary & Muted */
-    --secondary: 25 12% 85%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 20 10% 82%;
+    --secondary: 34 28% 90%;
+    --secondary-foreground: 24 18% 32%;
+    --muted: 30 22% 88%;
 
     /* Neutrals */
-    --border: 0 0% 78%;            /* slightly darker neutral border */
-    --ring: 0 0% 9%;
-    --disabled: 20 8% 88%;
-    --shadow: 0 6px 20px rgba(0,0,0,0.08);
+    --border: 28 18% 80%;
+    --divider: 28 16% 84%;
+    --ring: 214 24% 28%;
+    --disabled: 28 10% 86%;
+    --shadow-soft: 0 22px 40px rgba(23, 23, 23, 0.08);
+    --shadow-focus: 0 0 0 1px rgba(23, 23, 23, 0.10);
 
-    --radius: 12px;
+    --radius: 10px;
   }
 
   * {
     box-sizing: border-box;
-    border-color: hsl(var(--border));
+    border-color: hsl(var(--divider));
   }
 
   html, body, #root, #app {
@@ -64,6 +66,8 @@
     color: hsl(var(--foreground));
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
+    font-size: 12px;
+    line-height: 1.45;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -79,20 +83,34 @@
 
   .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-  /* Remove Tailwind @apply and define utility equivalents */
-  .row-surface {
+  /* Shared surface helpers */
+  .surface-base {
+    background-color: hsl(var(--background));
+  }
+
+  .surface-raised {
     background-color: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    border: 1px solid hsl(var(--divider));
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .surface-contrast {
+    background-color: hsl(var(--surface-contrast));
     border-radius: var(--radius);
   }
-  .row-interactive {
-    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
-    transition-duration: 150ms;
-    transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+
+  .chip {
+    border-radius: 999px;
+    border: 1px solid hsl(var(--divider));
+    background-color: hsl(var(--secondary));
   }
-  .row-interactive:hover { background-color: hsl(var(--accent) / 0.40); }
-  .row-interactive:active { background-color: hsl(var(--accent) / 0.60); }
+
+  .chip-active {
+    background-color: hsl(var(--accent));
+    border-color: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+  }
 }
 html, body, #root {
   width: 400px;

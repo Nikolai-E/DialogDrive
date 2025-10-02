@@ -60,7 +60,17 @@ coverage/
 *.backup
 *.backup[0-9]
 
-# Ignore internal planning/instructions by pattern
+# Markdown handling - ignore all .md files by default but whitelist important ones
+*.md
+!README.md
+!CHANGELOG.md
+!PRIVACY_POLICY.md
+!SUPPORT.md
+!ChromePolicy.md
+!docs/TECH_OVERVIEW.md
+!docs/DesignResearch.md
+
+# Ignore internal planning/instructions by pattern (these will be ignored by the above rule as well)
 /*PLAN*.md
 /*_PLAN*.md
 /*TODO*.md
