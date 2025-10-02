@@ -6,7 +6,6 @@ import { FileText, Info, Loader2, MessageSquare, Search } from 'lucide-react';
 import React from 'react';
 import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert";
 import { useUnifiedStore } from '../../../lib/unifiedStore';
-import { cn } from '../../../lib/utils';
 import { UnifiedItem } from './UnifiedItem';
 
 export const UnifiedList: React.FC = () => {
@@ -19,47 +18,7 @@ export const UnifiedList: React.FC = () => {
     error,
     setCurrentView,
     contentFilter,
-    prompts,
-    chats,
-    setFilterTag,
-    filterTag,
-    setSelectedWorkspace,
-    selectedWorkspace,
-    workspaces,
-    selectedTags,
-    setSelectedTags
   } = useUnifiedStore();
-
-  // Use store-backed multi-select tags for OR filtering.
-  const activeTags = selectedTags && selectedTags.length > 0 ? selectedTags : (filterTag !== 'all' ? [filterTag] : []);
-  const toggleTag = (tag: string) => {
-    const exists = activeTags.includes(tag);
-    const next = exists ? activeTags.filter(t => t !== tag) : [...activeTags, tag];
-    // Sync to the store so unified filtering keeps working across views.
-    setSelectedTags(next);
-    // Maintain the legacy single-tag field for other UIs.
-    if (next.length === 0) setFilterTag('all');
-    else setFilterTag(next[next.length - 1]);
-  };
-
-  // Derive frequency metrics (combined prompts and chats).
-  const tagFrequency: Record<string, number> = {};
-  // Count how often each tag shows up across prompts and chats.
-  prompts.forEach((p) => (p.tags || []).forEach((t) => { tagFrequency[t] = (tagFrequency[t] || 0) + 1; }));
-  chats.forEach((c) => (c.tags || []).forEach((t) => { tagFrequency[t] = (tagFrequency[t] || 0) + 1; }));
-  const topTags = Object.entries(tagFrequency)
-    .sort((a,b) => b[1]-a[1])
-    .slice(0,10)
-    .map(([tag]) => tag);
-
-  const workspaceFrequency: Record<string, number> = {};
-  // Track how many items live in each workspace to surface smart chips.
-  prompts.forEach((p) => { workspaceFrequency[p.workspace] = (workspaceFrequency[p.workspace] || 0) + 1; });
-  chats.forEach((c) => { workspaceFrequency[c.workspace] = (workspaceFrequency[c.workspace] || 0) + 1; });
-  const topWorkspaces = Object.entries(workspaceFrequency)
-    .sort((a,b) => b[1]-a[1])
-    .slice(0,4)
-    .map(([ws]) => ws);
 
   // Virtual list setup driven by React Virtual.
   const virtualizer = useVirtualizer({
@@ -128,32 +87,6 @@ export const UnifiedList: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
-      {/* Quick filters showing top workspaces and tags. */}
-      <div className="px-2 pt-1 pb-0.5 border-b bg-background/80 backdrop-blur-sm">
-        <div className="flex gap-1 items-center overflow-x-auto whitespace-nowrap scrollbar-thin pb-0.5">
-          {topWorkspaces.map(ws => (
-            <button
-              type="button"
-              key={ws}
-              onClick={() => setSelectedWorkspace(selectedWorkspace === ws ? 'all' : ws)}
-              className={cn('px-2 py-0.5 rounded-full text-[11px] border transition-colors shrink-0',
-                selectedWorkspace === ws ? 'bg-black text-white border-black' : 'bg-muted/50 hover:bg-muted border-border')}
-            >{ws}</button>
-          ))}
-          {topTags.map(tag => (
-            <button
-              type="button"
-              key={tag}
-              onClick={() => toggleTag(tag)}
-              className={cn('px-2 py-0.5 rounded-full text-[11px] border transition-colors shrink-0',
-                activeTags.includes(tag) ? 'bg-black text-white border-black' : 'bg-muted/50 hover:bg-muted border-border')}
-            >#{tag}</button>
-          ))}
-          {(topTags.length === 0 && topWorkspaces.length === 0) && (
-            <span className="text-[11px] text-muted-foreground">Add tags & workspaces to enable quick filters</span>
-          )}
-        </div>
-      </div>
       <div className="flex-1 overflow-y-auto bg-card" ref={parentRef}>
         {filteredItems.length > 0 ? (
           <div

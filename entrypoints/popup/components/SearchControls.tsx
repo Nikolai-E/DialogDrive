@@ -1,150 +1,311 @@
-import { Filter, Pin, Plus, Search, SortAsc, X } from 'lucide-react';
-import React, { useEffect, useRef } from 'react';
+import { ChevronDown, Hammer, Pin, Plus, Settings as SettingsIcon, SortAsc } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../../components/ui/select';
-import { Switch } from '../../../components/ui/switch';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
+import { cn } from '../../../lib/utils';
+import type { SortOption } from '../../../types/app';
 
 export const SearchControls: React.FC = () => {
   const {
-    searchTerm,
     sortBy,
     filterTag,
     showPinned,
+    selectedWorkspace,
     allTags,
-    setSearchTerm,
+    workspaces,
     setSortBy,
     setFilterTag,
     setShowPinned,
-    resetFilters,
+    setSelectedWorkspace,
     setCurrentView,
   } = useUnifiedStore();
   
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  // Dropdown states
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [showPinnedDropdown, setShowPinnedDropdown] = useState(false);
+  const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [showToolsDropdown, setShowToolsDropdown] = useState(false);
   
-  const hasActiveFilters = searchTerm || filterTag !== 'all' || showPinned;
-
+  // Refs for dropdowns
+  const sortRef = useRef<HTMLDivElement>(null);
+  const pinnedRef = useRef<HTMLDivElement>(null);
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  const tagRef = useRef<HTMLDivElement>(null);
+  const toolsRef = useRef<HTMLDivElement>(null);
+  
+  // Sort options
+  const sortOptions: { value: string; label: string }[] = [
+    { value: 'lastUsed', label: 'Recent' },
+    { value: 'title', label: 'A-Z' },
+    { value: 'usageCount', label: 'Most Used' },
+    { value: 'createdAt', label: 'Created' },
+  ];
+  
+  // Close dropdowns on outside click
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
+        setShowSortDropdown(false);
+      }
+      if (pinnedRef.current && !pinnedRef.current.contains(event.target as Node)) {
+        setShowPinnedDropdown(false);
+      }
+      if (workspaceRef.current && !workspaceRef.current.contains(event.target as Node)) {
+        setShowWorkspaceDropdown(false);
+      }
+      if (tagRef.current && !tagRef.current.contains(event.target as Node)) {
+        setShowTagDropdown(false);
+      }
+      if (toolsRef.current && !toolsRef.current.contains(event.target as Node)) {
+        setShowToolsDropdown(false);
       }
     };
     
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   return (
-    <div className="bg-gray-50/80 backdrop-blur supports-[backdrop-filter]:bg-gray-50/70 border-b border-gray-200/80 px-2.5 py-1.5 text-[13px]">
-      {/* Search Row with Create button */}
-      <div className="relative flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            ref={searchInputRef}
-            placeholder="Search prompts..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            aria-label="Search prompts"
-            className="pl-8 pr-8 h-8 bg-white border-gray-200 rounded-md text-[13px] placeholder:text-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-          />
-          {searchTerm && (
+    <div className="relative bg-gray-50/80 backdrop-blur supports-[backdrop-filter]:bg-gray-50/70 border-b border-gray-200/80 px-2 py-1 text-[12px] z-10">
+      {/* Single Row with Filters and Actions */}
+      <div className="flex items-center gap-0.5 flex-nowrap overflow-hidden">
+        {/* Left Side: Filter Dropdowns */}
+        <div className="flex items-center gap-0.5 flex-1 flex-nowrap min-w-0 overflow-hidden">
+          {/* Sort Dropdown */}
+          <div ref={sortRef} className="relative flex-shrink-0">
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSearchTerm('')}
-              aria-label="Clear search"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSortDropdown(!showSortDropdown)}
+              className="h-7 px-1 gap-0.5 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-[11px] whitespace-nowrap"
+              aria-haspopup="menu"
+              aria-expanded={showSortDropdown}
             >
-              <X className="h-4 w-4" />
+              <SortAsc className="h-3 w-3 text-gray-500" />
+              <span className="text-[10px]">{sortOptions.find(opt => opt.value === sortBy)?.label || 'Sort'}</span>
+              <ChevronDown className="h-2.5 w-2.5 text-gray-500" />
             </Button>
-          )}
-        </div>
-        <Button
-          onClick={() => setCurrentView('form')}
-          className="h-8 px-3 text-[13px] bg-blue-600 text-white hover:bg-blue-700 rounded-md shadow-sm"
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          Create
-        </Button>
-      </div>
-
-      {/* Controls Row */}
-      <div className="mt-1.5 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          {/* Sort */}
-          <div className="flex items-center gap-1.5">
-            <SortAsc className="h-4 w-4 text-gray-500" />
-            <Select value={sortBy} onValueChange={(value: string) => setSortBy(value as any)}>
-              <SelectTrigger className="h-8 px-2.5 bg-white border-gray-200 rounded-md text-[12px] min-w-[92px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-md border-gray-200 shadow-lg bg-white">
-                <SelectItem value="lastUsed">Recent</SelectItem>
-                <SelectItem value="title">A-Z</SelectItem>
-                <SelectItem value="usageCount">Most Used</SelectItem>
-              </SelectContent>
-            </Select>
+            {showSortDropdown && (
+              <div className="absolute left-0 top-full mt-1 bg-white/95 backdrop-blur-sm border border-gray-200/80 rounded-lg shadow-xl min-w-[120px] py-0.5 z-[9999] animate-in fade-in slide-in-from-top-1 duration-150">
+                {sortOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setSortBy(option.value as SortOption);
+                      setShowSortDropdown(false);
+                    }}
+                    className={cn(
+                      "w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 first:rounded-t-lg last:rounded-b-lg",
+                      sortBy === option.value && "bg-gray-100 font-medium text-black"
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Filter by Tag */}
+          {/* Pinned Dropdown */}
+          <div ref={pinnedRef} className="relative flex-shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPinnedDropdown(!showPinnedDropdown)}
+              className="h-7 w-7 p-0 border-gray-200 bg-white hover:bg-gray-50"
+              aria-haspopup="menu"
+              aria-expanded={showPinnedDropdown}
+              title={showPinned ? 'Showing Pinned Only' : 'Showing All'}
+            >
+              <Pin className={cn("h-3.5 w-3.5", showPinned ? "text-black fill-black" : "text-gray-500")} />
+            </Button>
+            {showPinnedDropdown && (
+              <div className="absolute left-0 top-full mt-1 bg-white/95 backdrop-blur-sm border border-gray-200/80 rounded-lg shadow-xl min-w-[100px] py-0.5 z-[9999] animate-in fade-in slide-in-from-top-1 duration-150">
+                <button
+                  onClick={() => {
+                    setShowPinned(false);
+                    setShowPinnedDropdown(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 first:rounded-t-lg last:rounded-b-lg",
+                    !showPinned && "bg-gray-100 font-medium text-black"
+                  )}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPinned(true);
+                    setShowPinnedDropdown(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 first:rounded-t-lg last:rounded-b-lg",
+                    showPinned && "bg-gray-100 font-medium text-black"
+                  )}
+                >
+                  Pinned Only
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Workspace Dropdown */}
+          <div ref={workspaceRef} className="relative flex-shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
+              className="h-7 px-1.5 gap-0.5 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-[11px] whitespace-nowrap"
+              aria-haspopup="menu"
+              aria-expanded={showWorkspaceDropdown}
+            >
+              <span className="truncate max-w-[45px] text-[10px]">{selectedWorkspace === 'all' ? 'Workspace' : selectedWorkspace}</span>
+              <ChevronDown className="h-2.5 w-2.5 text-gray-500" />
+            </Button>
+            {showWorkspaceDropdown && (
+              <div className="absolute left-0 top-full mt-1 bg-white/95 backdrop-blur-sm border border-gray-200/80 rounded-lg shadow-xl min-w-[140px] max-h-[240px] overflow-y-auto py-0.5 z-[9999] animate-in fade-in slide-in-from-top-1 duration-150 [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300/60 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-white/95 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400/80">
+                <button
+                  onClick={() => {
+                    setSelectedWorkspace('all');
+                    setShowWorkspaceDropdown(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 rounded-t-lg",
+                    selectedWorkspace === 'all' && "bg-gray-100 font-medium text-black"
+                  )}
+                >
+                  All Workspaces
+                </button>
+                {workspaces.length > 0 && (
+                  <>
+                    <div className="border-t border-gray-200/60 my-0.5" />
+                    {workspaces.map((workspace) => (
+                      <button
+                        key={workspace}
+                        onClick={() => {
+                          setSelectedWorkspace(workspace);
+                          setShowWorkspaceDropdown(false);
+                        }}
+                        className={cn(
+                          "w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 truncate last:rounded-b-lg",
+                          selectedWorkspace === workspace && "bg-gray-100 font-medium text-black"
+                        )}
+                        title={workspace}
+                      >
+                        {workspace}
+                      </button>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Tag Dropdown */}
           {allTags.length > 0 && (
-            <div className="flex items-center gap-1.5">
-              <Filter className="h-4 w-4 text-gray-500" />
-              <Select value={filterTag} onValueChange={setFilterTag}>
-                <SelectTrigger className="h-8 px-2.5 bg-white border-gray-200 rounded-md text-[12px] min-w-[110px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-md border-gray-200 shadow-lg bg-white max-h-52 overflow-auto">
-                  <SelectItem value="all">All Tags</SelectItem>
+            <div ref={tagRef} className="relative flex-shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTagDropdown(!showTagDropdown)}
+                className="h-7 px-1.5 gap-0.5 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-[11px] whitespace-nowrap"
+                aria-haspopup="menu"
+                aria-expanded={showTagDropdown}
+              >
+                <span className="truncate max-w-[45px] text-[10px]">{filterTag === 'all' ? 'Tag' : filterTag}</span>
+                <ChevronDown className="h-2.5 w-2.5 text-gray-500" />
+              </Button>
+              {showTagDropdown && (
+                <div className="absolute left-0 top-full mt-1 bg-white/95 backdrop-blur-sm border border-gray-200/80 rounded-lg shadow-xl min-w-[120px] max-h-[240px] overflow-y-auto py-0.5 z-[9999] animate-in fade-in slide-in-from-top-1 duration-150 [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300/60 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-white/95 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400/80">
+                  <button
+                    onClick={() => {
+                      setFilterTag('all');
+                      setShowTagDropdown(false);
+                    }}
+                    className={cn(
+                      "w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 rounded-t-lg",
+                      filterTag === 'all' && "bg-gray-100 font-medium text-black"
+                    )}
+                  >
+                    All Tags
+                  </button>
+                  <div className="border-t border-gray-200/60 my-0.5" />
                   {allTags.map((tag) => (
-                    <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                    <button
+                      key={tag}
+                      onClick={() => {
+                        setFilterTag(tag);
+                        setShowTagDropdown(false);
+                      }}
+                      className={cn(
+                        "w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 truncate last:rounded-b-lg",
+                        filterTag === tag && "bg-gray-100 font-medium text-black"
+                      )}
+                      title={tag}
+                    >
+                      {tag}
+                    </button>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              )}
             </div>
           )}
+
+          {/* Tools Dropdown */}
+          <div ref={toolsRef} className="relative flex-shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowToolsDropdown(!showToolsDropdown)}
+              className="h-7 px-1.5 gap-0.5 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-[11px]"
+              aria-haspopup="menu"
+              aria-expanded={showToolsDropdown}
+            >
+              <Hammer className="h-3 w-3 text-gray-500" />
+              <span className="truncate text-[10px]">Tools</span>
+              <ChevronDown className="h-2.5 w-2.5 text-gray-500" />
+            </Button>
+            {showToolsDropdown && (
+              <div className="absolute left-0 top-full mt-1 bg-white/95 backdrop-blur-sm border border-gray-200/80 rounded-lg shadow-xl min-w-[120px] py-0.5 z-[9999] animate-in fade-in slide-in-from-top-1 duration-150">
+                <button
+                  onClick={() => {
+                    setCurrentView('cleaner');
+                    setShowToolsDropdown(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 rounded-lg"
+                >
+                  Text Tools
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Pinned Filter */}
-        <div className="flex items-center gap-1.5">
-          <Pin className="h-4 w-4 text-gray-500" />
-          <Label htmlFor="pinned-filter" className="text-[12px] text-gray-700 font-medium">
-            Pinned
-          </Label>
-          <Switch
-            id="pinned-filter"
-            checked={showPinned}
-            onCheckedChange={setShowPinned}
-            className="data-[state=checked]:bg-blue-600"
-          />
-        </div>
-      </div>
-
-      {/* Clear Filters */}
-      {hasActiveFilters && (
-        <div className="pt-1">
+        {/* Right Side: Settings and Create */}
+        <div className="flex items-center gap-0.5 ml-auto flex-shrink-0">
+          {/* Settings Icon */}
           <Button
             variant="ghost"
-            size="sm"
-            onClick={resetFilters}
-            className="h-8 px-2.5 text-[12px] text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md"
+            size="icon"
+            onClick={() => setCurrentView('settings')}
+            className="h-7 w-7 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            aria-label="Settings"
+            title="Settings"
           >
-            <X className="h-4 w-4 mr-1.5" />
-            Clear filters
+            <SettingsIcon className="h-4 w-4" />
+          </Button>
+
+          {/* Create Button - Prominent */}
+          <Button
+            onClick={() => setCurrentView('form')}
+            className="h-7 px-2 text-[11px] font-medium bg-black text-white hover:bg-black/90 rounded-md shadow-sm whitespace-nowrap"
+          >
+            <Plus className="h-3.5 w-3.5 mr-0.5" />
+            New
           </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 };

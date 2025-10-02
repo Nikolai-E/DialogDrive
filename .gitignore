@@ -55,6 +55,11 @@ temp/
 tmp/
 coverage/
 
+# Backups
+.backups/
+*.backup
+*.backup[0-9]
+
 # Ignore internal planning/instructions by pattern
 /*PLAN*.md
 /*_PLAN*.md
