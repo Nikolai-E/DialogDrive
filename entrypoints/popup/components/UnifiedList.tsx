@@ -102,6 +102,7 @@ export const UnifiedList: React.FC = () => {
             {virtualItems.map((virtualItem) => (
               <div
                 key={virtualItem.key}
+                {...{ 'data-index': virtualItem.index }}
                 ref={virtualizer.measureElement}
                 style={{
                   position: 'absolute',

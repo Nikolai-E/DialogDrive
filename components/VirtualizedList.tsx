@@ -49,6 +49,7 @@ export function VirtualizedList<T>({
         {virtualizer.getVirtualItems().map((virtualItem) => (
           <div
             key={virtualItem.key}
+            {...{ 'data-index': virtualItem.index }}
             style={{
               position: 'absolute',
               top: 0,
@@ -205,6 +206,7 @@ export function VirtualizedGrid<T>({
           return (
             <div
               key={virtualRow.key}
+              {...{ 'data-index': virtualRow.index }}
               style={{
                 position: 'absolute',
                 top: 0,

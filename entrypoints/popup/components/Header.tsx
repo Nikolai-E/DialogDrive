@@ -565,38 +565,44 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
         <div className="pl-1.75 pr-1.75 pb-2.5 space-y-1.6">
           <div role="tablist" aria-label="Views" className="grid grid-cols-[0.9fr_1.05fr_1fr_1fr_1.05fr] gap-0">
             <TabButton
-              active={contentFilter === 'all'}
+              active={contentFilter === 'all' && currentView === 'list' && activeMenu !== 'tools'}
               onClick={() => {
                 setCurrentView('list');
                 setContentFilter('all');
+                setActiveMenu(null);
               }}
               icon={<LayoutGrid className="h-3.5 w-3.5" />}
               label="All"
               className="w-full justify-center"
             />
             <TabButton
-              active={contentFilter === 'prompts'}
+              active={contentFilter === 'prompts' && currentView === 'list' && activeMenu !== 'tools'}
               onClick={() => {
                 setCurrentView('list');
                 setContentFilter('prompts');
+                setActiveMenu(null);
               }}
               icon={<List className="h-3.5 w-3.5" />}
               label="Prompts"
               className="w-full justify-center"
             />
             <TabButton
-              active={contentFilter === 'chats'}
+              active={contentFilter === 'chats' && currentView === 'list' && activeMenu !== 'tools'}
               onClick={() => {
                 setCurrentView('list');
                 setContentFilter('chats');
+                setActiveMenu(null);
               }}
               icon={<MessageSquare className="h-3.5 w-3.5" />}
               label="Chats"
               className="w-full justify-center"
             />
             <TabButton
-              active={currentView === 'library'}
-              onClick={() => onOpenLibrary && onOpenLibrary()}
+              active={currentView === 'library' && activeMenu !== 'tools'}
+              onClick={() => {
+                setActiveMenu(null);
+                onOpenLibrary && onOpenLibrary();
+              }}
               icon={<List className="h-3.5 w-3.5" />}
               label="Library"
               className="w-full justify-center"
