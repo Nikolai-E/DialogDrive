@@ -57,6 +57,7 @@ coverage/
 
 # Backups
 .backups/
+.safety/
 *.backup
 *.backup[0-9]
 
@@ -67,6 +68,8 @@ coverage/
 !PRIVACY_POLICY.md
 !SUPPORT.md
 !ChromePolicy.md
+!AGENT_GUIDE.md
+!BACKUP.md
 !docs/TECH_OVERVIEW.md
 !docs/DesignResearch.md
 
