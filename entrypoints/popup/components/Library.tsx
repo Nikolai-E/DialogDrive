@@ -64,7 +64,7 @@ export const Library: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="px-2 pt-2 pb-1 border-b">
+      <div className="px-2 pt-2 pb-1 border-b bg-background/80 backdrop-blur-sm">
         <h2 className="text-[13px] font-semibold">Prompt Library</h2>
         <p className="text-[11px] text-muted-foreground">Curated, ready-to-use prompts you can add to your collection.</p>
       </div>
@@ -93,7 +93,7 @@ export const Library: React.FC = () => {
                     disabled={added || addingIndex === idx}
                     aria-pressed={added}
                     aria-label={added ? 'Selected' : `Select ${p.title}`}
-                    className="min-w-[108px] justify-center bg-black text-white hover:bg-black/90 border border-black"
+                    className="min-w-[108px] justify-center bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21]"
                   >
                     {added ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
                     {added ? 'Selected' : addingIndex === idx ? 'Selecting…' : 'Select'}

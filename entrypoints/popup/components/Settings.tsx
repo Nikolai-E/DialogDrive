@@ -54,20 +54,20 @@ export const Settings: React.FC = () => {
           className="space-y-2"
         >
           <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2"><Slash className="h-4 w-4"/> Prompt picker trigger</h3>
-          <div className="text-[12.5px] text-foreground/80">How to open the in‑page picker on ChatGPT.</div>
+          <div className="text-[12.5px] text-muted-foreground">Choose how to pop open your saved prompts while you're typing in ChatGPT.</div>
           <div className="inline-flex rounded-lg border border-border overflow-hidden">
             <button
-              className={`px-3 py-2 text-[13px] ${pickerTrigger === 'none' ? 'bg-primary text-primary-foreground' : 'bg-background text-foreground'}`}
+              className={`px-3 py-2 text-[13px] ${pickerTrigger === 'none' ? 'bg-[#1f1f21] text-white' : 'bg-background text-foreground'}`}
               aria-pressed={pickerTrigger === 'none'}
               onClick={() => updatePickerTrigger('none')}
             >None</button>
             <button
-              className={`px-3 py-2 text-[13px] border-l border-border ${pickerTrigger === 'doubleSlash' ? 'bg-primary text-primary-foreground' : 'bg-background text-foreground'}`}
+              className={`px-3 py-2 text-[13px] border-l border-border ${pickerTrigger === 'doubleSlash' ? 'bg-[#1f1f21] text-white' : 'bg-background text-foreground'}`}
               aria-pressed={pickerTrigger === 'doubleSlash'}
               onClick={() => updatePickerTrigger('doubleSlash')}
            >// (double slash)</button>
             <button
-              className={`px-3 py-2 text-[13px] border-l border-border ${pickerTrigger === 'backslash' ? 'bg-primary text-primary-foreground' : 'bg-background text-foreground'}`}
+              className={`px-3 py-2 text-[13px] border-l border-border ${pickerTrigger === 'backslash' ? 'bg-[#1f1f21] text-white' : 'bg-background text-foreground'}`}
               aria-pressed={pickerTrigger === 'backslash'}
               onClick={() => updatePickerTrigger('backslash')}
             >\ (backslash)</button>
@@ -100,7 +100,7 @@ export const Settings: React.FC = () => {
               <span className="text-xs text-muted-foreground">Escape</span>
             </li>
           </ul>
-          <p className="text-[12px] text-muted-foreground">While the popup is focused, Save/Print shortcuts trigger DialogDrive actions instead of the browser.</p>
+          <p className="text-[12px] text-muted-foreground">When the popup is focused, these keys take over the browser shortcuts so DialogDrive responds instantly.</p>
         </motion.div>
         {/* Quick stats showing prompt usage. */}
         <motion.div
@@ -134,6 +134,7 @@ export const Settings: React.FC = () => {
           className="space-y-2"
         >
           <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2"><Folder className="h-4 w-4"/> Workspaces</h3>
+          <p className="text-[12.5px] text-muted-foreground">Workspaces act like folders for different clients or projects. Switch them from the chips above the library to swap context.</p>
           <div className="space-y-1.5">
             {workspaces.filter(w => w !== 'General').length === 0 ? (
               <p className="text-xs text-muted-foreground">No custom workspaces yet.</p>
@@ -161,6 +162,7 @@ export const Settings: React.FC = () => {
           className="space-y-2"
         >
           <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2"><Tag className="h-4 w-4"/> Tags</h3>
+          <p className="text-[12.5px] text-muted-foreground">Tags are quick labels you can stack to narrow results. Add them in the editor, tidy them up here.</p>
           <div className="space-y-1.5">
             {allTags.length === 0 ? (
               <p className="text-xs text-muted-foreground">No tags yet.</p>
@@ -190,7 +192,7 @@ export const Settings: React.FC = () => {
           <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2"><Info className="h-4 w-4" /> Privacy & data</h3>
           <div className="space-y-2.5 text-[13px] leading-relaxed">
             <p className="text-foreground/85">
-              DialogDrive keeps your prompts, chat snippets (including URLs), workspaces, tags, usage counts, and UI preferences on this device. We don’t send this content to our servers. If optional cloud sync is ever offered, you’ll opt in.
+              Everything you save - prompts, chat snippets, workspaces, tags, usage counts, preferences - stays on this device. Nothing is uploaded to our servers, and we'll ask before offering any future sync.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button

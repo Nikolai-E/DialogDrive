@@ -16,16 +16,6 @@ interface UnifiedItemProps {
   item: WorkspaceItem;
 }
 
-// simple debounce utility scoped to component instance
-const useClickDebounce = (delay = 200) => {
-  const t = React.useRef<number | null>(null);
-  return () => {
-    if (t.current) return true; // busy
-    t.current = window.setTimeout(() => { t.current && clearTimeout(t.current); t.current = null; }, delay) as unknown as number;
-    return false;
-  };
-};
-
 // shallow compare helper for primitives/flat props we care about
 const areUnifiedItemPropsEqual = (prev: Readonly<UnifiedItemProps>, next: Readonly<UnifiedItemProps>) => {
   const a = prev.item; const b = next.item;
@@ -55,7 +45,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
 
   const handleCardClick = async () => {
     logger.debug('Card clicked', item.type);
-    
+
     if (item.type === 'prompt') {
       const prompt = item.data as Prompt;
       const buildText = () => {
@@ -159,30 +149,36 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
     }
   };
 
-  const getTypeIcon = () => {
-    if (item.type === 'prompt') {
-      return <FileText className="w-3 h-3 text-accent" />;
-    } else {
-      const chat = item.data as ChatBookmark;
-  const platformNames: Record<string, string> = { chatgpt: 'ChatGPT', gemini: 'Gemini', claude: 'Claude', deepseek: 'DeepSeek' };
-      const { urlType, isOwnerOnly } = ChatStorage.parseUrl(chat.url);
-      const isShareLink = !isOwnerOnly;
-      return (
-        <div className="flex items-center gap-1">
-          <MessageSquare className="w-3 h-3 text-secondary" />
-          <span className="text-[11px] leading-4 text-muted-foreground">{platformNames[chat.platform] || chat.platform}</span>
-          {isShareLink ? (
-            <span className="text-[10px] leading-4 text-accent bg-accent/10 px-1 rounded" title="Public share link - works without login">Public</span>
-          ) : (
-            <span className="text-[10px] leading-4 text-destructive bg-destructive/10 px-1 rounded" title="Private conversation - requires login">Private</span>
+  const renderChatMeta = () => {
+    if (item.type !== 'chat') return null;
+    const chat = item.data as ChatBookmark;
+    const platformNames: Record<string, string> = { chatgpt: 'ChatGPT', gemini: 'Gemini', claude: 'Claude', deepseek: 'DeepSeek' };
+    const { isOwnerOnly } = ChatStorage.parseUrl(chat.url);
+    const isShareLink = !isOwnerOnly;
+
+    return (
+      <>
+        <span className="inline-flex items-center rounded-full border border-border/70 bg-[hsl(var(--surface-subtle))] px-2.5 py-0.5 text-[11px] text-muted-foreground/80">
+          {platformNames[chat.platform] || chat.platform}
+        </span>
+        <span
+          className={cn(
+            'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide',
+            isShareLink ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'
           )}
-        </div>
-      );
-    }
+          title={isShareLink ? 'Public share link - works without login' : 'Private conversation - requires login'}
+        >
+          {isShareLink ? 'Public' : 'Private'}
+        </span>
+      </>
+    );
   };
 
   return (
-    <div className="mx-2 my-0.5" role="button" tabIndex={0}
+    <div
+      className="px-0 py-0"
+      role="button"
+      tabIndex={0}
       onClick={handleCardClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -193,74 +189,98 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
     >
       <div
         className={cn(
-          'relative rounded-md px-2.5 py-2 select-none border border-border/60',
-          'bg-card hover:bg-card/80',
-          'transition-colors'
+          'group rounded-[var(--radius)] border border-border/70 bg-[hsl(var(--card))] px-3.5 py-1.5 transition-all duration-150 shadow-[0_1px_1px_rgba(15,23,42,0.05)]',
+          'hover:border-border/60 hover:bg-[hsl(var(--card))] hover:shadow-[0_5px_14px_rgba(15,23,42,0.14)]'
         )}
       >
-        <div className="flex items-center gap-2.5 min-w-0">
-          {/* title and meta should truncate cleanly */}
-          <div className="min-w-0 flex-1">
-            <div className="text-[13px] font-medium text-foreground truncate">{item.title}</div>
-            <div className="text-[12px] text-muted-foreground truncate flex items-center gap-1.5">
-              {getTypeIcon()}
-              <span className="truncate">{item.workspace || 'General'}</span>
-            </div>
+        {/* Row 1: Icon + Title + Pin + Open */}
+        <div className="flex items-center gap-2.25 mb-1.5">
+          <div className="flex-shrink-0">
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+              {item.type === 'prompt' ? (
+                <FileText className="h-3 w-3" />
+              ) : (
+                <MessageSquare className="h-3 w-3" />
+              )}
+            </span>
           </div>
-          {/* right-side actions remain aligned */}
-          <div className="flex items-center gap-0.5 shrink-0">
-            {item.isPinned && <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full" />}
+          
+          <span className="truncate text-[12.5px] font-semibold text-foreground/95 flex-1 min-w-0">{item.title}</span>
+          
+          <div className="flex items-center gap-1 flex-shrink-0">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={handlePin}
               aria-label={item.isPinned ? `Unpin ${item.type}` : `Pin ${item.type}`}
               className={cn(
-                'h-7 w-7 p-0 transition-opacity duration-150 rounded-md',
-                item.isPinned 
-                  ? 'text-accent bg-accent/10 hover:bg-accent/20 border border-accent/20' 
-                  : 'text-muted-foreground hover:text-accent hover:bg-accent/10'
+                'h-6 w-6 rounded-full text-muted-foreground transition-colors',
+                item.isPinned && 'bg-primary/10 text-primary'
               )}
               title={item.isPinned ? `Unpin ${item.type}` : `Pin ${item.type}`}
             >
-              <Pin className="w-3.5 h-3.5" />
+              <Pin className="h-3 w-3" />
             </Button>
             {item.type === 'chat' && (
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={async (e) => {
                   e.stopPropagation();
                   const chat = item.data as ChatBookmark;
                   api.tabs.create({ url: chat.url });
-                  try { await incrementChatAccess(chat.id); } catch { toast.error('Failed to update chat access count'); }
+                  try {
+                    await incrementChatAccess(chat.id);
+                  } catch {
+                    toast.error('Failed to update chat access count');
+                  }
                 }}
                 aria-label="Open chat in new tab"
-                className="h-7 w-7 p-0 text-muted-foreground hover:text-secondary hover:bg-secondary/10 transition-opacity duration-150 rounded-md"
+                className="h-6 w-6 rounded-full text-muted-foreground transition-colors hover:text-foreground"
                 title="Open chat in new tab"
               >
-                <ExternalLink className="w-3.5 h-3.5" />
+                <ExternalLink className="h-3 w-3" />
               </Button>
             )}
+          </div>
+        </div>
+
+        {/* Row 2: Tags/Workspace + Edit + Delete */}
+        <div className="flex items-center gap-2.25">
+          <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground flex-1 min-w-0">
+            {item.isPinned && (
+              <span className="rounded-full bg-accent/20 px-1.5 py-0.5 text-[10px] font-medium text-accent-foreground shrink-0">Pinned</span>
+            )}
+            <span className="inline-flex items-center rounded-full border border-border/70 bg-[hsl(var(--surface-subtle))] px-2 py-0.5 text-[10.5px] text-muted-foreground/80 whitespace-nowrap">
+              {item.workspace || 'General'}
+            </span>
+            {item.type === 'chat' ? (
+              renderChatMeta()
+            ) : (
+              <span className="text-muted-foreground/80 whitespace-nowrap">Prompt</span>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-1 flex-shrink-0">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={handleEdit}
               aria-label={`Edit ${item.type}`}
-              className="h-7 w-7 p-0 text-muted-foreground hover:text-accent hover:bg-accent/10 transition-opacity duration-150 rounded-md"
+              className="h-6 w-6 rounded-full text-muted-foreground transition-colors hover:text-foreground"
               title={`Edit ${item.type}`}
             >
-              <Edit2 className="w-3.5 h-3.5" />
+              <Edit2 className="h-3 w-3" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={handleDelete}
               aria-label={`Delete ${item.type}`}
-              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-opacity duration-150 rounded-md"
+              className="h-6 w-6 rounded-full text-muted-foreground transition-colors hover:text-destructive"
               title={`Delete ${item.type}`}
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="h-3 w-3" />
             </Button>
           </div>
         </div>

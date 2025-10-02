@@ -55,7 +55,7 @@ test.describe('Draft restore and prefs persistence', () => {
 
     // Open Text Tools via Tools dropdown
     await expect(page.getByRole('heading', { name: 'DialogDrive' })).toBeVisible();
-    await page.getByRole('button', { name: /tools/i }).click();
+    await page.getByRole('tab', { name: /tools/i }).click();
     await page.getByRole('menuitem', { name: /text tools/i }).click();
 
     // If tips are showing, hide them; if hidden, show then hide
@@ -74,7 +74,7 @@ test.describe('Draft restore and prefs persistence', () => {
   // Reload popup and ensure hidden remains hidden
   await page.reload();
 
-    await page.getByRole('button', { name: /tools/i }).click();
+    await page.getByRole('tab', { name: /tools/i }).click();
     await page.getByRole('menuitem', { name: /text tools/i }).click();
     // After hydration the description block should not be present; the Show button should be visible
     await expect(page.getByRole('button', { name: /show what these text tools do/i })).toBeVisible();

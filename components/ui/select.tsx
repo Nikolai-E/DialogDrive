@@ -47,9 +47,9 @@ const SelectTrigger = React.forwardRef<
     return (
       <button
         ref={ref}
-  type="button"
+        type="button"
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          "flex h-8 w-full items-center justify-between rounded-[calc(var(--radius)-2px)] border border-input bg-background/80 px-3 text-[12px] ring-offset-background placeholder:text-muted-foreground/80 transition-colors focus:outline-none focus:ring-2 focus:ring-ring/80 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40",
           className
         )}
         aria-haspopup="listbox"
@@ -117,11 +117,11 @@ const SelectItem = React.forwardRef<
     return (
       <button
         ref={ref}
-  type="button"
+        type="button"
         role="option"
         aria-selected={selected}
         className={cn(
-          "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+          "relative flex w-full cursor-default select-none items-center rounded-md py-1.5 pl-8 pr-2 text-[12px] outline-none hover:bg-secondary/60 hover:text-foreground",
           selected && "bg-primary/10 text-primary",
           className
         )}
@@ -182,7 +182,7 @@ const SelectItemAction = (
       role="option"
       aria-selected={selected}
       className={cn(
-        "relative flex w-full items-center rounded-sm py-1 pl-1 pr-1 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+        "relative flex w-full items-center rounded-md py-1 pl-1 pr-1 text-[12px] outline-none hover:bg-secondary/60 hover:text-foreground",
         selected && "bg-primary/10 text-primary",
         className
       )}
@@ -190,7 +190,7 @@ const SelectItemAction = (
       <button
         type="button"
         className={cn(
-          "flex-1 flex items-center rounded-sm py-0.5 pl-7 pr-2 text-left truncate"
+          "flex-1 flex items-center rounded-md py-0.5 pl-7 pr-2 text-left truncate"
         )}
         onClick={() => {
           onValueChange?.(value);

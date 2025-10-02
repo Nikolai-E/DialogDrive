@@ -13,7 +13,7 @@ test.describe('Tools dropdown and Library', () => {
     await expect(page.getByRole('heading', { name: 'DialogDrive' })).toBeVisible();
 
     // Open Tools
-    await page.getByRole('button', { name: /tools/i }).click();
+    await page.getByRole('tab', { name: /tools/i }).click();
     await expect(page.getByRole('menuitem', { name: /text tools/i })).toBeVisible();
 
     // Open Text Tools

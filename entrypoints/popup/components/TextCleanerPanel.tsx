@@ -35,7 +35,7 @@ export const TextCleanerPanel: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.12 }}
-        className="px-2 py-2 border-b bg-background/80"
+        className="px-2 py-2 border-b bg-background/80 backdrop-blur-sm"
       >
         <DescriptionBlock
           onToggle={() => setShowAdvanced((prev) => !prev)}
