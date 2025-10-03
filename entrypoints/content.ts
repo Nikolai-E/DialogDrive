@@ -98,6 +98,7 @@ function setupPromptPicker() {
   let cachedPrompts: PromptItem[] | null = null;
   let overlayEl: HTMLDivElement | null = null;
   let formEl: HTMLDivElement | null = null;
+  let cleanupForm: (() => void) | null = null;
   let pickerTrigger: 'none' | 'doubleSlash' | 'backslash' = 'doubleSlash';
 
   // Load picker trigger preference and keep it in sync with persisted store
@@ -388,6 +389,40 @@ function setupPromptPicker() {
     logger.warn('DialogDrive: Failed to start mutation observer');
   }
 
+  // Helper functions for focus management - shared across overlay and form
+  const getFocusableElements = (root: HTMLElement): HTMLElement[] => {
+    const raw = Array.from(root.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    ));
+    return raw.filter((el) => {
+      if (el.hasAttribute('disabled')) return false;
+      const rect = el.getBoundingClientRect();
+      const style = window.getComputedStyle(el);
+      if (style.visibility === 'hidden' || style.display === 'none') return false;
+      return rect.width > 0 || rect.height > 0 || el === document.activeElement;
+    });
+  };
+
+  const setOverlayFocusState = (disable: boolean) => {
+    if (!overlayEl) return;
+    const overlay = overlayEl as (HTMLDivElement & { inert?: boolean });
+    if (disable) {
+      overlay.setAttribute('aria-hidden', 'true');
+      try {
+        overlay.inert = true;
+      } catch {
+        // noop: inert not supported
+      }
+    } else {
+      overlay.removeAttribute('aria-hidden');
+      try {
+        overlay.inert = false;
+      } catch {
+        // noop
+      }
+    }
+  };
+
   function openOverlay() {
     logger.debug('DialogDrive: Opening overlay');
     if (overlayEl) closeOverlay();
@@ -631,8 +666,7 @@ function setupPromptPicker() {
           logger.debug('DialogDrive: Escape pressed while form open - closing form');
           ev.preventDefault();
           ev.stopPropagation();
-          formEl.remove();
-          formEl = null;
+          cleanupForm?.();
           return; // Keep the overlay open
         }
         logger.debug('DialogDrive: Escape pressed, closing overlay');
@@ -642,13 +676,14 @@ function setupPromptPicker() {
         return;
       }
 
-      // Basic focus trap within the overlay panel
-      if (ev.key === 'Tab' && overlayEl) {
-        const focusable = Array.from(overlayEl.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )).filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null);
-        if (focusable.length) {
+      const target = ev.target as HTMLElement | null;
+
+      if (ev.key === 'Tab') {
+        if (formEl && target && formEl.contains(target)) {
+          const focusable = getFocusableElements(formEl);
           ev.preventDefault();
+          ev.stopPropagation();
+          if (!focusable.length) return;
           const idx = focusable.indexOf(document.activeElement as HTMLElement);
           let next = idx;
           if (ev.shiftKey) {
@@ -656,19 +691,31 @@ function setupPromptPicker() {
           } else {
             next = idx === -1 || idx >= focusable.length - 1 ? 0 : idx + 1;
           }
-          focusable[next].focus();
+          focusable[next]?.focus();
+          return;
+        }
+        if (overlayEl) {
+          const focusable = getFocusableElements(overlayEl);
+          if (focusable.length) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            const idx = focusable.indexOf(document.activeElement as HTMLElement);
+            let next = idx;
+            if (ev.shiftKey) {
+              next = idx <= 0 ? focusable.length - 1 : idx - 1;
+            } else {
+              next = idx === -1 || idx >= focusable.length - 1 ? 0 : idx + 1;
+            }
+            focusable[next]?.focus();
+          }
           return;
         }
       }
 
-      // Check if the event is coming from a form input - if so, let the form handle it (except Escape handled above)
-      const target = ev.target as HTMLElement;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
-        const form = target.closest('form');
-        if (form && formEl && form === formEl.querySelector('form')) {
-          console.log('DialogDrive: Event from form input, letting form handle it');
-          return; // Don't interfere with form submission or typing
-        }
+      if (formEl && target && formEl.contains(target)) {
+        // Let the placeholder form manage non-escape key interactions.
+        ev.stopPropagation();
+        return;
       }
 
       // While overlay is open, steer selection
@@ -714,6 +761,7 @@ function setupPromptPicker() {
     });
 
     function closeOverlay() {
+      cleanupForm?.();
       document.removeEventListener('keydown', onDocKey, true);
       overlayEl?.remove();
       overlayEl = null;
@@ -736,23 +784,25 @@ function setupPromptPicker() {
   }
 
   function openFillForm(prompt: PromptItem, placeholders: string[], onClose: () => void) {
-    if (formEl) formEl.remove();
+    cleanupForm?.();
+
     formEl = document.createElement('div');
-    formEl.style.position = 'fixed';
-    formEl.style.zIndex = '2147483647';
-    formEl.style.inset = '0';
-    formEl.style.background = 'rgba(0,0,0,0.35)';
-    formEl.style.display = 'block';
+    const currentFormEl = formEl;
+    currentFormEl.style.position = 'fixed';
+    currentFormEl.style.zIndex = '2147483647';
+    currentFormEl.style.inset = '0';
+    currentFormEl.style.background = 'rgba(0,0,0,0.35)';
+    currentFormEl.style.display = 'block';
 
     // Apply theme variables (match warm light palette)
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches || document.documentElement.classList.contains('dark');
-    formEl.style.setProperty('--dd-bg', '#f9f6f2');
-    formEl.style.setProperty('--dd-surface', '#f4efe8');
-    formEl.style.setProperty('--dd-header', '#ece7df');
-    formEl.style.setProperty('--dd-border', '#ddd1c2');
-    formEl.style.setProperty('--dd-text', '#141311');
-    formEl.style.setProperty('--dd-muted', '#6b645c');
-    formEl.style.setProperty('--dd-accent', '#111111');
+    currentFormEl.style.setProperty('--dd-bg', '#f9f6f2');
+    currentFormEl.style.setProperty('--dd-surface', '#f4efe8');
+    currentFormEl.style.setProperty('--dd-header', '#ece7df');
+    currentFormEl.style.setProperty('--dd-border', '#ddd1c2');
+    currentFormEl.style.setProperty('--dd-text', '#141311');
+    currentFormEl.style.setProperty('--dd-muted', '#6b645c');
+    currentFormEl.style.setProperty('--dd-accent', '#111111');
 
     // Inject style for visible focus ring in form and style scrollbars inside card
     const formStyle = document.createElement('style');
@@ -764,7 +814,7 @@ function setupPromptPicker() {
       .ddp-form::-webkit-scrollbar-thumb { background-color: #c5b9aa; border-radius: 8px; border: 2px solid var(--dd-bg); }
       .ddp-form::-webkit-scrollbar-thumb:hover { background-color: #b4a894; }
     `;
-    formEl.appendChild(formStyle);
+    currentFormEl.appendChild(formStyle);
 
     const card = document.createElement('div');
     card.className = 'ddp-form';
@@ -794,6 +844,10 @@ function setupPromptPicker() {
     titleEl.style.fontWeight = '600';
     titleEl.style.color = 'var(--dd-text)';
 
+    const closeForm = () => {
+      cleanupForm?.();
+    };
+
     const xBtn = document.createElement('button');
     xBtn.type = 'button';
     xBtn.setAttribute('aria-label', 'Close');
@@ -816,7 +870,7 @@ function setupPromptPicker() {
     headerRow.appendChild(xBtn);
 
     const hint = document.createElement('div');
-    hint.textContent = 'Press Enter to insert · Esc to close';
+    hint.textContent = 'Use Tab/Shift+Tab to move · Press Enter to insert · Esc to close';
     hint.style.fontSize = '12px';
     hint.style.fontWeight = '500';
     hint.style.color = 'var(--dd-muted)';
@@ -886,12 +940,6 @@ function setupPromptPicker() {
       form.appendChild(row);
     }
 
-    const closeForm = () => {
-      window.removeEventListener('resize', onResize);
-      formEl?.remove();
-      formEl = null;
-    };
-
     form.onsubmit = (ev: SubmitEvent) => {
       ev.preventDefault();
       ev.stopPropagation();
@@ -913,13 +961,28 @@ function setupPromptPicker() {
       }
     };
 
+    const handleFormKeydown = (ev: KeyboardEvent) => {
+      if (ev.key !== 'Tab') return;
+      const focusable = getFocusableElements(currentFormEl);
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (!focusable.length) return;
+      const idx = focusable.indexOf(document.activeElement as HTMLElement);
+      let next = idx;
+      if (ev.shiftKey) {
+        next = idx <= 0 ? focusable.length - 1 : idx - 1;
+      } else {
+        next = idx === -1 || idx >= focusable.length - 1 ? 0 : idx + 1;
+      }
+      focusable[next]?.focus();
+    };
+    currentFormEl.addEventListener('keydown', handleFormKeydown, true);
+
     card.appendChild(headerRow);
     card.appendChild(hint);
     card.appendChild(form);
-    formEl.appendChild(card);
-    document.body.appendChild(formEl);
+    currentFormEl.appendChild(card);
 
-    // Center the card within the overlay panel (the first UI)
     const positionCard = () => {
       try {
         const panelNode = overlayEl?.querySelector('.ddp-panel') as HTMLElement | null;
@@ -943,14 +1006,29 @@ function setupPromptPicker() {
     };
     const onResize = () => positionCard();
     requestAnimationFrame(positionCard);
-  window.addEventListener('resize', onResize, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
 
-    // Close form when clicking backdrop (but ignore clicks inside card)
-    formEl.addEventListener('click', (e) => {
-      if (e.target === formEl) {
+    const onBackdropClick = (e: MouseEvent) => {
+      if (e.target === currentFormEl) {
         closeForm();
       }
-    }, { capture: true, passive: true });
+    };
+    currentFormEl.addEventListener('click', onBackdropClick, { capture: true, passive: true });
+
+    cleanupForm = () => {
+      window.removeEventListener('resize', onResize);
+      currentFormEl.removeEventListener('keydown', handleFormKeydown, true);
+      currentFormEl.removeEventListener('click', onBackdropClick, true);
+      setOverlayFocusState(false);
+      currentFormEl.remove();
+      if (formEl === currentFormEl) {
+        formEl = null;
+      }
+      cleanupForm = null;
+    };
+
+    setOverlayFocusState(true);
+    document.body.appendChild(currentFormEl);
 
     // Focus the first input after a short delay
     setTimeout(() => {
