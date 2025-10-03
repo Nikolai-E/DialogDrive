@@ -2,18 +2,18 @@
 // Popup header that manages search, filtering, and quick-create menus.
 
 import {
-  Check,
-  ChevronDown,
-  Hammer,
-  LayoutGrid,
-  List,
-  MessageSquare,
-  Pin,
-  Plus,
-  Search,
-  Settings as SettingsIcon,
-  SortAsc,
-  X,
+    Check,
+    ChevronDown,
+    Hammer,
+    LayoutGrid,
+    List,
+    MessageSquare,
+    Pin,
+    Plus,
+    Search,
+    Settings as SettingsIcon,
+    SortAsc,
+    X,
 } from 'lucide-react';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';

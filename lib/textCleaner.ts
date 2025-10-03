@@ -458,11 +458,12 @@ function transformStructure(
         pushBlockLines(renderedFootnote, lines);
         break;
       }
-      default:
+      default: {
         // Exhaustive guard
         const _never: never = block;
         void _never;
         break;
+      }
     }
   }
 
@@ -808,7 +809,7 @@ function transformInline(input: string, options: CleanOptions, report: CleanRepo
 }
 
 function transformLinks(input: string, mode: LinkMode): { text: string; count: number } {
-  const regex = /\[([^\]]+)\]\(([^)\s]+)(?:\s+\"([^\"]*)\")?\)/g;
+  const regex = /\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g;
   let count = 0;
   const replaced = input.replace(regex, (_match, label, url) => {
     count += 1;
@@ -862,7 +863,7 @@ function stripEmojis(input: string): { text: string; count: number } {
     return { text: input, count: 0 };
   }
 
-  stripped = stripped.replace(/[\u200d\uFE0F]/g, '');
+  stripped = stripped.replace(/[\u200d]|[\uFE0F]/g, '');
   return { text: stripped, count };
 }
 
@@ -1145,7 +1146,7 @@ function fallbackSanitizeHtml(input: string): string {
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/ on[a-z]+="[^"]*"/gi, '')
-    .replace(/ on[a-z]+=\'[^\']*\'/gi, '');
+    .replace(/ on[a-z]+='[^']*'/gi, '');
 }
 
 function htmlToText(input: string): string {
@@ -1216,6 +1217,7 @@ function stripTags(input: string): string {
 // =========================
 
 function stripAnsi(text: string): { text: string; count: number } {
+  // eslint-disable-next-line no-control-regex -- ANSI escape sequences are intentional
   const regex = /\u001B\[[0-9;]*[A-Za-z]/g;
   let count = 0;
   const replaced = text.replace(regex, () => {
@@ -1318,7 +1320,7 @@ function replaceEmDashWithComma(text: string): { text: string; count: number } {
 
   result = result.replace(/\s+,/g, ',');
   result = result.replace(/,\s+/g, ', ');
-  result = result.replace(/, ([\.\!\?\;\:,\)\]])/g, ',$1');
+  result = result.replace(/, ([.!?;:,)\]])/g, ',$1');
   result = result.replace(/, $/, ',');
   return { text: result, count };
 }
@@ -1511,7 +1513,7 @@ function fallbackStripMarkdown(input: string, report: CleanReport): string {
     .replace(/[*_~]{1,3}([^*_~\n]+)[*_~]{1,3}/g, '$1')
     .replace(/^>\s?/gm, '')
     .replace(/^\s*([-*+]\s+|\d+[.)]\s+)/gm, '')
-    .replace(/\!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
     .replace(/#{1,6}\s+/g, '')
     .replace(/(?:[-*_]){3,}/g, '');
   if (stripped !== input) {

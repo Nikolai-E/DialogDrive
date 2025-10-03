@@ -195,10 +195,11 @@ const getFilteredAndSortedItems = (
       case 'pinned':
         return Number(b.isPinned) - Number(a.isPinned);
       case 'recent':
-      default:
+      default: {
         const dateA = a.lastUsed ? new Date(a.lastUsed).getTime() : 0;
         const dateB = b.lastUsed ? new Date(b.lastUsed).getTime() : 0;
         return dateB - dateA;
+      }
     }
   });
 
@@ -247,10 +248,11 @@ const getFilteredAndSortedPrompts = (
       case 'pinned':
         return Number(b.isPinned) - Number(a.isPinned);
       case 'recent':
-      default:
+      default: {
         const dateA = a.lastUsed ? new Date(a.lastUsed).getTime() : 0;
         const dateB = b.lastUsed ? new Date(b.lastUsed).getTime() : 0;
         return dateB - dateA;
+      }
     }
   });
 
