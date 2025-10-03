@@ -30,43 +30,45 @@ export default defineContentScript({
     const PingMsg = z.object({ type: z.literal('PING') });
     const ContentMsg = z.union([PasteMsg, CaptureMsg, PingMsg]);
 
-  browser.runtime.onMessage.addListener((message: unknown, _sender: unknown, sendResponse: (response: unknown) => void) => {
-      (async () => {
-        const parsed = ContentMsg.safeParse(message);
-        if (!parsed.success) {
-          sendResponse({ success: false, error: 'Bad message' });
-          return;
-        }
-        const msg = parsed.data as z.infer<typeof ContentMsg>;
-        switch ((msg as any).type) {
-          case 'PASTE_PROMPT': {
-            // Drops the selected prompt straight into the chat input.
-            const pasteSuccess = await platformManager.paste((msg as any).text);
-            sendResponse({ success: pasteSuccess });
-            break;
+    browser.runtime.onMessage.addListener(
+      (message: unknown, _sender: unknown, sendResponse: (response: unknown) => void) => {
+        (async () => {
+          const parsed = ContentMsg.safeParse(message);
+          if (!parsed.success) {
+            sendResponse({ success: false, error: 'Bad message' });
+            return;
           }
-          case 'CAPTURE_CHAT': {
-            // Captures the latest conversation so it can be saved as a bookmark.
-            const captureResult = await platformManager.capture();
-            sendResponse(captureResult);
-            break;
+          const msg = parsed.data as z.infer<typeof ContentMsg>;
+          switch ((msg as any).type) {
+            case 'PASTE_PROMPT': {
+              // Drops the selected prompt straight into the chat input.
+              const pasteSuccess = await platformManager.paste((msg as any).text);
+              sendResponse({ success: pasteSuccess });
+              break;
+            }
+            case 'CAPTURE_CHAT': {
+              // Captures the latest conversation so it can be saved as a bookmark.
+              const captureResult = await platformManager.capture();
+              sendResponse(captureResult);
+              break;
+            }
+            case 'PING': {
+              // Gives the UI a quick heartbeat and the active adapter name.
+              sendResponse({
+                success: true,
+                platform: platformManager.getCurrentAdapter()?.name || 'unknown',
+              });
+              break;
+            }
+            default:
+              sendResponse({ success: false, error: 'Unknown message type' });
           }
-          case 'PING': {
-            // Gives the UI a quick heartbeat and the active adapter name.
-            sendResponse({
-              success: true,
-              platform: platformManager.getCurrentAdapter()?.name || 'unknown',
-            });
-            break;
-          }
-          default:
-            sendResponse({ success: false, error: 'Unknown message type' });
-        }
-      })();
+        })();
 
-      // Keep the channel open for the async response.
-      return true;
-    });
+        // Keep the channel open for the async response.
+        return true;
+      }
+    );
 
     // Set up in-page prompt picker on ChatGPT when user types '\\' or '//'
     logger.info('DialogDrive: About to setup prompt picker');
@@ -91,7 +93,7 @@ function setupPromptPicker() {
 
   logger.debug('DialogDrive: On ChatGPT, proceeding with picker setup');
   let input: HTMLElement | null = findChatGPTInput();
-  
+
   // Debug logging
   logger.debug('DialogDrive: Setting up prompt picker', { inputFound: !!input });
 
@@ -109,7 +111,11 @@ function setupPromptPicker() {
         logger.warn('DialogDrive: Prefs hydration timed out; using defaults for picker trigger');
       }
       const prefs = usePrefsStore.getState();
-      if (prefs.pickerTrigger === 'none' || prefs.pickerTrigger === 'backslash' || prefs.pickerTrigger === 'doubleSlash') {
+      if (
+        prefs.pickerTrigger === 'none' ||
+        prefs.pickerTrigger === 'backslash' ||
+        prefs.pickerTrigger === 'doubleSlash'
+      ) {
         pickerTrigger = prefs.pickerTrigger;
       }
     } catch (error) {
@@ -130,7 +136,7 @@ function setupPromptPicker() {
 
   // Safe extension API detection using globalThis to avoid TS errors in isolated context
   function getExtApi(): any | null {
-    const g: any = (globalThis as any);
+    const g: any = globalThis as any;
     try {
       if (g?.browser?.runtime?.id) return g.browser;
     } catch {}
@@ -174,18 +180,31 @@ function setupPromptPicker() {
   const onKeyDown = async (e: KeyboardEvent) => {
     const key = e.key;
     const target = e.target as HTMLElement;
-    logger.debug('DialogDrive: Key pressed', { key, target: target?.tagName, targetClass: (target as any)?.className });
-    
+    logger.debug('DialogDrive: Key pressed', {
+      key,
+      target: target?.tagName,
+      targetClass: (target as any)?.className,
+    });
+
     // Re-resolve input in case ChatGPT re-rendered
     input = findChatGPTInput() || input;
     // If input not found via selectors, but target is editable, treat target as current input
-    if (!input && target && (target.isContentEditable || target instanceof HTMLTextAreaElement || target.tagName?.toLowerCase() === 'input')) {
+    if (
+      !input &&
+      target &&
+      (target.isContentEditable ||
+        target instanceof HTMLTextAreaElement ||
+        target.tagName?.toLowerCase() === 'input')
+    ) {
       input = target;
       logger.debug('DialogDrive: Using target as input fallback', { target: target.tagName });
     }
-    
+
     if (!target || !isChatInput(target)) {
-      logger.debug('DialogDrive: Target not valid chat input', { target: target?.tagName, isChatInput: target ? isChatInput(target) : false });
+      logger.debug('DialogDrive: Target not valid chat input', {
+        target: target?.tagName,
+        isChatInput: target ? isChatInput(target) : false,
+      });
       return;
     }
 
@@ -193,7 +212,7 @@ function setupPromptPicker() {
 
     // Detect backslash trigger if enabled
     if (pickerTrigger === 'backslash' && key === '\\') {
-  logger.debug('DialogDrive: Backslash detected, opening overlay');
+      logger.debug('DialogDrive: Backslash detected, opening overlay');
       e.preventDefault();
       e.stopPropagation();
       openOverlay();
@@ -201,16 +220,16 @@ function setupPromptPicker() {
     }
 
     // Detect '//' when typing the second '/'
-  if (pickerTrigger !== 'none' && key === '/') {
-    logger.debug('DialogDrive: Forward slash detected, checking for double slash');
+    if (pickerTrigger !== 'none' && key === '/') {
+      logger.debug('DialogDrive: Forward slash detected, checking for double slash');
       // Prefer textarea logic (ChatGPT uses #prompt-textarea)
       if (input instanceof HTMLTextAreaElement) {
         const ta = input as HTMLTextAreaElement;
         const start = ta.selectionStart ?? ta.value.length;
         const before = ta.value.slice(0, start);
-  const charBefore = before.slice(-1);
-  logger.debug('DialogDrive: Textarea check', { charBefore });
-  if (pickerTrigger === 'doubleSlash' && charBefore === '/') {
+        const charBefore = before.slice(-1);
+        logger.debug('DialogDrive: Textarea check', { charBefore });
+        if (pickerTrigger === 'doubleSlash' && charBefore === '/') {
           logger.info('DialogDrive: Double slash detected in textarea, opening overlay');
           e.preventDefault();
           e.stopPropagation();
@@ -234,9 +253,14 @@ function setupPromptPicker() {
             const offset = range.startOffset;
             const text = node.textContent || '';
             const charBefore = text.charAt(offset - 1);
-            logger.info('DialogDrive: Contenteditable check', { charBefore, textBefore: text.slice(0, offset).slice(-5) });
+            logger.info('DialogDrive: Contenteditable check', {
+              charBefore,
+              textBefore: text.slice(0, offset).slice(-5),
+            });
             if (pickerTrigger === 'doubleSlash' && charBefore === '/') {
-              logger.debug('DialogDrive: Double slash detected in contenteditable, opening overlay');
+              logger.debug(
+                'DialogDrive: Double slash detected in contenteditable, opening overlay'
+              );
               e.preventDefault();
               e.stopPropagation();
               // Remove the prior '/'
@@ -262,7 +286,13 @@ function setupPromptPicker() {
   const onInput = async (e: Event) => {
     const target = e.target as HTMLElement;
     input = findChatGPTInput() || input;
-    if (!input && target && (target.isContentEditable || target instanceof HTMLTextAreaElement || target.tagName?.toLowerCase() === 'input')) {
+    if (
+      !input &&
+      target &&
+      (target.isContentEditable ||
+        target instanceof HTMLTextAreaElement ||
+        target.tagName?.toLowerCase() === 'input')
+    ) {
       input = target;
     }
     if (!target || !isChatInput(target) || !input) return;
@@ -296,7 +326,7 @@ function setupPromptPicker() {
         openOverlay();
         return;
       }
-  } else if (input && input.isContentEditable) {
+    } else if (input && input.isContentEditable) {
       try {
         const sel = window.getSelection();
         if (sel && sel.rangeCount > 0) {
@@ -338,10 +368,10 @@ function setupPromptPicker() {
   // Attach base listeners - always attach to document, even if input not found yet
   document.addEventListener('keydown', onKeyDown, true);
   document.addEventListener('input', onInput, true);
-  
+
   // Also attach to specific input if found
   if (input) {
-  logger.debug('DialogDrive: Attaching listeners to found input');
+    logger.debug('DialogDrive: Attaching listeners to found input');
     input.addEventListener('keydown', onKeyDown, true);
     input.addEventListener('input', onInput, true);
   } else {
@@ -357,7 +387,9 @@ function setupPromptPicker() {
       moScheduled = false;
       const found = findChatGPTInput();
       if (found && found !== input) {
-        logger.debug('DialogDrive: Found new input via mutation observer', { newInput: (found as any).tagName });
+        logger.debug('DialogDrive: Found new input via mutation observer', {
+          newInput: (found as any).tagName,
+        });
         // Detach from old input
         try {
           input?.removeEventListener('keydown', onKeyDown, true);
@@ -391,9 +423,11 @@ function setupPromptPicker() {
 
   // Helper functions for focus management - shared across overlay and form
   const getFocusableElements = (root: HTMLElement): HTMLElement[] => {
-    const raw = Array.from(root.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    ));
+    const raw = Array.from(
+      root.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    );
     return raw.filter((el) => {
       if (el.hasAttribute('disabled')) return false;
       const rect = el.getBoundingClientRect();
@@ -405,7 +439,7 @@ function setupPromptPicker() {
 
   const setOverlayFocusState = (disable: boolean) => {
     if (!overlayEl) return;
-    const overlay = overlayEl as (HTMLDivElement & { inert?: boolean });
+    const overlay = overlayEl as HTMLDivElement & { inert?: boolean };
     if (disable) {
       overlay.setAttribute('aria-hidden', 'true');
       try {
@@ -433,26 +467,26 @@ function setupPromptPicker() {
     overlayEl.style.position = 'fixed';
     overlayEl.style.zIndex = '2147483647';
     overlayEl.style.inset = '0';
-  overlayEl.style.background = 'rgba(0,0,0,0.1)';
-  overlayEl.style.display = 'flex';
-  overlayEl.style.alignItems = 'flex-end';
-  overlayEl.style.justifyContent = 'center';
+    overlayEl.style.background = 'rgba(0,0,0,0.1)';
+    overlayEl.style.display = 'flex';
+    overlayEl.style.alignItems = 'flex-end';
+    overlayEl.style.justifyContent = 'center';
     overlayEl.style.pointerEvents = 'auto';
 
     // CSS custom properties for theming
-  // Force light warm palette regardless of system theme
-  // Warmer, greyer light palette
-  overlayEl.style.setProperty('--dd-bg', '#f9f6f2');
-  overlayEl.style.setProperty('--dd-surface', '#f4efe8');
-  overlayEl.style.setProperty('--dd-header', '#ece7df');
-  overlayEl.style.setProperty('--dd-border', '#ddd1c2');
-  overlayEl.style.setProperty('--dd-text', '#141311');
-  overlayEl.style.setProperty('--dd-muted', '#6b645c');
-  overlayEl.style.setProperty('--dd-accent', '#111111');
+    // Force light warm palette regardless of system theme
+    // Warmer, greyer light palette
+    overlayEl.style.setProperty('--dd-bg', '#f9f6f2');
+    overlayEl.style.setProperty('--dd-surface', '#f4efe8');
+    overlayEl.style.setProperty('--dd-header', '#ece7df');
+    overlayEl.style.setProperty('--dd-border', '#ddd1c2');
+    overlayEl.style.setProperty('--dd-text', '#141311');
+    overlayEl.style.setProperty('--dd-muted', '#6b645c');
+    overlayEl.style.setProperty('--dd-accent', '#111111');
 
-  // Inject CSS for scrollbar styling and visible focus ring
-  const overlayStyle = document.createElement('style');
-  overlayStyle.textContent = `
+    // Inject CSS for scrollbar styling and visible focus ring
+    const overlayStyle = document.createElement('style');
+    overlayStyle.textContent = `
     .ddp-overlay input:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
     .ddp-overlay .ddp-list { scrollbar-width: thin; scrollbar-color: #c5b9aa var(--dd-bg); }
     .ddp-overlay .ddp-list::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -460,9 +494,9 @@ function setupPromptPicker() {
     .ddp-overlay .ddp-list::-webkit-scrollbar-thumb { background-color: #c5b9aa; border-radius: 8px; border: 2px solid var(--dd-bg); }
     .ddp-overlay .ddp-list::-webkit-scrollbar-thumb:hover { background-color: #b4a894; }
   `;
-  overlayEl.appendChild(overlayStyle);
+    overlayEl.appendChild(overlayStyle);
 
-  const panel = document.createElement('div');
+    const panel = document.createElement('div');
     panel.className = 'ddp-panel';
     panel.setAttribute('role', 'document');
     panel.style.pointerEvents = 'auto';
@@ -471,76 +505,80 @@ function setupPromptPicker() {
     panel.style.border = '1px solid var(--dd-border)';
     panel.style.borderRadius = '8px';
     panel.style.boxShadow = '0 16px 48px rgba(20,19,17,0.18), 0 4px 16px rgba(20,19,17,0.08)';
-  panel.style.width = 'min(680px, 96vw)';
-  panel.style.height = '50vh';
-  panel.style.overflow = 'hidden';
-  panel.style.marginBottom = '25vh';
+    panel.style.width = 'min(680px, 96vw)';
+    panel.style.height = '50vh';
+    panel.style.overflow = 'hidden';
+    panel.style.marginBottom = '25vh';
 
-  // Top bar with search input and close X
-  const header = document.createElement('div');
-  header.style.display = 'flex';
-  header.style.alignItems = 'center';
-  header.style.gap = '8px';
-  header.style.borderBottom = '1px solid var(--dd-border)';
-  header.style.background = 'var(--dd-header)';
-  header.style.minHeight = '44px';
+    // Top bar with search input and close X
+    const header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.alignItems = 'center';
+    header.style.gap = '8px';
+    header.style.borderBottom = '1px solid var(--dd-border)';
+    header.style.background = 'var(--dd-header)';
+    header.style.minHeight = '44px';
 
-  const search = document.createElement('input');
+    const search = document.createElement('input');
     search.type = 'text';
     search.placeholder = 'Search prompts…';
-  search.setAttribute('aria-label', 'Search prompts');
-  search.style.flex = '1';
-  search.style.padding = '12px 16px';
-  search.style.border = '0';
+    search.setAttribute('aria-label', 'Search prompts');
+    search.style.flex = '1';
+    search.style.padding = '12px 16px';
+    search.style.border = '0';
     search.style.outline = 'none';
     search.style.fontSize = '14px';
     search.style.fontWeight = '500';
-  search.style.background = 'transparent';
+    search.style.background = 'transparent';
     search.style.color = 'var(--dd-text)';
-  // Suppress default blue focus ring and appearance
-  search.style.boxShadow = 'none';
-  search.style.setProperty('appearance', 'none');
-  search.style.setProperty('-webkit-appearance', 'none');
+    // Suppress default blue focus ring and appearance
+    search.style.boxShadow = 'none';
+    search.style.setProperty('appearance', 'none');
+    search.style.setProperty('-webkit-appearance', 'none');
 
-  const closeBtn = document.createElement('button');
-  closeBtn.type = 'button';
-  closeBtn.setAttribute('aria-label', 'Close');
-  closeBtn.textContent = '×';
-  closeBtn.style.fontSize = '18px';
-  closeBtn.style.lineHeight = '1';
-  closeBtn.style.padding = '0 12px';
-  closeBtn.style.height = '44px';
-  closeBtn.style.border = '0';
-  closeBtn.style.color = 'var(--dd-text)';
-  closeBtn.style.background = 'transparent';
-  closeBtn.style.cursor = 'pointer';
-  closeBtn.onmouseenter = () => { closeBtn.style.background = 'rgba(17,17,17,0.06)'; };
-  closeBtn.onmouseleave = () => { closeBtn.style.background = 'transparent'; };
-  closeBtn.onclick = () => closeOverlay();
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.textContent = '×';
+    closeBtn.style.fontSize = '18px';
+    closeBtn.style.lineHeight = '1';
+    closeBtn.style.padding = '0 12px';
+    closeBtn.style.height = '44px';
+    closeBtn.style.border = '0';
+    closeBtn.style.color = 'var(--dd-text)';
+    closeBtn.style.background = 'transparent';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.onmouseenter = () => {
+      closeBtn.style.background = 'rgba(17,17,17,0.06)';
+    };
+    closeBtn.onmouseleave = () => {
+      closeBtn.style.background = 'transparent';
+    };
+    closeBtn.onclick = () => closeOverlay();
 
-  const heading = document.createElement('h2');
-  heading.id = 'ddp-heading';
-  heading.textContent = 'Prompt picker';
-  heading.style.position = 'absolute';
-  heading.style.width = '1px';
-  heading.style.height = '1px';
-  heading.style.overflow = 'hidden';
-  heading.style.clip = 'rect(1px, 1px, 1px, 1px)';
-  heading.style.whiteSpace = 'nowrap';
-  panel.setAttribute('aria-labelledby', 'ddp-heading');
+    const heading = document.createElement('h2');
+    heading.id = 'ddp-heading';
+    heading.textContent = 'Prompt picker';
+    heading.style.position = 'absolute';
+    heading.style.width = '1px';
+    heading.style.height = '1px';
+    heading.style.overflow = 'hidden';
+    heading.style.clip = 'rect(1px, 1px, 1px, 1px)';
+    heading.style.whiteSpace = 'nowrap';
+    panel.setAttribute('aria-labelledby', 'ddp-heading');
 
-  header.appendChild(heading);
-  header.appendChild(search);
-  header.appendChild(closeBtn);
+    header.appendChild(heading);
+    header.appendChild(search);
+    header.appendChild(closeBtn);
 
     const list = document.createElement('div');
-  list.className = 'ddp-list';
-  list.setAttribute('role', 'listbox');
-  list.style.maxHeight = 'calc(50vh - 44px)';
+    list.className = 'ddp-list';
+    list.setAttribute('role', 'listbox');
+    list.style.maxHeight = 'calc(50vh - 44px)';
     list.style.overflow = 'auto';
     list.style.padding = '8px';
     list.style.display = 'grid';
-  list.style.gap = '2px';
+    list.style.gap = '2px';
 
     const empty = document.createElement('div');
     empty.textContent = 'No prompts found';
@@ -551,17 +589,21 @@ function setupPromptPicker() {
     empty.style.textAlign = 'center';
     empty.style.display = 'none';
 
-  panel.appendChild(header);
+    panel.appendChild(header);
     panel.appendChild(list);
     panel.appendChild(empty);
     overlayEl.appendChild(panel);
     document.body.appendChild(overlayEl);
     // Close when clicking backdrop (but ignore clicks inside panel)
-    overlayEl.addEventListener('click', (e) => {
-      if (e.target === overlayEl) {
-        closeOverlay();
-      }
-    }, { capture: true, passive: true });
+    overlayEl.addEventListener(
+      'click',
+      (e) => {
+        if (e.target === overlayEl) {
+          closeOverlay();
+        }
+      },
+      { capture: true, passive: true }
+    );
 
     // Selection state
     let selectedIndex = -1;
@@ -578,17 +620,20 @@ function setupPromptPicker() {
 
     const onSearch = async () => {
       const q = search.value.toLowerCase();
-      const prompts = (await ensurePrompts()).filter(p =>
-        p.title.toLowerCase().includes(q) || p.text.toLowerCase().includes(q)
+      const prompts = (await ensurePrompts()).filter(
+        (p) => p.title.toLowerCase().includes(q) || p.text.toLowerCase().includes(q)
       );
       currentItems = prompts;
       selectedIndex = prompts.length ? 0 : -1;
       renderList();
     };
-  search.addEventListener('input', onSearch);
+    search.addEventListener('input', onSearch);
 
     function renderList() {
-      logger.debug('DialogDrive: Rendering list', { itemCount: currentItems.length, selectedIndex });
+      logger.debug('DialogDrive: Rendering list', {
+        itemCount: currentItems.length,
+        selectedIndex,
+      });
       // Clear previous items safely without using innerHTML.
       list.replaceChildren();
       if (!currentItems.length) {
@@ -615,18 +660,18 @@ function setupPromptPicker() {
         item.style.flexDirection = 'column';
         item.style.alignItems = 'flex-start';
         item.style.gap = '2px';
-        
+
         const isSelected = idx === selectedIndex;
-  item.style.background = isSelected ? 'var(--dd-accent)' : 'transparent';
-  item.style.color = isSelected ? '#fafafa' : 'var(--dd-text)';
-        
+        item.style.background = isSelected ? 'var(--dd-accent)' : 'transparent';
+        item.style.color = isSelected ? '#fafafa' : 'var(--dd-text)';
+
         // Title
         const title = document.createElement('div');
         title.textContent = p.title;
         title.style.fontSize = '14px';
         title.style.fontWeight = '600';
-  title.style.color = isSelected ? '#fafafa' : 'var(--dd-text)';
-        
+        title.style.color = isSelected ? '#fafafa' : 'var(--dd-text)';
+
         // Meta info
         const meta = document.createElement('div');
         const hasPlaceholders = /\[[^\]]+\]/.test(p.text);
@@ -634,11 +679,11 @@ function setupPromptPicker() {
         meta.textContent = `${wordCount} words${hasPlaceholders ? ' • has placeholders' : ''}`;
         meta.style.fontSize = '12px';
         meta.style.fontWeight = '500';
-  meta.style.color = isSelected ? 'rgba(250,250,250,0.8)' : 'var(--dd-muted)';
-        
+        meta.style.color = isSelected ? 'rgba(250,250,250,0.8)' : 'var(--dd-muted)';
+
         item.appendChild(title);
         item.appendChild(meta);
-        
+
         // Hover effects
         item.onmouseenter = () => {
           if (idx !== selectedIndex) {
@@ -648,7 +693,7 @@ function setupPromptPicker() {
         item.onmouseleave = () => {
           item.style.background = isSelected ? 'var(--dd-accent)' : 'transparent';
         };
-        
+
         item.addEventListener('click', () => {
           logger.debug('DialogDrive: Item clicked', { title: p.title });
           handlePick(p);
@@ -657,8 +702,12 @@ function setupPromptPicker() {
       });
     }
 
-  const onDocKey = (ev: KeyboardEvent) => {
-      logger.debug('DialogDrive: Overlay key pressed', { key: ev.key, selectedIndex, currentItemsLength: currentItems.length });
+    const onDocKey = (ev: KeyboardEvent) => {
+      logger.debug('DialogDrive: Overlay key pressed', {
+        key: ev.key,
+        selectedIndex,
+        currentItemsLength: currentItems.length,
+      });
 
       // If Escape is pressed while the placeholder form is open, close ONLY the form
       if (ev.key === 'Escape') {
@@ -720,11 +769,15 @@ function setupPromptPicker() {
 
       // While overlay is open, steer selection
       if (['ArrowDown', 'ArrowUp'].includes(ev.key)) {
-        logger.debug('DialogDrive: Arrow key pressed', { key: ev.key, currentSelectedIndex: selectedIndex });
+        logger.debug('DialogDrive: Arrow key pressed', {
+          key: ev.key,
+          currentSelectedIndex: selectedIndex,
+        });
         ev.preventDefault();
         ev.stopPropagation();
         if (!currentItems.length) return;
-        if (ev.key === 'ArrowDown') selectedIndex = Math.min(currentItems.length - 1, selectedIndex + 1);
+        if (ev.key === 'ArrowDown')
+          selectedIndex = Math.min(currentItems.length - 1, selectedIndex + 1);
         if (ev.key === 'ArrowUp') selectedIndex = Math.max(0, selectedIndex - 1);
         logger.debug('DialogDrive: Updated selectedIndex', { newSelectedIndex: selectedIndex });
         renderList();
@@ -732,7 +785,11 @@ function setupPromptPicker() {
       }
 
       if (ev.key === 'Enter') {
-        logger.debug('DialogDrive: Enter pressed in overlay', { selectedIndex, itemsLength: currentItems.length, hasValidSelection: selectedIndex >= 0 && selectedIndex < currentItems.length });
+        logger.debug('DialogDrive: Enter pressed in overlay', {
+          selectedIndex,
+          itemsLength: currentItems.length,
+          hasValidSelection: selectedIndex >= 0 && selectedIndex < currentItems.length,
+        });
         ev.preventDefault();
         ev.stopPropagation();
         if (selectedIndex >= 0 && selectedIndex < currentItems.length) {
@@ -768,7 +825,10 @@ function setupPromptPicker() {
     }
 
     async function handlePick(p: PromptItem) {
-      logger.debug('DialogDrive: handlePick called', { prompt: p.title, hasPlaceholders: extractPlaceholders(p.text).length > 0 });
+      logger.debug('DialogDrive: handlePick called', {
+        prompt: p.title,
+        hasPlaceholders: extractPlaceholders(p.text).length > 0,
+      });
       // Build placeholder form if needed
       const placeholders = Array.from(new Set(extractPlaceholders(p.text)));
       if (!placeholders.length) {
@@ -795,7 +855,9 @@ function setupPromptPicker() {
     currentFormEl.style.display = 'block';
 
     // Apply theme variables (match warm light palette)
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches || document.documentElement.classList.contains('dark');
+    const isDark =
+      window.matchMedia('(prefers-color-scheme: dark)').matches ||
+      document.documentElement.classList.contains('dark');
     currentFormEl.style.setProperty('--dd-bg', '#f9f6f2');
     currentFormEl.style.setProperty('--dd-surface', '#f4efe8');
     currentFormEl.style.setProperty('--dd-header', '#ece7df');
@@ -860,8 +922,12 @@ function setupPromptPicker() {
     xBtn.style.color = 'var(--dd-text)';
     xBtn.style.background = 'transparent';
     xBtn.style.cursor = 'pointer';
-    xBtn.onmouseenter = () => { xBtn.style.background = 'rgba(17,17,17,0.06)'; };
-    xBtn.onmouseleave = () => { xBtn.style.background = 'transparent'; };
+    xBtn.onmouseenter = () => {
+      xBtn.style.background = 'rgba(17,17,17,0.06)';
+    };
+    xBtn.onmouseleave = () => {
+      xBtn.style.background = 'transparent';
+    };
     xBtn.onclick = () => {
       closeForm();
     };
@@ -1057,9 +1123,9 @@ function setupPromptPicker() {
       // Add some more specific ChatGPT patterns
       'div[data-testid="prosemirror-editor"]',
       '[data-slate-editor="true"]',
-      'div[contenteditable][role="textbox"]'
+      'div[contenteditable][role="textbox"]',
     ];
-    
+
     // Fast-path: try last successful selector first
     const g: any = globalThis as any;
     const lastSel: string | undefined = g.__ddLastSelector;
@@ -1070,12 +1136,13 @@ function setupPromptPicker() {
 
     for (const s of selectors) {
       const el = document.querySelector<HTMLElement>(s);
-      if (el && (el.offsetParent !== null || el === document.activeElement)) { // Must be visible or focused
+      if (el && (el.offsetParent !== null || el === document.activeElement)) {
+        // Must be visible or focused
         (globalThis as any).__ddLastSelector = s;
         return el;
       }
     }
-    
+
     return null;
   }
 
@@ -1097,9 +1164,15 @@ function setupPromptPicker() {
   // Removed caret helpers as unused
   // Cleanup on pagehide (avoid beforeunload to preserve BFCache)
   const cleanup = () => {
-    try { document.removeEventListener('keydown', onKeyDown, true); } catch {}
-    try { document.removeEventListener('input', onInput, true); } catch {}
-    try { mo.disconnect(); } catch {}
+    try {
+      document.removeEventListener('keydown', onKeyDown, true);
+    } catch {}
+    try {
+      document.removeEventListener('input', onInput, true);
+    } catch {}
+    try {
+      mo.disconnect();
+    } catch {}
   };
   window.addEventListener('pagehide', cleanup, { once: true });
 }

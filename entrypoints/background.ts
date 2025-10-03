@@ -48,12 +48,14 @@ type BgMessage =
   | DeleteTagMsg;
 
 // Clean and coerce scraped chat metadata before storage.
-function normalizeScrapedContent(input: unknown): {
-  summary: string;
-  messageCount: number;
-  lastMessage: string;
-  scrapedAt: string;
-} | undefined {
+function normalizeScrapedContent(input: unknown):
+  | {
+      summary: string;
+      messageCount: number;
+      lastMessage: string;
+      scrapedAt: string;
+    }
+  | undefined {
   if (
     input &&
     typeof input === 'object' &&
@@ -77,15 +79,17 @@ export default defineBackground(() => {
   logger.info('DialogDrive background script loaded!', { id: browser.runtime.id });
 
   // Handle install/update so we can seed storage and affordances on day one.
-  browser.runtime.onInstalled.addListener(async (details: { reason: 'install' | 'update' | string }) => {
-    if (details.reason === 'install') {
-      logger.info('Extension installed, initializing storage...');
-      await initializeStorage();
-    }
+  browser.runtime.onInstalled.addListener(
+    async (details: { reason: 'install' | 'update' | string }) => {
+      if (details.reason === 'install') {
+        logger.info('Extension installed, initializing storage...');
+        await initializeStorage();
+      }
 
-    initializeKeyboardShortcuts();
-    initializeContextMenu();
-  });
+      initializeKeyboardShortcuts();
+      initializeContextMenu();
+    }
+  );
 
   // Refresh keyboard shortcuts and menus on every restart.
   initializeKeyboardShortcuts();
@@ -106,7 +110,10 @@ export default defineBackground(() => {
       (async () => {
         try {
           // Narrow and coerce via schema before persisting.
-          const { data } = SaveBookmarkMsgSchema.parse({ type: 'SAVE_BOOKMARK', data: msg.data } as any);
+          const { data } = SaveBookmarkMsgSchema.parse({
+            type: 'SAVE_BOOKMARK',
+            data: msg.data,
+          } as any);
           const newBookmark = await chatStorage.add({
             title: data.title,
             url: data.url,
@@ -159,17 +166,25 @@ export default defineBackground(() => {
         try {
           logger.debug('Fetching workspaces and tags for quick form');
 
-          const [prompts, chats] = await Promise.all([promptStorage.getAll(), chatStorage.getAll()]);
+          const [prompts, chats] = await Promise.all([
+            promptStorage.getAll(),
+            chatStorage.getAll(),
+          ]);
 
           const promptWorkspaces = prompts.map((p) => p.workspace).filter(Boolean);
           const chatWorkspaces = chats.map((c) => c.workspace).filter(Boolean);
-          const workspaces = Array.from(new Set(['General', ...promptWorkspaces, ...chatWorkspaces]));
+          const workspaces = Array.from(
+            new Set(['General', ...promptWorkspaces, ...chatWorkspaces])
+          );
 
           const promptTags = prompts.flatMap((p) => p.tags || []);
           const chatTags = chats.flatMap((c) => c.tags || []);
           const allTags = Array.from(new Set([...promptTags, ...chatTags]));
 
-          logger.debug('Workspace/tag counts', { workspaces: workspaces.length, tags: allTags.length });
+          logger.debug('Workspace/tag counts', {
+            workspaces: workspaces.length,
+            tags: allTags.length,
+          });
           sendResponse({ success: true, workspaces, tags: allTags });
         } catch (error) {
           logger.error('Error fetching workspaces/tags:', error);
@@ -189,8 +204,13 @@ export default defineBackground(() => {
             sendResponse({ success: false, error: 'Invalid workspace name' });
             return;
           }
-          const [prompts, chats] = await Promise.all([promptStorage.getAll(), chatStorage.getAll()]);
-          const updatedPrompts = prompts.map((p) => (p.workspace === name ? { ...p, workspace: 'General' } : p));
+          const [prompts, chats] = await Promise.all([
+            promptStorage.getAll(),
+            chatStorage.getAll(),
+          ]);
+          const updatedPrompts = prompts.map((p) =>
+            p.workspace === name ? { ...p, workspace: 'General' } : p
+          );
           // Walk each prompt and move it back under the General workspace.
           for (const p of updatedPrompts) {
             await promptStorage.update(p);
@@ -220,8 +240,13 @@ export default defineBackground(() => {
             sendResponse({ success: false, error: 'Invalid tag' });
             return;
           }
-          const [prompts, chats] = await Promise.all([promptStorage.getAll(), chatStorage.getAll()]);
-          const updatedPrompts = prompts.map((p) => (p.tags?.includes(tag) ? { ...p, tags: p.tags.filter((t) => t !== tag) } : p));
+          const [prompts, chats] = await Promise.all([
+            promptStorage.getAll(),
+            chatStorage.getAll(),
+          ]);
+          const updatedPrompts = prompts.map((p) =>
+            p.tags?.includes(tag) ? { ...p, tags: p.tags.filter((t) => t !== tag) } : p
+          );
           // Strip the tag from each prompt before persisting the cleaned list.
           for (const p of updatedPrompts) {
             await promptStorage.update(p);

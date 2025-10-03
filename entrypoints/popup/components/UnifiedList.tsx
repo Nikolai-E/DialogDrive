@@ -4,21 +4,15 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { FileText, Info, Loader2, MessageSquare, Search } from 'lucide-react';
 import React from 'react';
-import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { UnifiedItem } from './UnifiedItem';
 
 export const UnifiedList: React.FC = () => {
   // Reference for the scroll container powering the virtualizer.
   const parentRef = React.useRef<HTMLDivElement>(null);
-  
-  const { 
-    filteredItems,
-    isLoading, 
-    error,
-    setCurrentView,
-    contentFilter,
-  } = useUnifiedStore();
+
+  const { filteredItems, isLoading, error, setCurrentView, contentFilter } = useUnifiedStore();
 
   // Virtual list setup driven by React Virtual.
   const virtualizer = useVirtualizer({
@@ -66,7 +60,7 @@ export const UnifiedList: React.FC = () => {
           title: 'No Prompts Found',
           description: 'Create your first prompt to get started with DialogDrive.',
           actionLabel: 'Create Prompt',
-          actionView: 'form' as const
+          actionView: 'form' as const,
         };
       case 'chats':
         return {
@@ -74,7 +68,7 @@ export const UnifiedList: React.FC = () => {
           title: 'No Chat Bookmarks Found',
           description: 'Save your first chat conversation to organize your AI discussions.',
           actionLabel: 'Add Chat Bookmark',
-          actionView: 'chat-form' as const
+          actionView: 'chat-form' as const,
         };
       default:
         return {
@@ -82,7 +76,7 @@ export const UnifiedList: React.FC = () => {
           title: 'No Items Found',
           description: 'Try adjusting your search or create new content to get started.',
           actionLabel: 'Create Content',
-          actionView: 'form' as const
+          actionView: 'form' as const,
         };
     }
   };
@@ -137,7 +131,11 @@ export const UnifiedList: React.FC = () => {
                     onClick={() => setCurrentView(empty.actionView)}
                     className="inline-flex items-center gap-1.5 rounded-full bg-[#1f1f21] px-3.5 py-1.5 text-[12px] font-semibold text-white shadow-sm transition-colors hover:bg-[#1f1f21]/94"
                   >
-                    {contentFilter === 'chats' ? <MessageSquare className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                    {contentFilter === 'chats' ? (
+                      <MessageSquare className="h-4 w-4" />
+                    ) : (
+                      <FileText className="h-4 w-4" />
+                    )}
                     {empty.actionLabel}
                   </button>
                 );

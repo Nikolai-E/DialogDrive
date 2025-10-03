@@ -20,7 +20,7 @@ const PREMADE: LibraryPrompt[] = [
   },
   {
     title: "Explain like I'm 5",
-    text: "Explain the following concept to me as if I were a 5-year-old: [paste concept here]",
+    text: 'Explain the following concept to me as if I were a 5-year-old: [paste concept here]',
     tags: ['simple', 'explanation'],
     workspace: 'Education',
   },
@@ -42,7 +42,10 @@ export const Library: React.FC = () => {
   const { prompts, addPrompt } = useUnifiedStore();
   const [addingIndex, setAddingIndex] = useState<number | null>(null);
 
-  const byTitle = useMemo(() => new Set(prompts.map((p) => p.title.trim().toLowerCase())), [prompts]);
+  const byTitle = useMemo(
+    () => new Set(prompts.map((p) => p.title.trim().toLowerCase())),
+    [prompts]
+  );
 
   const handleAdd = async (idx: number, p: LibraryPrompt) => {
     if (addingIndex !== null) return;
@@ -66,7 +69,9 @@ export const Library: React.FC = () => {
     <div className="h-full flex flex-col">
       <div className="px-2 pt-2 pb-1 border-b bg-background/80 backdrop-blur-sm">
         <h2 className="text-[13px] font-semibold">Prompt Library</h2>
-        <p className="text-[11px] text-muted-foreground">Curated, ready-to-use prompts you can add to your collection.</p>
+        <p className="text-[11px] text-muted-foreground">
+          Curated, ready-to-use prompts you can add to your collection.
+        </p>
       </div>
       <div className="flex-1 overflow-auto p-2 space-y-2">
         {PREMADE.map((p, idx) => {
@@ -75,12 +80,21 @@ export const Library: React.FC = () => {
             <div key={idx} className="rounded-md border border-border bg-card p-2">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <h3 className="text-[12px] font-medium text-foreground truncate" title={p.title}>{p.title}</h3>
-                  <p className="mt-1 text-[11px] text-muted-foreground whitespace-pre-wrap line-clamp-3">{p.text}</p>
+                  <h3 className="text-[12px] font-medium text-foreground truncate" title={p.title}>
+                    {p.title}
+                  </h3>
+                  <p className="mt-1 text-[11px] text-muted-foreground whitespace-pre-wrap line-clamp-3">
+                    {p.text}
+                  </p>
                   {p.tags && p.tags.length > 0 && (
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {p.tags.map((t) => (
-                        <span key={t} className="inline-flex items-center rounded bg-muted/40 border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">#{t}</span>
+                        <span
+                          key={t}
+                          className="inline-flex items-center rounded bg-muted/40 border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                        >
+                          #{t}
+                        </span>
                       ))}
                     </div>
                   )}
@@ -104,7 +118,9 @@ export const Library: React.FC = () => {
           );
         })}
         {PREMADE.length === 0 && (
-          <div className="text-center text-[12px] text-muted-foreground py-6">No library items available.</div>
+          <div className="text-center text-[12px] text-muted-foreground py-6">
+            No library items available.
+          </div>
         )}
       </div>
     </div>

@@ -61,6 +61,7 @@ Use Playwright tests **when suitable**, not for every tiny change:
 - **Keep tests fast** (<5s each when possible)
 
 Example:
+
 ```typescript
 test('creates a new prompt draft', async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/popup.html`);
@@ -75,16 +76,16 @@ test('creates a new prompt draft', async ({ page, extensionId }) => {
 
 ## Available Commands
 
-| Command | Purpose |
-|---------|---------|
-| `npm run backup` | Create local safety backup (diffs + files) |
-| `npm run check:all` | Full quality gate (typecheck + lint + build + e2e) |
-| `npm run check:fast` | Quick validation (typecheck only) |
-| `npm run lint` | TypeScript check |
-| `npm run format` | Prettier formatting |
-| `npm run build` | Production build |
-| `npm run test:e2e` | Run Playwright tests |
-| `npm run dev` | Development mode |
+| Command              | Purpose                                            |
+| -------------------- | -------------------------------------------------- |
+| `npm run backup`     | Create local safety backup (diffs + files)         |
+| `npm run check:all`  | Full quality gate (typecheck + lint + build + e2e) |
+| `npm run check:fast` | Quick validation (typecheck only)                  |
+| `npm run lint`       | TypeScript check                                   |
+| `npm run format`     | Prettier formatting                                |
+| `npm run build`      | Production build                                   |
+| `npm run test:e2e`   | Run Playwright tests                               |
+| `npm run dev`        | Development mode                                   |
 
 ---
 
@@ -102,6 +103,7 @@ Use these prefixes for commits:
 - `perf:` Performance improvements
 
 Examples:
+
 ```
 feat: add prompt filtering in library
 fix: resolve draft persistence bug in sidepanel
@@ -121,6 +123,7 @@ npm run backup
 ```
 
 This creates:
+
 - `.safety/patch-YYYY-MM-DD....diff` (Git diff)
 - `.safety/files-YYYY-MM-DD....tar.gz` (Changed/untracked files)
 - Appends entry to `BACKUP.md`
@@ -128,11 +131,13 @@ This creates:
 ### Restoring from Backup
 
 **Option 1: Apply diff patch**
+
 ```bash
 git apply .safety/patch-2025-10-02....diff
 ```
 
 **Option 2: Extract files**
+
 ```bash
 tar -xzf .safety/files-2025-10-02....tar.gz
 ```
@@ -148,6 +153,7 @@ tar -xzf .safety/files-2025-10-02....tar.gz
 ## Git-Blind Mode (for AI Agents)
 
 AI agents should:
+
 - ❌ **Never commit, stash, push, or modify Git state**
 - ✅ **Use `npm run backup` for safety** (read-only Git operations)
 - ✅ **Read `git diff` and `git status`** (safe)

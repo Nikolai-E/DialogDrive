@@ -2,7 +2,7 @@ declare global {
   // WXT global functions
   function defineBackground(fn: () => void): any;
   function defineContentScript(config: any): any;
-  
+
   const browser: {
     storage: {
       local: {
@@ -19,7 +19,10 @@ declare global {
       };
     };
     tabs: {
-      query: (queryInfo: { active?: boolean; currentWindow?: boolean }) => Promise<{ id?: number; url?: string }[]>;
+      query: (queryInfo: {
+        active?: boolean;
+        currentWindow?: boolean;
+      }) => Promise<{ id?: number; url?: string }[]>;
       sendMessage: (tabId: number, message: any) => Promise<any>;
       create?: (createProperties: { url: string }) => Promise<{ id?: number }>;
     };
@@ -30,7 +33,13 @@ declare global {
         addListener: (callback: (details: { reason: string }) => void) => void;
       };
       onMessage: {
-        addListener: (callback: (message: any, sender: any, sendResponse: (response: any) => void) => boolean | void) => void;
+        addListener: (
+          callback: (
+            message: any,
+            sender: any,
+            sendResponse: (response: any) => void
+          ) => boolean | void
+        ) => void;
       };
     };
     action?: {
@@ -50,12 +59,7 @@ declare global {
       OnClickData: any;
     };
     notifications?: {
-      create: (options: {
-        type: string;
-        iconUrl: string;
-        title: string;
-        message: string;
-      }) => void;
+      create: (options: { type: string; iconUrl: string; title: string; message: string }) => void;
     };
     sidePanel?: {
       open: (options: { windowId?: number }) => Promise<void>;
@@ -66,5 +70,4 @@ declare global {
   };
 }
 
-export { };
-
+export {};

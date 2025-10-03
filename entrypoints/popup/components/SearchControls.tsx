@@ -19,21 +19,21 @@ export const SearchControls: React.FC = () => {
     setSelectedWorkspace,
     setCurrentView,
   } = useUnifiedStore();
-  
+
   // Dropdown states
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [showPinnedDropdown, setShowPinnedDropdown] = useState(false);
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [showToolsDropdown, setShowToolsDropdown] = useState(false);
-  
+
   // Refs for dropdowns
   const sortRef = useRef<HTMLDivElement>(null);
   const pinnedRef = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
   const tagRef = useRef<HTMLDivElement>(null);
   const toolsRef = useRef<HTMLDivElement>(null);
-  
+
   // Sort options
   const sortOptions: { value: string; label: string }[] = [
     { value: 'lastUsed', label: 'Recent' },
@@ -41,7 +41,7 @@ export const SearchControls: React.FC = () => {
     { value: 'usageCount', label: 'Most Used' },
     { value: 'createdAt', label: 'Created' },
   ];
-  
+
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -61,7 +61,7 @@ export const SearchControls: React.FC = () => {
         setShowToolsDropdown(false);
       }
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -83,7 +83,9 @@ export const SearchControls: React.FC = () => {
               aria-expanded={showSortDropdown}
             >
               <SortAsc className="h-3 w-3 text-gray-500" />
-              <span className="text-[10px]">{sortOptions.find(opt => opt.value === sortBy)?.label || 'Sort'}</span>
+              <span className="text-[10px]">
+                {sortOptions.find((opt) => opt.value === sortBy)?.label || 'Sort'}
+              </span>
               <ChevronDown className="h-2.5 w-2.5 text-gray-500" />
             </Button>
             {showSortDropdown && (
@@ -96,8 +98,8 @@ export const SearchControls: React.FC = () => {
                       setShowSortDropdown(false);
                     }}
                     className={cn(
-                      "w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 first:rounded-t-lg last:rounded-b-lg",
-                      sortBy === option.value && "bg-gray-100 font-medium text-black"
+                      'w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 first:rounded-t-lg last:rounded-b-lg',
+                      sortBy === option.value && 'bg-gray-100 font-medium text-black'
                     )}
                   >
                     {option.label}
@@ -118,7 +120,12 @@ export const SearchControls: React.FC = () => {
               aria-expanded={showPinnedDropdown}
               title={showPinned ? 'Showing Pinned Only' : 'Showing All'}
             >
-              <Pin className={cn("h-3.5 w-3.5", showPinned ? "text-black fill-black" : "text-gray-500")} />
+              <Pin
+                className={cn(
+                  'h-3.5 w-3.5',
+                  showPinned ? 'text-black fill-black' : 'text-gray-500'
+                )}
+              />
             </Button>
             {showPinnedDropdown && (
               <div className="absolute left-0 top-full mt-1 bg-white/95 backdrop-blur-sm border border-gray-200/80 rounded-lg shadow-xl min-w-[100px] py-0.5 z-[9999] animate-in fade-in slide-in-from-top-1 duration-150">
@@ -128,8 +135,8 @@ export const SearchControls: React.FC = () => {
                     setShowPinnedDropdown(false);
                   }}
                   className={cn(
-                    "w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 first:rounded-t-lg last:rounded-b-lg",
-                    !showPinned && "bg-gray-100 font-medium text-black"
+                    'w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 first:rounded-t-lg last:rounded-b-lg',
+                    !showPinned && 'bg-gray-100 font-medium text-black'
                   )}
                 >
                   All
@@ -140,8 +147,8 @@ export const SearchControls: React.FC = () => {
                     setShowPinnedDropdown(false);
                   }}
                   className={cn(
-                    "w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 first:rounded-t-lg last:rounded-b-lg",
-                    showPinned && "bg-gray-100 font-medium text-black"
+                    'w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 first:rounded-t-lg last:rounded-b-lg',
+                    showPinned && 'bg-gray-100 font-medium text-black'
                   )}
                 >
                   Pinned Only
@@ -160,7 +167,9 @@ export const SearchControls: React.FC = () => {
               aria-haspopup="menu"
               aria-expanded={showWorkspaceDropdown}
             >
-              <span className="truncate max-w-[45px] text-[10px]">{selectedWorkspace === 'all' ? 'Workspace' : selectedWorkspace}</span>
+              <span className="truncate max-w-[45px] text-[10px]">
+                {selectedWorkspace === 'all' ? 'Workspace' : selectedWorkspace}
+              </span>
               <ChevronDown className="h-2.5 w-2.5 text-gray-500" />
             </Button>
             {showWorkspaceDropdown && (
@@ -171,8 +180,8 @@ export const SearchControls: React.FC = () => {
                     setShowWorkspaceDropdown(false);
                   }}
                   className={cn(
-                    "w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 rounded-t-lg",
-                    selectedWorkspace === 'all' && "bg-gray-100 font-medium text-black"
+                    'w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 rounded-t-lg',
+                    selectedWorkspace === 'all' && 'bg-gray-100 font-medium text-black'
                   )}
                 >
                   All Workspaces
@@ -188,8 +197,8 @@ export const SearchControls: React.FC = () => {
                           setShowWorkspaceDropdown(false);
                         }}
                         className={cn(
-                          "w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 truncate last:rounded-b-lg",
-                          selectedWorkspace === workspace && "bg-gray-100 font-medium text-black"
+                          'w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 truncate last:rounded-b-lg',
+                          selectedWorkspace === workspace && 'bg-gray-100 font-medium text-black'
                         )}
                         title={workspace}
                       >
@@ -213,7 +222,9 @@ export const SearchControls: React.FC = () => {
                 aria-haspopup="menu"
                 aria-expanded={showTagDropdown}
               >
-                <span className="truncate max-w-[45px] text-[10px]">{filterTag === 'all' ? 'Tag' : filterTag}</span>
+                <span className="truncate max-w-[45px] text-[10px]">
+                  {filterTag === 'all' ? 'Tag' : filterTag}
+                </span>
                 <ChevronDown className="h-2.5 w-2.5 text-gray-500" />
               </Button>
               {showTagDropdown && (
@@ -224,8 +235,8 @@ export const SearchControls: React.FC = () => {
                       setShowTagDropdown(false);
                     }}
                     className={cn(
-                      "w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 rounded-t-lg",
-                      filterTag === 'all' && "bg-gray-100 font-medium text-black"
+                      'w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 rounded-t-lg',
+                      filterTag === 'all' && 'bg-gray-100 font-medium text-black'
                     )}
                   >
                     All Tags
@@ -239,8 +250,8 @@ export const SearchControls: React.FC = () => {
                         setShowTagDropdown(false);
                       }}
                       className={cn(
-                        "w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 truncate last:rounded-b-lg",
-                        filterTag === tag && "bg-gray-100 font-medium text-black"
+                        'w-full text-left px-3 py-1.5 text-[11px] hover:bg-gray-100/80 transition-all duration-150 truncate last:rounded-b-lg',
+                        filterTag === tag && 'bg-gray-100 font-medium text-black'
                       )}
                       title={tag}
                     >

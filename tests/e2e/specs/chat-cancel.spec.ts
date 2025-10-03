@@ -33,7 +33,7 @@ test.describe('Chat bookmark Back button preserves draft', () => {
     await page.getByRole('menuitem', { name: /bookmark chat/i }).click();
 
     await expect(page.getByRole('heading', { name: /create chat bookmark/i })).toBeVisible();
-    
+
     // Draft should be restored
     await expect(page.getByLabel('URL')).toHaveValue('https://chat.openai.com/c/abc');
     await expect(page.getByLabel('Title')).toHaveValue('Draft Bookmark');

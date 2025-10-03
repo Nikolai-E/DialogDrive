@@ -5,12 +5,8 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "baseUrl": ".",
     "paths": {
-      "~/*": [
-        "./entrypoints/popup/*"
-      ],
-      "@/*": [
-        "./*"
-      ]
+      "~/*": ["./entrypoints/popup/*"],
+      "@/*": ["./*"]
     },
     "types": [],
     "allowImportingTsExtensions": true,

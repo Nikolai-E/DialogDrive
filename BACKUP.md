@@ -5,11 +5,13 @@ Local backup history before risky operations.
 ## How to Restore
 
 ### Option 1: Apply diff patch
+
 ```bash
 git apply .safety/patch-YYYY-MM-DD....diff
 ```
 
 ### Option 2: Extract archived files
+
 ```bash
 tar -xzf .safety/files-YYYY-MM-DD....tar.gz
 ```
@@ -32,4 +34,3 @@ Entries are appended automatically by `npm run backup`.
   - AGENT_GUIDE.md
   - BACKUP.md
   - scripts/backup.cjs
-

@@ -37,12 +37,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 const ErrorFallback: React.FC<{ error?: Error }> = ({ error }) => (
   <div className="flex flex-col items-center justify-center p-8 text-center">
     <div className="text-6xl mb-4">:(</div>
-    <h2 className="text-lg font-semibold text-gray-800 mb-2">
-      Something went wrong
-    </h2>
-    <p className="text-sm text-gray-600 mb-4">
-      DialogDrive encountered an unexpected error
-    </p>
+    <h2 className="text-lg font-semibold text-gray-800 mb-2">Something went wrong</h2>
+    <p className="text-sm text-gray-600 mb-4">DialogDrive encountered an unexpected error</p>
     {error && (
       <details className="text-xs text-gray-500 max-w-xs">
         <summary className="cursor-pointer">Error details</summary>

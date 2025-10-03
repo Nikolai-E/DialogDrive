@@ -18,7 +18,8 @@ export const OnboardingBanner: React.FC<Props> = ({ onDismiss }) => {
         <div className="flex-1 text-[11px] leading-5">
           <div className="font-semibold text-[12px] mb-0.5">Quick start</div>
           <p className="text-[11px] text-foreground/80 mb-1.5">
-            DialogDrive is your prompt locker: save things once, sort them by context, and drop them into chats fast.
+            DialogDrive is your prompt locker: save things once, sort them by context, and drop them
+            into chats fast.
           </p>
           <ul className="list-disc pl-4 space-y-1">
             <li className="flex items-start gap-1.5">
@@ -26,16 +27,29 @@ export const OnboardingBanner: React.FC<Props> = ({ onDismiss }) => {
               <span>Tap + (top right) to save a new prompt or bookmark the current chat.</span>
             </li>
             <li className="flex items-start gap-1.5">
-              <Folder className="h-3.5 w-3.5 mt-0.5 text-primary flex-shrink-0" aria-hidden="true" />
-              <span>Workspaces act like mini folders for projects. Swap them above the list to change focus.</span>
+              <Folder
+                className="h-3.5 w-3.5 mt-0.5 text-primary flex-shrink-0"
+                aria-hidden="true"
+              />
+              <span>
+                Workspaces act like mini folders for projects. Swap them above the list to change
+                focus.
+              </span>
             </li>
             <li className="flex items-start gap-1.5">
               <Tag className="h-3.5 w-3.5 mt-0.5 text-primary flex-shrink-0" aria-hidden="true" />
-              <span>Tags are quick labels you can stack to filter, e.g. <span className="font-semibold">#email</span> + <span className="font-semibold">#launch</span>.</span>
+              <span>
+                Tags are quick labels you can stack to filter, e.g.{' '}
+                <span className="font-semibold">#email</span> +{' '}
+                <span className="font-semibold">#launch</span>.
+              </span>
             </li>
             <li className="flex items-start gap-1.5">
               <Slash className="h-3.5 w-3.5 mt-0.5 text-primary flex-shrink-0" aria-hidden="true" />
-              <span>While typing in ChatGPT, type // to pop the prompt picker and paste a saved prompt instantly.</span>
+              <span>
+                While typing in ChatGPT, type // to pop the prompt picker and paste a saved prompt
+                instantly.
+              </span>
             </li>
             <li className="flex items-start gap-1.5">
               <Wand2 className="h-3.5 w-3.5 mt-0.5 text-primary flex-shrink-0" aria-hidden="true" />

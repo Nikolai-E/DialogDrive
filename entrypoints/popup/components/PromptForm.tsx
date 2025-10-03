@@ -4,7 +4,7 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft, ChevronDown, Clock, Hash, Loader2, Wand2, X } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from "sonner";
+import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
@@ -34,7 +34,7 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
     setCurrentView,
     setEditingPrompt,
     addWorkspace,
-  deleteTag,
+    deleteTag,
   } = useUnifiedStore();
 
   // Local form state mirrors the fields the user can edit.
@@ -49,31 +49,37 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSnippets, setShowSnippets] = useState(false);
   const [showVoiceToneGenerator, setShowVoiceToneGenerator] = useState(false);
-  const [showTagDropdown, setShowTagDropdown] = useState(false);
-  const tagDropdownRef = useRef<HTMLDivElement>(null);
-  const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
-  const workspaceDropdownRef = useRef<HTMLDivElement>(null);
+  const [_showTagDropdown, _setShowTagDropdown] = useState(false);
+  const _tagDropdownRef = useRef<HTMLDivElement>(null);
+  const [_showWorkspaceDropdown, _setShowWorkspaceDropdown] = useState(false);
+  const _workspaceDropdownRef = useRef<HTMLDivElement>(null);
 
   const draftId = editingPrompt ? `prompt:${editingPrompt.id}` : 'prompt:new';
   const finalizeDraft = useDraftStore((state) => state.finalizeDraft);
   const [resumedDraftAt, setResumedDraftAt] = useState<number | null>(null);
 
-  const handleDraftHydrated = useCallback((payload: PromptDraftData, record: DraftRecord<'prompt'>) => {
-    setTitle(payload.title ?? '');
-    setText(payload.text ?? '');
-    setWorkspace(payload.workspace ?? 'General');
-    setTags(Array.isArray(payload.tags) ? [...payload.tags] : []);
-    setIncludeTimestamp(Boolean(payload.includeTimestamp));
-    setResumedDraftAt(record.updatedAt);
-  }, []);
+  const handleDraftHydrated = useCallback(
+    (payload: PromptDraftData, record: DraftRecord<'prompt'>) => {
+      setTitle(payload.title ?? '');
+      setText(payload.text ?? '');
+      setWorkspace(payload.workspace ?? 'General');
+      setTags(Array.isArray(payload.tags) ? [...payload.tags] : []);
+      setIncludeTimestamp(Boolean(payload.includeTimestamp));
+      setResumedDraftAt(record.updatedAt);
+    },
+    []
+  );
 
-  const draftPayload = useMemo(() => ({
-    title,
-    text,
-    workspace,
-    tags,
-    includeTimestamp,
-  }), [title, text, workspace, tags, includeTimestamp]);
+  const draftPayload = useMemo(
+    () => ({
+      title,
+      text,
+      workspace,
+      tags,
+      includeTimestamp,
+    }),
+    [title, text, workspace, tags, includeTimestamp]
+  );
 
   const {
     hydrated: draftHydrated,
@@ -112,25 +118,25 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
   const PROMPT_SNIPPETS = {
     // Handy starter snippets so the user can compose faster.
     expertise: [
-      "You are an expert in [FIELD] with [NUMBER] years of experience.",
-      "As a seasoned [ROLE] specializing in [DOMAIN], you understand...",
-      "Drawing from extensive experience in [FIELD], you provide..."
+      'You are an expert in [FIELD] with [NUMBER] years of experience.',
+      'As a seasoned [ROLE] specializing in [DOMAIN], you understand...',
+      'Drawing from extensive experience in [FIELD], you provide...',
     ],
     instructions: [
-      "Please provide a step-by-step analysis of...",
-      "Break down this complex topic into simple terms...",
-      "Analyze the following and provide actionable insights..."
+      'Please provide a step-by-step analysis of...',
+      'Break down this complex topic into simple terms...',
+      'Analyze the following and provide actionable insights...',
     ],
     constraints: [
-      "Keep your response under [NUMBER] words.",
-      "Use bullet points for clarity.",
-      "Provide [NUMBER] specific examples."
+      'Keep your response under [NUMBER] words.',
+      'Use bullet points for clarity.',
+      'Provide [NUMBER] specific examples.',
     ],
     tone: [
-      "Maintain a professional yet approachable tone.",
-      "Be direct and concise, avoiding unnecessary jargon.",
-      "Use an educational tone suitable for beginners."
-    ]
+      'Maintain a professional yet approachable tone.',
+      'Be direct and concise, avoiding unnecessary jargon.',
+      'Use an educational tone suitable for beginners.',
+    ],
   };
 
   const handleInsertSnippet = (snippetText: string) => {
@@ -174,7 +180,9 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
       setTitle(editingPrompt.title);
       setText(editingPrompt.text);
       setWorkspace(editingPrompt.workspace);
-      const safeTags = (editingPrompt.tags || []).map(t => sanitizeTagLabel(t).toLowerCase()).filter(Boolean);
+      const safeTags = (editingPrompt.tags || [])
+        .map((t) => sanitizeTagLabel(t).toLowerCase())
+        .filter(Boolean);
       setTags(Array.from(new Set(safeTags)));
       setIncludeTimestamp(editingPrompt.includeTimestamp);
     }
@@ -215,7 +223,9 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
       setResumedDraftAt(null);
       handleClose(false);
     } catch (error) {
-      toast.error(`Failed to save prompt: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(
+        `Failed to save prompt: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -241,7 +251,7 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
 
   const removeTag = (tagToRemove: string) => {
     // Remove an applied tag chip from the form.
-    setTags(tags.filter(tag => tag !== tagToRemove));
+    setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
   const handleTagKeyDown = (e: React.KeyboardEvent) => {
@@ -254,14 +264,14 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
 
   const normalizedQuery = sanitizeTagLabel(tagInput).toLowerCase();
   const suggestedTags = normalizedQuery
-    ? normalizedAllTags.filter((tag: string) =>
-        tag.includes(normalizedQuery) && !tags.includes(tag)
-      ).slice(0, 5)
+    ? normalizedAllTags
+        .filter((tag: string) => tag.includes(normalizedQuery) && !tags.includes(tag))
+        .slice(0, 5)
     : [];
 
   return (
     <div className="relative flex flex-col h-full text-[12px]">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.15 }}
@@ -282,12 +292,12 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
           {editingPrompt ? 'Edit Prompt' : 'Create New Prompt'}
         </h2>
       </motion.div>
-      
-      <motion.form 
+
+      <motion.form
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.2 }}
-        onSubmit={handleSubmit} 
+        onSubmit={handleSubmit}
         className="flex flex-col flex-1 overflow-hidden"
       >
         <div className="flex-1 p-3 space-y-3 overflow-y-auto scrollbar-thin">
@@ -303,21 +313,30 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
             <Alert variant="destructive" className="text-[12px]">
               <AlertTitle>Draft updated elsewhere</AlertTitle>
               <AlertDescription className="flex flex-col gap-2">
-                <span>Another window saved new edits {formatRelativeTime(draftConflict.remote.updatedAt)}.</span>
+                <span>
+                  Another window saved new edits{' '}
+                  {formatRelativeTime(draftConflict.remote.updatedAt)}.
+                </span>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="secondary" onClick={handleApplyRemoteDraft}>Use remote</Button>
-                  <Button size="sm" variant="outline" onClick={handleDismissConflict}>Keep mine</Button>
+                  <Button size="sm" variant="secondary" onClick={handleApplyRemoteDraft}>
+                    Use remote
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleDismissConflict}>
+                    Keep mine
+                  </Button>
                 </div>
               </AlertDescription>
             </Alert>
           )}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.15 }}
             className="space-y-1.5"
           >
-            <Label htmlFor="title" className="text-[12px] font-medium">Title</Label>
+            <Label htmlFor="title" className="text-[12px] font-medium">
+              Title
+            </Label>
             <Input
               id="title"
               value={title}
@@ -328,15 +347,17 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
               className="shadow-sm h-8 text-[12px]"
             />
           </motion.div>
-          
-          <motion.div 
+
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.15 }}
             className="space-y-1.5"
           >
             <div className="flex justify-between items-center">
-              <Label htmlFor="text" className="text-[12px] font-medium">Prompt Text</Label>
+              <Label htmlFor="text" className="text-[12px] font-medium">
+                Prompt Text
+              </Label>
               <div className="flex items-center gap-1">
                 <Button
                   type="button"
@@ -395,14 +416,21 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
             />
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.15 }}
             className="space-y-1.5"
           >
-            <Label htmlFor="workspace" className="text-[12px] font-medium">Workspace</Label>
-            <WorkspaceSelect value={workspace} onChange={setWorkspace} id="workspace" className="shadow-sm h-8 text-[12px]" />
+            <Label htmlFor="workspace" className="text-[12px] font-medium">
+              Workspace
+            </Label>
+            <WorkspaceSelect
+              value={workspace}
+              onChange={setWorkspace}
+              id="workspace"
+              className="shadow-sm h-8 text-[12px]"
+            />
             {/* Inline delete now available directly in Select dropdown; extra Browse menu removed. */}
             <div className="flex mt-2 gap-1">
               <Input
@@ -421,7 +449,9 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
                   if (!ws) return;
                   // Ensure it's added to the central store immediately
                   if (!workspaces.includes(ws)) {
-                    try { addWorkspace(ws); } catch {}
+                    try {
+                      addWorkspace(ws);
+                    } catch {}
                   }
                   // Select it in the form either way
                   setWorkspace(ws);
@@ -429,11 +459,13 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
                 }}
                 title="Add workspace"
                 className={`h-8 text-xs bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21] ${onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
-              >Add</Button>
+              >
+                Add
+              </Button>
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.15 }}
@@ -451,7 +483,7 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
                 const safeTag = sanitizeTagLabel(tag).toLowerCase();
                 if (!safeTag) return;
                 deleteTag(safeTag);
-                setTags((prev) => prev.filter(t => t !== safeTag));
+                setTags((prev) => prev.filter((t) => t !== safeTag));
               }}
             />
             <div className="flex gap-1.5 items-center">
@@ -478,18 +510,18 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
               </Button>
             </div>
             {suggestedTags.length > 0 && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-wrap gap-1 mt-1"
               >
                 {suggestedTags.map((tag: string) => (
-                  <Button 
-                    key={tag} 
-                    type="button" 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => addTag(tag)} 
+                  <Button
+                    key={tag}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => addTag(tag)}
                     className="h-6 text-xs hover:bg-[#1f1f21] hover:text-white transition-colors"
                   >
                     {tag}
@@ -498,7 +530,7 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
               </motion.div>
             )}
             {tags.length > 0 && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="flex flex-wrap gap-1 mt-1.5"
@@ -526,8 +558,8 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
               </motion.div>
             )}
           </motion.div>
-          
-          <motion.div 
+
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.15 }}
@@ -548,18 +580,22 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
             {/* Voice-friendly toggle removed */}
           </motion.div>
         </div>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.15 }}
-            className="flex items-center justify-end gap-2.5 px-3 py-2 border-t bg-background/80 backdrop-blur-sm"
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.15 }}
+          className="flex items-center justify-end gap-2.5 px-3 py-2 border-t bg-background/80 backdrop-blur-sm"
+        >
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="min-w-[110px] h-8 bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21]"
           >
-            <Button type="submit" disabled={isSubmitting} className="min-w-[110px] h-8 bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21]">
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {editingPrompt ? 'Update' : 'Create'}
-            </Button>
-          </motion.div>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {editingPrompt ? 'Update' : 'Create'}
+          </Button>
+        </motion.div>
       </motion.form>
       <VoiceToneGenerator
         open={showVoiceToneGenerator}
@@ -571,4 +607,3 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
     </div>
   );
 };
-

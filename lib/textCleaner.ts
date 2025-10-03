@@ -242,7 +242,13 @@ export const cleanerPresets: CleanerPresetMap = {
  * should set preset="custom" externally.
  */
 export function resolveCleanOptions(partial: Partial<CleanOptions> | undefined): CleanOptions {
-  if (!partial) return { ...defaultCleanOptions, structure: { ...defaultCleanOptions.structure }, whitespace: { ...defaultCleanOptions.whitespace }, punctuation: { ...defaultCleanOptions.punctuation } };
+  if (!partial)
+    return {
+      ...defaultCleanOptions,
+      structure: { ...defaultCleanOptions.structure },
+      whitespace: { ...defaultCleanOptions.whitespace },
+      punctuation: { ...defaultCleanOptions.punctuation },
+    };
 
   const fallbackPreset: Exclude<CleanPreset, 'custom'> =
     defaultCleanOptions.preset === 'custom' ? 'plain' : defaultCleanOptions.preset;
@@ -256,7 +262,11 @@ export function resolveCleanOptions(partial: Partial<CleanOptions> | undefined):
 /**
  * Main entry point.
  */
-export function cleanText(input: string, userOptions: Partial<CleanOptions> = {}, runtime: CleanerRuntimeOptions = {}): CleanResult {
+export function cleanText(
+  input: string,
+  userOptions: Partial<CleanOptions> = {},
+  runtime: CleanerRuntimeOptions = {}
+): CleanResult {
   const start = performanceNow();
   const options = resolveCleanOptions(userOptions);
   const report = createEmptyReport();
@@ -272,7 +282,9 @@ export function cleanText(input: string, userOptions: Partial<CleanOptions> = {}
     structured = transformInline(stripped, options, report);
   }
 
-  const redacted = options.redactContacts ? applyRedactions(structured, options, report) : structured;
+  const redacted = options.redactContacts
+    ? applyRedactions(structured, options, report)
+    : structured;
 
   const punctuated = normalizePunctuation(redacted, options, report);
   const whitespaceNormalised = normalizeWhitespace(punctuated, options, report);
@@ -302,7 +314,7 @@ interface ParsedDocument {
 type MarkdownAst = unknown;
 
 type Block =
-  | { type: 'paragraph'; text: string } 
+  | { type: 'paragraph'; text: string }
   | { type: 'heading'; depth: number; text: string }
   | { type: 'list'; ordered: boolean; items: string[] }
   | { type: 'code'; content: string; fenced: boolean }
@@ -346,7 +358,12 @@ function preprocess(input: string, options: CleanOptions, report: CleanReport): 
   return text;
 }
 
-function parse(text: string, options: CleanOptions, runtime: CleanerRuntimeOptions, report: CleanReport): ParsedDocument {
+function parse(
+  text: string,
+  options: CleanOptions,
+  runtime: CleanerRuntimeOptions,
+  report: CleanReport
+): ParsedDocument {
   const trimmed = text.trim();
   if (!trimmed) {
     return { kind: 'plain', text: '', blocks: [] };
@@ -372,7 +389,11 @@ function parse(text: string, options: CleanOptions, runtime: CleanerRuntimeOptio
   return { kind: 'plain', text: trimmed, blocks: parseMarkdownLike(trimmed) };
 }
 
-function transformStructure(doc: ParsedDocument, options: CleanOptions, report: CleanReport): string {
+function transformStructure(
+  doc: ParsedDocument,
+  options: CleanOptions,
+  report: CleanReport
+): string {
   if (!doc.blocks || doc.blocks.length === 0) {
     const inline = transformInline(doc.text, options, report);
     return inline;
@@ -397,16 +418,16 @@ function transformStructure(doc: ParsedDocument, options: CleanOptions, report: 
         break;
       }
       case 'list': {
-      const renderedList = renderList(block, options, report);
-      pushBlockLines(renderedList, lines);
-      break;
-    }
-    case 'rule': {
-      const renderedRule = renderRule(block, options, report);
-      if (renderedRule.length === 0) break;
-      pushBlockLines(renderedRule, lines);
-      break;
-    }
+        const renderedList = renderList(block, options, report);
+        pushBlockLines(renderedList, lines);
+        break;
+      }
+      case 'rule': {
+        const renderedRule = renderRule(block, options, report);
+        if (renderedRule.length === 0) break;
+        pushBlockLines(renderedRule, lines);
+        break;
+      }
       case 'code': {
         const renderedCode = renderCode(block, options, report);
         if (renderedCode.length === 0) break;
@@ -480,7 +501,7 @@ function normalizePunctuation(input: string, options: CleanOptions, report: Clea
       bump(report, 'punctuation', 'punct:quotes', dbl.count);
       text = dbl.text;
     }
-    const sgl = replaceWithCounter(text, /[‘’‚‹›]/g, '\'');
+    const sgl = replaceWithCounter(text, /[‘’‚‹›]/g, "'");
     if (sgl.count > 0) {
       bump(report, 'punctuation', 'punct:quotes', sgl.count);
       text = sgl.text;
@@ -556,7 +577,11 @@ function normalizeWhitespace(input: string, options: CleanOptions, report: Clean
 // Rendering helpers
 // =========================
 
-function renderHeading(block: Extract<Block, { type: 'heading' }>, options: CleanOptions, report: CleanReport): string[] {
+function renderHeading(
+  block: Extract<Block, { type: 'heading' }>,
+  options: CleanOptions,
+  report: CleanReport
+): string[] {
   const rendered = transformInline(block.text, options, report);
   if (options.structure.keepBasicMarkdown) {
     const marker = '#'.repeat(Math.max(1, Math.min(6, block.depth)));
@@ -565,7 +590,11 @@ function renderHeading(block: Extract<Block, { type: 'heading' }>, options: Clea
   return [rendered];
 }
 
-function renderList(block: Extract<Block, { type: 'list' }>, options: CleanOptions, report: CleanReport): string[] {
+function renderList(
+  block: Extract<Block, { type: 'list' }>,
+  options: CleanOptions,
+  report: CleanReport
+): string[] {
   const items = block.items.map((item) => transformInline(item, options, report));
   const mode = options.listMode;
   const lines: string[] = [];
@@ -596,7 +625,8 @@ function renderList(block: Extract<Block, { type: 'list' }>, options: CleanOptio
       const segments = items.flatMap((item) => segmentSentences(item, options.locale));
       const trimmedSegments = segments.map((segment) => segment.trim()).filter(Boolean);
       const canUnwrap =
-        trimmedSegments.length === 1 || trimmedSegments.every((segment) => sentenceEndRegex.test(segment));
+        trimmedSegments.length === 1 ||
+        trimmedSegments.every((segment) => sentenceEndRegex.test(segment));
 
       if (canUnwrap) {
         const joined = trimmedSegments.join(' ').trim();
@@ -617,7 +647,11 @@ function renderList(block: Extract<Block, { type: 'list' }>, options: CleanOptio
   return lines;
 }
 
-function renderRule(block: Extract<Block, { type: 'rule' }>, options: CleanOptions, report: CleanReport): string[] {
+function renderRule(
+  block: Extract<Block, { type: 'rule' }>,
+  options: CleanOptions,
+  report: CleanReport
+): string[] {
   if (options.structure.dropHorizontalRules) {
     bump(report, 'structure', 'structure:horizontal-rule', 1);
     return [];
@@ -627,7 +661,11 @@ function renderRule(block: Extract<Block, { type: 'rule' }>, options: CleanOptio
   return [marker];
 }
 
-function renderCode(block: Extract<Block, { type: 'code' }>, options: CleanOptions, report: CleanReport): string[] {
+function renderCode(
+  block: Extract<Block, { type: 'code' }>,
+  options: CleanOptions,
+  report: CleanReport
+): string[] {
   if (options.blockCode === 'drop') {
     bump(report, 'structure', 'structure:block-code', 1);
     return [];
@@ -638,7 +676,11 @@ function renderCode(block: Extract<Block, { type: 'code' }>, options: CleanOptio
   return indented;
 }
 
-function renderBlockquote(block: Extract<Block, { type: 'blockquote' }>, options: CleanOptions, report: CleanReport): string[] {
+function renderBlockquote(
+  block: Extract<Block, { type: 'blockquote' }>,
+  options: CleanOptions,
+  report: CleanReport
+): string[] {
   const renderedChildren = block.blocks.flatMap((child) => {
     if (child.type === 'blockquote') return renderBlockquote(child, options, report);
     return renderGenericBlock(child, options, report);
@@ -655,13 +697,21 @@ function renderBlockquote(block: Extract<Block, { type: 'blockquote' }>, options
   return quoted;
 }
 
-function renderTable(block: Extract<Block, { type: 'table' }>, options: CleanOptions, report: CleanReport): string[] {
+function renderTable(
+  block: Extract<Block, { type: 'table' }>,
+  options: CleanOptions,
+  report: CleanReport
+): string[] {
   const rendered = block.rows.map((row) => transformInline(row, options, report));
   bump(report, 'structure', 'structure:inline-markup', rendered.length);
   return rendered;
 }
 
-function renderFootnote(block: Extract<Block, { type: 'footnote' }>, options: CleanOptions, report: CleanReport): string[] {
+function renderFootnote(
+  block: Extract<Block, { type: 'footnote' }>,
+  options: CleanOptions,
+  report: CleanReport
+): string[] {
   const rendered = transformInline(block.text, options, report);
   bump(report, 'structure', 'structure:inline-markup', 1);
   if (options.structure.keepBasicMarkdown) {
@@ -927,7 +977,11 @@ function matchFence(line: string): { delimiter: string } | null {
   return { delimiter: match[1] };
 }
 
-function consumeFence(lines: string[], start: number, delimiter: string): { content: string; nextIndex: number } {
+function consumeFence(
+  lines: string[],
+  start: number,
+  delimiter: string
+): { content: string; nextIndex: number } {
   const collected: string[] = [];
   let index = start;
 
@@ -943,7 +997,10 @@ function consumeFence(lines: string[], start: number, delimiter: string): { cont
   return { content: collected.join('\n').trimEnd(), nextIndex: lines.length };
 }
 
-function matchList(lines: string[], start: number): { block: Extract<Block, { type: 'list' }>; nextIndex: number } | null {
+function matchList(
+  lines: string[],
+  start: number
+): { block: Extract<Block, { type: 'list' }>; nextIndex: number } | null {
   const items: string[] = [];
   let index = start;
   let ordered: boolean | null = null;
@@ -982,7 +1039,10 @@ function matchFootnote(line: string): Extract<Block, { type: 'footnote' }> | nul
   return { type: 'footnote', label: match[1], text: match[2] };
 }
 
-function matchBlockquote(lines: string[], start: number): { block: Extract<Block, { type: 'blockquote' }>; nextIndex: number } | null {
+function matchBlockquote(
+  lines: string[],
+  start: number
+): { block: Extract<Block, { type: 'blockquote' }>; nextIndex: number } | null {
   const collected: string[] = [];
   let index = start;
 
@@ -999,7 +1059,10 @@ function matchBlockquote(lines: string[], start: number): { block: Extract<Block
   return { block: { type: 'blockquote', blocks: nestedBlocks }, nextIndex: index };
 }
 
-function matchTable(lines: string[], start: number): { block: Extract<Block, { type: 'table' }>; nextIndex: number } | null {
+function matchTable(
+  lines: string[],
+  start: number
+): { block: Extract<Block, { type: 'table' }>; nextIndex: number } | null {
   if (!lines[start].includes('|')) return null;
   const collected: string[] = [];
   let index = start;
@@ -1023,11 +1086,7 @@ function matchHorizontalRule(line: string): Extract<Block, { type: 'rule' }> | n
   const normalized = trimmed.replace(/\s+/g, '');
   if (!/^(-{3,}|_{3,}|\*{3,})$/.test(normalized)) return null;
 
-  const marker = normalized[0] === '*'
-    ? '***'
-    : normalized[0] === '_'
-      ? '___'
-      : '---';
+  const marker = normalized[0] === '*' ? '***' : normalized[0] === '_' ? '___' : '---';
 
   return { type: 'rule', marker };
 }
@@ -1116,7 +1175,22 @@ function walkDom(node: Node, lines: string[], depth = 0): string {
     return lines.join('');
   }
 
-  const blockTags = new Set(['P', 'DIV', 'SECTION', 'ARTICLE', 'LI', 'BR', 'HR', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'TR']);
+  const blockTags = new Set([
+    'P',
+    'DIV',
+    'SECTION',
+    'ARTICLE',
+    'LI',
+    'BR',
+    'HR',
+    'H1',
+    'H2',
+    'H3',
+    'H4',
+    'H5',
+    'H6',
+    'TR',
+  ]);
   if (blockTags.has(node.tagName)) {
     lines.push('\n');
   }
@@ -1157,7 +1231,7 @@ function decodeEntities(text: string): { text: string; count: number; changed: b
     '&lt;': '<',
     '&gt;': '>',
     '&quot;': '"',
-    '&#39;': '\'',
+    '&#39;': "'",
     '&nbsp;': '\u00A0',
   };
   let count = 0;
@@ -1249,7 +1323,11 @@ function replaceEmDashWithComma(text: string): { text: string; count: number } {
   return { text: result, count };
 }
 
-function replaceWithCounter(text: string, pattern: RegExp, replacement: string): { text: string; count: number } {
+function replaceWithCounter(
+  text: string,
+  pattern: RegExp,
+  replacement: string
+): { text: string; count: number } {
   let count = 0;
   const replaced = text.replace(pattern, () => {
     count += 1;
@@ -1258,7 +1336,11 @@ function replaceWithCounter(text: string, pattern: RegExp, replacement: string):
   return { text: replaced, count };
 }
 
-function replaceWithPlaceholder(text: string, pattern: RegExp, placeholder: string): { text: string; count: number } {
+function replaceWithPlaceholder(
+  text: string,
+  pattern: RegExp,
+  placeholder: string
+): { text: string; count: number } {
   let count = 0;
   const replaced = text.replace(pattern, () => {
     count += 1;
@@ -1285,7 +1367,11 @@ function segmentSentences(text: string, locale: string): string[] {
   return text.split(/(?<=[.!?])\s+/).filter(Boolean);
 }
 
-function mergeOptions(base: CleanOptions, preset: Partial<CleanOptions>, overrides: Partial<CleanOptions>): CleanOptions {
+function mergeOptions(
+  base: CleanOptions,
+  preset: Partial<CleanOptions>,
+  overrides: Partial<CleanOptions>
+): CleanOptions {
   return {
     preset: overrides.preset ?? preset.preset ?? base.preset,
     locale: overrides.locale ?? preset.locale ?? base.locale,
@@ -1295,29 +1381,71 @@ function mergeOptions(base: CleanOptions, preset: Partial<CleanOptions>, overrid
     blockCode: overrides.blockCode ?? preset.blockCode ?? base.blockCode,
     redactContacts: overrides.redactContacts ?? preset.redactContacts ?? base.redactContacts,
     punctuation: {
-      mapEmDash: overrides.punctuation?.mapEmDash ?? preset.punctuation?.mapEmDash ?? base.punctuation.mapEmDash,
-      mapEnDash: overrides.punctuation?.mapEnDash ?? preset.punctuation?.mapEnDash ?? base.punctuation.mapEnDash,
-      curlyQuotes: overrides.punctuation?.curlyQuotes ?? preset.punctuation?.curlyQuotes ?? base.punctuation.curlyQuotes,
-      ellipsis: overrides.punctuation?.ellipsis ?? preset.punctuation?.ellipsis ?? base.punctuation.ellipsis,
+      mapEmDash:
+        overrides.punctuation?.mapEmDash ??
+        preset.punctuation?.mapEmDash ??
+        base.punctuation.mapEmDash,
+      mapEnDash:
+        overrides.punctuation?.mapEnDash ??
+        preset.punctuation?.mapEnDash ??
+        base.punctuation.mapEnDash,
+      curlyQuotes:
+        overrides.punctuation?.curlyQuotes ??
+        preset.punctuation?.curlyQuotes ??
+        base.punctuation.curlyQuotes,
+      ellipsis:
+        overrides.punctuation?.ellipsis ??
+        preset.punctuation?.ellipsis ??
+        base.punctuation.ellipsis,
     },
     structure: {
-      dropHeadings: overrides.structure?.dropHeadings ?? preset.structure?.dropHeadings ?? base.structure.dropHeadings,
-      dropTables: overrides.structure?.dropTables ?? preset.structure?.dropTables ?? base.structure.dropTables,
-      dropFootnotes: overrides.structure?.dropFootnotes ?? preset.structure?.dropFootnotes ?? base.structure.dropFootnotes,
-      dropBlockquotes: overrides.structure?.dropBlockquotes ?? preset.structure?.dropBlockquotes ?? base.structure.dropBlockquotes,
+      dropHeadings:
+        overrides.structure?.dropHeadings ??
+        preset.structure?.dropHeadings ??
+        base.structure.dropHeadings,
+      dropTables:
+        overrides.structure?.dropTables ??
+        preset.structure?.dropTables ??
+        base.structure.dropTables,
+      dropFootnotes:
+        overrides.structure?.dropFootnotes ??
+        preset.structure?.dropFootnotes ??
+        base.structure.dropFootnotes,
+      dropBlockquotes:
+        overrides.structure?.dropBlockquotes ??
+        preset.structure?.dropBlockquotes ??
+        base.structure.dropBlockquotes,
       dropHorizontalRules:
         overrides.structure?.dropHorizontalRules ??
         preset.structure?.dropHorizontalRules ??
         base.structure.dropHorizontalRules,
-      stripEmojis: overrides.structure?.stripEmojis ?? preset.structure?.stripEmojis ?? base.structure.stripEmojis,
-      keepBasicMarkdown: overrides.structure?.keepBasicMarkdown ?? preset.structure?.keepBasicMarkdown ?? base.structure.keepBasicMarkdown,
+      stripEmojis:
+        overrides.structure?.stripEmojis ??
+        preset.structure?.stripEmojis ??
+        base.structure.stripEmojis,
+      keepBasicMarkdown:
+        overrides.structure?.keepBasicMarkdown ??
+        preset.structure?.keepBasicMarkdown ??
+        base.structure.keepBasicMarkdown,
     },
     whitespace: {
-      collapseSpaces: overrides.whitespace?.collapseSpaces ?? preset.whitespace?.collapseSpaces ?? base.whitespace.collapseSpaces,
-      collapseBlankLines: overrides.whitespace?.collapseBlankLines ?? preset.whitespace?.collapseBlankLines ?? base.whitespace.collapseBlankLines,
+      collapseSpaces:
+        overrides.whitespace?.collapseSpaces ??
+        preset.whitespace?.collapseSpaces ??
+        base.whitespace.collapseSpaces,
+      collapseBlankLines:
+        overrides.whitespace?.collapseBlankLines ??
+        preset.whitespace?.collapseBlankLines ??
+        base.whitespace.collapseBlankLines,
       trim: overrides.whitespace?.trim ?? preset.whitespace?.trim ?? base.whitespace.trim,
-      normalizeNbsp: overrides.whitespace?.normalizeNbsp ?? preset.whitespace?.normalizeNbsp ?? base.whitespace.normalizeNbsp,
-      ensureFinalNewline: overrides.whitespace?.ensureFinalNewline ?? preset.whitespace?.ensureFinalNewline ?? base.whitespace.ensureFinalNewline,
+      normalizeNbsp:
+        overrides.whitespace?.normalizeNbsp ??
+        preset.whitespace?.normalizeNbsp ??
+        base.whitespace.normalizeNbsp,
+      ensureFinalNewline:
+        overrides.whitespace?.ensureFinalNewline ??
+        preset.whitespace?.ensureFinalNewline ??
+        base.whitespace.ensureFinalNewline,
     },
   } satisfies CleanOptions;
 }
@@ -1400,7 +1528,10 @@ function performanceNow(): number {
   if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
     return performance.now();
   }
-  const [seconds, nanoseconds] = typeof process !== 'undefined' && typeof process.hrtime === 'function' ? process.hrtime() : [Date.now() / 1000, 0];
+  const [seconds, nanoseconds] =
+    typeof process !== 'undefined' && typeof process.hrtime === 'function'
+      ? process.hrtime()
+      : [Date.now() / 1000, 0];
   return seconds * 1000 + nanoseconds / 1e6;
 }
 

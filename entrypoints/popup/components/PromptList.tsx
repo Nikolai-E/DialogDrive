@@ -1,20 +1,20 @@
 import { Info, Loader2, Plus, Search } from 'lucide-react';
 import React from 'react';
-import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
 import { VirtualizedPromptList } from '../../../components/VirtualizedList';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import type { Prompt } from '../../../types/prompt';
 import { SearchControls } from './SearchControls';
 
 export const PromptList: React.FC = () => {
-  const { 
+  const {
     filteredPrompts,
-    isLoading, 
+    isLoading,
     error,
     setCurrentView,
     setEditingPrompt,
     deletePrompt,
-    incrementUsage
+    incrementUsage,
   } = useUnifiedStore();
 
   const handlePromptSelect = async (prompt: Prompt) => {
@@ -35,7 +35,11 @@ export const PromptList: React.FC = () => {
       await navigator.clipboard.writeText(prompt.text);
     } catch {
       const ta = document.createElement('textarea');
-      ta.value = prompt.text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      ta.value = prompt.text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
     }
     await incrementUsage(prompt.id);
   };

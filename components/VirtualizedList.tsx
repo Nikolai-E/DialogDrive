@@ -22,7 +22,7 @@ export function VirtualizedList<T>({
   renderItem,
   className = '',
   height = 400,
-  overscan = 5
+  overscan = 5,
 }: VirtualizedListProps<T>) {
   const parentRef = React.useRef<HTMLDivElement>(null);
 
@@ -34,11 +34,7 @@ export function VirtualizedList<T>({
   });
 
   return (
-    <div
-      ref={parentRef}
-      className={`overflow-auto ${className}`}
-      style={{ height: `${height}px` }}
-    >
+    <div ref={parentRef} className={`overflow-auto ${className}`} style={{ height: `${height}px` }}>
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,
@@ -85,7 +81,7 @@ export function VirtualizedPromptList({
   onPromptEdit,
   onPromptDelete,
   className = '',
-  height = 400
+  height = 400,
 }: VirtualizedPromptListProps) {
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
 
@@ -95,10 +91,7 @@ export function VirtualizedPromptList({
   };
 
   const renderPromptItem = (prompt: Prompt, index: number) => (
-    <div 
-      key={prompt.id}
-      className="mx-3 my-2"
-    >
+    <div key={prompt.id} className="mx-3 my-2">
       <div
         className={
           `flex items-start justify-between gap-3 rounded-md px-4 py-3 select-none ` +
@@ -114,7 +107,12 @@ export function VirtualizedPromptList({
               {prompt.workspace}
             </span>
             {prompt.tags.map((tag: string) => (
-              <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-gray-100 text-gray-700">{tag}</span>
+              <span
+                key={tag}
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-gray-100 text-gray-700"
+              >
+                {tag}
+              </span>
             ))}
             {prompt.isPinned && <span className="text-yellow-500 text-xs">Pinned</span>}
           </div>
@@ -122,7 +120,10 @@ export function VirtualizedPromptList({
         <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onPromptEdit(prompt); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onPromptEdit(prompt);
+            }}
             className="text-gray-400 hover:text-gray-700 rounded-md px-2 py-1"
             aria-label="Edit"
           >
@@ -130,7 +131,10 @@ export function VirtualizedPromptList({
           </button>
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onPromptDelete(prompt.id); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onPromptDelete(prompt.id);
+            }}
             className="text-gray-400 hover:text-red-600 rounded-md px-2 py-1"
             aria-label="Delete"
           >
@@ -171,7 +175,7 @@ export function VirtualizedGrid<T>({
   itemsPerRow,
   gap = 16,
   className = '',
-  height = 400
+  height = 400,
 }: VirtualizedGridProps<T>) {
   const parentRef = React.useRef<HTMLDivElement>(null);
 
@@ -186,11 +190,7 @@ export function VirtualizedGrid<T>({
   });
 
   return (
-    <div
-      ref={parentRef}
-      className={`overflow-auto ${className}`}
-      style={{ height: `${height}px` }}
-    >
+    <div ref={parentRef} className={`overflow-auto ${className}`} style={{ height: `${height}px` }}>
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,
@@ -218,9 +218,7 @@ export function VirtualizedGrid<T>({
                 gap: `${gap}px`,
               }}
             >
-              {rowItems.map((item, itemIndex) =>
-                renderItem(item, startIndex + itemIndex)
-              )}
+              {rowItems.map((item, itemIndex) => renderItem(item, startIndex + itemIndex))}
             </div>
           );
         })}

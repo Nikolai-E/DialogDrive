@@ -3,7 +3,13 @@ import React, { useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Checkbox } from '../../../components/ui/checkbox';
 import { Label } from '../../../components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../../components/ui/select';
 
 interface VoiceToneGeneratorProps {
   open: boolean;
@@ -15,61 +21,66 @@ const COMMUNICATION_STYLES = {
   professional: {
     label: 'Professional',
     description: 'Formal, respectful tone for industry peers',
-    template: 'Maintain a formal, respectful tone. Avoid casual expressions. Focus on clear, credible information exchange.'
+    template:
+      'Maintain a formal, respectful tone. Avoid casual expressions. Focus on clear, credible information exchange.',
   },
   direct: {
     label: 'Direct',
     description: 'Concise and assertive communication',
-    template: 'Communicate points concisely and assertively. Eliminate filler words. Address disagreements plainly.'
+    template:
+      'Communicate points concisely and assertively. Eliminate filler words. Address disagreements plainly.',
   },
   educational: {
     label: 'Educational',
     description: 'Informative and clarifying',
-    template: 'Aim to inform or clarify. Use teaching moments by breaking down concepts or sharing insights.'
+    template:
+      'Aim to inform or clarify. Use teaching moments by breaking down concepts or sharing insights.',
   },
   casual: {
     label: 'Casual',
     description: 'Friendly and conversational',
-    template: 'Use a friendly, approachable tone. Include conversational elements while maintaining clarity.'
+    template:
+      'Use a friendly, approachable tone. Include conversational elements while maintaining clarity.',
   },
   technical: {
     label: 'Technical',
     description: 'Precise and detailed for experts',
-    template: 'Use precise technical language. Include specific details and assume domain expertise.'
-  }
+    template:
+      'Use precise technical language. Include specific details and assume domain expertise.',
+  },
 };
 
 const PHRASING_PATTERNS = {
   question_first: {
     label: 'Question First',
     description: 'Start with engaging questions',
-    example: 'Have you considered...?'
+    example: 'Have you considered...?',
   },
   experience_led: {
     label: 'Experience Led',
     description: 'Ground responses in past learnings',
-    example: 'From my experience...'
+    example: 'From my experience...',
   },
   opinion_formula: {
     label: 'Opinion Formula',
     description: 'State viewpoint with reasoning',
-    example: 'In my view... because...'
+    example: 'In my view... because...',
   },
   listicle_burst: {
     label: 'List Format',
     description: 'Use numbered or bulleted lists',
-    example: 'Key points: 1. ... 2. ...'
+    example: 'Key points: 1. ... 2. ...',
   },
   step_by_step: {
     label: 'Step by Step',
     description: 'Outline processes explicitly',
-    example: 'Step 1: ... Step 2: ...'
+    example: 'Step 1: ... Step 2: ...',
   },
   storytelling: {
     label: 'Storytelling',
     description: 'Use narrative and examples',
-    example: 'Let me share a story...'
-  }
+    example: 'Let me share a story...',
+  },
 };
 
 const WRITING_CONSTRAINTS = {
@@ -77,26 +88,26 @@ const WRITING_CONSTRAINTS = {
     { value: 'twitter', label: 'Twitter (280 chars)', chars: 280 },
     { value: 'linkedin', label: 'LinkedIn (short)', chars: 500 },
     { value: 'medium', label: 'Medium length', chars: 1000 },
-    { value: 'long', label: 'Long form', chars: null }
+    { value: 'long', label: 'Long form', chars: null },
   ],
   formality: [
     { value: 'very_formal', label: 'Very Formal' },
     { value: 'formal', label: 'Formal' },
     { value: 'neutral', label: 'Neutral' },
     { value: 'casual', label: 'Casual' },
-    { value: 'very_casual', label: 'Very Casual' }
+    { value: 'very_casual', label: 'Very Casual' },
   ],
   expertise: [
     { value: 'beginner', label: 'Beginner friendly' },
     { value: 'intermediate', label: 'Some knowledge assumed' },
-    { value: 'expert', label: 'Expert level' }
-  ]
+    { value: 'expert', label: 'Expert level' },
+  ],
 };
 
 export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
   open,
   onOpenChange,
-  onGenerate
+  onGenerate,
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selections, setSelections] = useState({
@@ -109,12 +120,12 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
       expertise: 'intermediate',
       emoji: false,
       lineBreaks: true,
-      examples: true
+      examples: true,
     },
     expertise: {
       domain: '',
-      years: ''
-    }
+      years: '',
+    },
   });
 
   const steps = [
@@ -122,7 +133,7 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
     { title: 'Communication Style', description: 'Select one or more styles' },
     { title: 'Phrasing Patterns', description: 'How should responses be structured?' },
     { title: 'Constraints', description: 'Set boundaries and rules' },
-    { title: 'Expertise', description: 'Define the expert persona' }
+    { title: 'Expertise', description: 'Define the expert persona' },
   ];
 
   const handleGenerate = () => {
@@ -145,7 +156,7 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
     // Add communication styles
     if (selections.styles.length > 0) {
       prompt += '<COMMUNICATION_STYLE>\n';
-      selections.styles.forEach(style => {
+      selections.styles.forEach((style) => {
         const styleData = COMMUNICATION_STYLES[style as keyof typeof COMMUNICATION_STYLES];
         prompt += `- ${styleData.label}: ${styleData.template}\n`;
       });
@@ -155,7 +166,7 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
     // Add phrasing patterns
     if (selections.patterns.length > 0) {
       prompt += '<PHRASING_PATTERNS>\n';
-      selections.patterns.forEach(pattern => {
+      selections.patterns.forEach((pattern) => {
         const patternData = PHRASING_PATTERNS[pattern as keyof typeof PHRASING_PATTERNS];
         prompt += `- ${patternData.label}: ${patternData.description}. Example: "${patternData.example}"\n`;
       });
@@ -165,7 +176,9 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
     // Add constraints
     prompt += '<WRITING_RULES>\n';
     if (selections.constraints.maxLength) {
-      const lengthData = WRITING_CONSTRAINTS.length.find(l => l.value === selections.constraints.maxLength);
+      const lengthData = WRITING_CONSTRAINTS.length.find(
+        (l) => l.value === selections.constraints.maxLength
+      );
       if (lengthData?.chars) {
         prompt += `- Maximum length: ${lengthData.chars} characters\n`;
       }
@@ -202,7 +215,7 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                 className="w-full h-24 p-2 border rounded-md text-xs"
                 placeholder="e.g., 'help users write engaging LinkedIn comments' or 'provide technical documentation'"
                 value={selections.purpose}
-                onChange={(e) => setSelections({...selections, purpose: e.target.value})}
+                onChange={(e) => setSelections({ ...selections, purpose: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -212,7 +225,9 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setSelections({...selections, purpose: 'write professional emails'})}
+                  onClick={() =>
+                    setSelections({ ...selections, purpose: 'write professional emails' })
+                  }
                 >
                   Email Writer
                 </Button>
@@ -220,7 +235,12 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setSelections({...selections, purpose: 'create engaging social media content'})}
+                  onClick={() =>
+                    setSelections({
+                      ...selections,
+                      purpose: 'create engaging social media content',
+                    })
+                  }
                 >
                   Social Media
                 </Button>
@@ -228,7 +248,12 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setSelections({...selections, purpose: 'provide technical documentation and explanations'})}
+                  onClick={() =>
+                    setSelections({
+                      ...selections,
+                      purpose: 'provide technical documentation and explanations',
+                    })
+                  }
                 >
                   Technical Docs
                 </Button>
@@ -236,7 +261,12 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setSelections({...selections, purpose: 'assist with creative writing and storytelling'})}
+                  onClick={() =>
+                    setSelections({
+                      ...selections,
+                      purpose: 'assist with creative writing and storytelling',
+                    })
+                  }
                 >
                   Creative Writing
                 </Button>
@@ -254,9 +284,12 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                   checked={selections.styles.includes(key)}
                   onCheckedChange={(checked) => {
                     if (checked) {
-                      setSelections({...selections, styles: [...selections.styles, key]});
+                      setSelections({ ...selections, styles: [...selections.styles, key] });
                     } else {
-                      setSelections({...selections, styles: selections.styles.filter(s => s !== key)});
+                      setSelections({
+                        ...selections,
+                        styles: selections.styles.filter((s) => s !== key),
+                      });
                     }
                   }}
                 />
@@ -278,9 +311,12 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                   checked={selections.patterns.includes(key)}
                   onCheckedChange={(checked) => {
                     if (checked) {
-                      setSelections({...selections, patterns: [...selections.patterns, key]});
+                      setSelections({ ...selections, patterns: [...selections.patterns, key] });
                     } else {
-                      setSelections({...selections, patterns: selections.patterns.filter(p => p !== key)});
+                      setSelections({
+                        ...selections,
+                        patterns: selections.patterns.filter((p) => p !== key),
+                      });
                     }
                   }}
                 />
@@ -301,16 +337,18 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
               <Label>Response Length</Label>
               <Select
                 value={selections.constraints.maxLength}
-                onValueChange={(value) => setSelections({
-                  ...selections,
-                  constraints: {...selections.constraints, maxLength: value}
-                })}
+                onValueChange={(value) =>
+                  setSelections({
+                    ...selections,
+                    constraints: { ...selections.constraints, maxLength: value },
+                  })
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select length constraint" />
                 </SelectTrigger>
                 <SelectContent>
-                  {WRITING_CONSTRAINTS.length.map(length => (
+                  {WRITING_CONSTRAINTS.length.map((length) => (
                     <SelectItem key={length.value} value={length.value}>
                       {length.label}
                     </SelectItem>
@@ -325,30 +363,36 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                 <label className="flex items-center space-x-2">
                   <Checkbox
                     checked={selections.constraints.emoji}
-                    onCheckedChange={(checked) => setSelections({
-                      ...selections,
-                      constraints: {...selections.constraints, emoji: !!checked}
-                    })}
+                    onCheckedChange={(checked) =>
+                      setSelections({
+                        ...selections,
+                        constraints: { ...selections.constraints, emoji: !!checked },
+                      })
+                    }
                   />
                   <span className="text-xs">Allow emojis</span>
                 </label>
                 <label className="flex items-center space-x-2">
                   <Checkbox
                     checked={selections.constraints.lineBreaks}
-                    onCheckedChange={(checked) => setSelections({
-                      ...selections,
-                      constraints: {...selections.constraints, lineBreaks: !!checked}
-                    })}
+                    onCheckedChange={(checked) =>
+                      setSelections({
+                        ...selections,
+                        constraints: { ...selections.constraints, lineBreaks: !!checked },
+                      })
+                    }
                   />
                   <span className="text-xs">Use line breaks for readability</span>
                 </label>
                 <label className="flex items-center space-x-2">
                   <Checkbox
                     checked={selections.constraints.examples}
-                    onCheckedChange={(checked) => setSelections({
-                      ...selections,
-                      constraints: {...selections.constraints, examples: !!checked}
-                    })}
+                    onCheckedChange={(checked) =>
+                      setSelections({
+                        ...selections,
+                        constraints: { ...selections.constraints, examples: !!checked },
+                      })
+                    }
                   />
                   <span className="text-xs">Include examples</span>
                 </label>
@@ -367,10 +411,12 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                 className="w-full p-2 border rounded-md text-xs"
                 placeholder="e.g., 'software engineering', 'marketing', 'data science'"
                 value={selections.expertise.domain}
-                onChange={(e) => setSelections({
-                  ...selections,
-                  expertise: {...selections.expertise, domain: e.target.value}
-                })}
+                onChange={(e) =>
+                  setSelections({
+                    ...selections,
+                    expertise: { ...selections.expertise, domain: e.target.value },
+                  })
+                }
               />
             </div>
             <div className="space-y-2">
@@ -380,10 +426,12 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                 className="w-full p-2 border rounded-md text-xs"
                 placeholder="e.g., '10', '15+', 'extensive'"
                 value={selections.expertise.years}
-                onChange={(e) => setSelections({
-                  ...selections,
-                  expertise: {...selections.expertise, years: e.target.value}
-                })}
+                onChange={(e) =>
+                  setSelections({
+                    ...selections,
+                    expertise: { ...selections.expertise, years: e.target.value },
+                  })
+                }
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -391,10 +439,12 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setSelections({
-                  ...selections,
-                  expertise: {domain: 'software development', years: '10+'}
-                })}
+                onClick={() =>
+                  setSelections({
+                    ...selections,
+                    expertise: { domain: 'software development', years: '10+' },
+                  })
+                }
               >
                 Software Dev
               </Button>
@@ -402,10 +452,12 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setSelections({
-                  ...selections,
-                  expertise: {domain: 'product management', years: '8'}
-                })}
+                onClick={() =>
+                  setSelections({
+                    ...selections,
+                    expertise: { domain: 'product management', years: '8' },
+                  })
+                }
               >
                 Product Mgmt
               </Button>
@@ -413,10 +465,12 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setSelections({
-                  ...selections,
-                  expertise: {domain: 'data science and machine learning', years: '12'}
-                })}
+                onClick={() =>
+                  setSelections({
+                    ...selections,
+                    expertise: { domain: 'data science and machine learning', years: '12' },
+                  })
+                }
               >
                 Data Science
               </Button>
@@ -424,10 +478,12 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setSelections({
-                  ...selections,
-                  expertise: {domain: 'digital marketing', years: '7'}
-                })}
+                onClick={() =>
+                  setSelections({
+                    ...selections,
+                    expertise: { domain: 'digital marketing', years: '7' },
+                  })
+                }
               >
                 Marketing
               </Button>
@@ -443,17 +499,23 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
   if (!open) {
     return null;
   }
-  
+
   return (
     <div className="absolute inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-background border rounded-lg shadow-lg w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col" role="dialog" aria-modal="true" aria-label="Voice & Tone Generator">
+      <div
+        className="bg-background border rounded-lg shadow-lg w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Voice & Tone Generator"
+      >
         <div className="p-4 pb-3 border-b">
           <div className="flex items-start gap-2">
             <Wand2 className="h-5 w-5 text-blue-600 mt-0.5" />
             <div>
               <h2 className="text-lg font-semibold">Voice & Tone Generator</h2>
               <p className="mt-0.5 text-[12px] text-muted-foreground">
-                Pick a vibe and a few guardrails, and DialogDrive builds the prompt that makes the AI answer in that voice.
+                Pick a vibe and a few guardrails, and DialogDrive builds the prompt that makes the
+                AI answer in that voice.
               </p>
             </div>
           </div>
@@ -461,7 +523,9 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
         {/* Progress */}
         <div className="px-4 pt-2">
           <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-2">
-            <span>Step {currentStep + 1} / {steps.length}</span>
+            <span>
+              Step {currentStep + 1} / {steps.length}
+            </span>
             <span className="font-medium">{steps[currentStep].title}</span>
           </div>
           <div className="h-1 w-full bg-muted rounded overflow-hidden mb-2">
@@ -474,9 +538,7 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
         <div className="px-4 pb-2 text-xs text-muted-foreground hidden md:block">
           {steps[currentStep].description}
         </div>
-        <div className="px-4 py-3 flex-1 overflow-y-auto">
-          {renderStepContent()}
-        </div>
+        <div className="px-4 py-3 flex-1 overflow-y-auto">{renderStepContent()}</div>
         <div className="px-4 py-3 border-t bg-muted/30 flex items-center justify-between gap-3">
           <Button
             type="button"

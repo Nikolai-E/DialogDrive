@@ -29,7 +29,9 @@ function createId(): string {
   return `err_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function logStorageError(entry: Omit<StorageErrorEntry, 'id' | 'occurredAt'> & { occurredAt?: string }) {
+export function logStorageError(
+  entry: Omit<StorageErrorEntry, 'id' | 'occurredAt'> & { occurredAt?: string }
+) {
   const record: StorageErrorEntry = {
     id: createId(),
     occurredAt: entry.occurredAt ?? new Date().toISOString(),
@@ -49,7 +51,9 @@ export function getStorageErrors(): StorageErrorEntry[] {
   return [...errors];
 }
 
-export function subscribeStorageErrors(listener: (entries: StorageErrorEntry[]) => void): () => void {
+export function subscribeStorageErrors(
+  listener: (entries: StorageErrorEntry[]) => void
+): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }

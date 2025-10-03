@@ -28,10 +28,7 @@ async function run() {
   const userDataDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'dd-reset-'));
   const context: any = await chromium.launchPersistentContext(userDataDir, {
     headless: false, // extensions are only supported in headed mode
-    args: [
-      `--disable-extensions-except=${extPath}`,
-      `--load-extension=${extPath}`,
-    ],
+    args: [`--disable-extensions-except=${extPath}`, `--load-extension=${extPath}`],
   });
 
   try {
@@ -39,7 +36,10 @@ async function run() {
     const worker = await new Promise<any>((resolve, reject) => {
       const existing = context.serviceWorkers?.();
       if (existing && existing.length > 0) return resolve(existing[0]!);
-      const timeout = setTimeout(() => reject(new Error('Timed out waiting for extension service worker')), 5000);
+      const timeout = setTimeout(
+        () => reject(new Error('Timed out waiting for extension service worker')),
+        5000
+      );
       context.once?.('serviceworker', (sw: any) => {
         clearTimeout(timeout);
         resolve(sw);

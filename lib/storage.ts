@@ -25,7 +25,7 @@ const validatePrompt = (prompt: any): prompt is Prompt => {
 };
 
 // Initial data creation.
-const createInitialPrompts = (): Prompt[] => [
+export const _createInitialPrompts = (): Prompt[] => [
   {
     id: uuidv4(),
     title: 'Summarize this article',
@@ -35,7 +35,7 @@ const createInitialPrompts = (): Prompt[] => [
     tags: ['summary', 'article'],
     usageCount: 0,
     isPinned: false,
-  includeTimestamp: false,
+    includeTimestamp: false,
   },
   {
     id: uuidv4(),
@@ -46,7 +46,7 @@ const createInitialPrompts = (): Prompt[] => [
     tags: ['simple', 'explanation'],
     usageCount: 0,
     isPinned: false,
-  includeTimestamp: false,
+    includeTimestamp: false,
   },
   {
     id: uuidv4(),
@@ -57,8 +57,8 @@ const createInitialPrompts = (): Prompt[] => [
     tags: ['code', 'review'],
     usageCount: 0,
     isPinned: false,
-  includeTimestamp: false,
-  }
+    includeTimestamp: false,
+  },
 ];
 
 // Initialize storage without seeding default prompts.
@@ -73,7 +73,7 @@ export const initializeStorage = async (): Promise<void> => {
     }
 
     // Set storage version.
-    const preferences = await secureStorage.getPreferences() || {};
+    const preferences = (await secureStorage.getPreferences()) || {};
     await secureStorage.setPreferences({ ...preferences, version: STORAGE_VERSION });
   } catch (error) {
     logger.error('Failed to initialize storage:', error);
@@ -89,14 +89,14 @@ export const promptStorage = {
       if (!prompts) {
         return [];
       }
-      
+
       // Validate and filter prompts.
       const validPrompts = prompts.filter(validatePrompt);
       if (validPrompts.length !== prompts.length) {
         logger.warn('Some prompts failed validation and were filtered out');
         await secureStorage.setPrompts(validPrompts);
       }
-      
+
       logStorageAction('Get all prompts', true);
       return validPrompts;
     } catch (error) {
@@ -117,9 +117,9 @@ export const promptStorage = {
         tags: prompt.tags || [],
         usageCount: 0,
         isPinned: prompt.isPinned ?? false,
-  includeTimestamp: prompt.includeTimestamp ?? false,
+        includeTimestamp: prompt.includeTimestamp ?? false,
       };
-      
+
       const updatedPrompts = [...prompts, newPrompt];
       await secureStorage.setPrompts(updatedPrompts);
       logStorageAction('Add prompt', true);
@@ -136,13 +136,13 @@ export const promptStorage = {
       if (!validatePrompt(prompt)) {
         throw new Error('Invalid prompt data');
       }
-      
+
       const prompts = await promptStorage.getAll();
-      const index = prompts.findIndex(p => p.id === prompt.id);
+      const index = prompts.findIndex((p) => p.id === prompt.id);
       if (index === -1) {
         throw new Error('Prompt not found');
       }
-      
+
       prompts[index] = prompt;
       await secureStorage.setPrompts(prompts);
       logStorageAction('Update prompt', true);
@@ -157,7 +157,7 @@ export const promptStorage = {
   remove: async (id: string): Promise<void> => {
     try {
       const prompts = await promptStorage.getAll();
-      const filteredPrompts = prompts.filter(p => p.id !== id);
+      const filteredPrompts = prompts.filter((p) => p.id !== id);
       await secureStorage.setPrompts(filteredPrompts);
       logStorageAction('Delete prompt', true);
     } catch (error) {
@@ -170,7 +170,7 @@ export const promptStorage = {
   incrementUsage: async (id: string): Promise<void> => {
     try {
       const prompts = await promptStorage.getAll();
-      const prompt = prompts.find(p => p.id === id);
+      const prompt = prompts.find((p) => p.id === id);
       if (prompt) {
         prompt.usageCount += 1;
         prompt.lastUsed = new Date().toISOString();
@@ -189,7 +189,7 @@ export const promptStorage = {
       if (validPrompts.length !== prompts.length) {
         throw new Error('Some prompts failed validation');
       }
-      
+
       await secureStorage.setPrompts(validPrompts);
       logStorageAction('Bulk update prompts', true);
     } catch (error) {
@@ -206,7 +206,7 @@ export const promptStorage = {
       const exportData = {
         version: STORAGE_VERSION,
         exportDate: new Date().toISOString(),
-        prompts
+        prompts,
       };
       return JSON.stringify(exportData, null, 2);
     } catch (error) {
@@ -223,11 +223,11 @@ export const promptStorage = {
       }
 
       const existingPrompts = await promptStorage.getAll();
-      const existingIds = new Set(existingPrompts.map(p => p.id));
-      
+      const existingIds = new Set(existingPrompts.map((p) => p.id));
+
       let imported = 0;
       let skipped = 0;
-      
+
       for (const prompt of data.prompts) {
         if (validatePrompt(prompt) && !existingIds.has(prompt.id)) {
           existingPrompts.push(prompt);
@@ -236,7 +236,7 @@ export const promptStorage = {
           skipped++;
         }
       }
-      
+
       await secureStorage.setPrompts(existingPrompts);
       logStorageAction('Import data', true);
       return { imported, skipped };
@@ -247,7 +247,13 @@ export const promptStorage = {
   },
 
   // Pagination shim: returns items sorted by lastUsed desc then created desc
-  getPage: async ({ limit, cursor }: { limit: number; cursor: string | null }): Promise<{ items: Prompt[]; nextCursor: string | null }> => {
+  getPage: async ({
+    limit,
+    cursor,
+  }: {
+    limit: number;
+    cursor: string | null;
+  }): Promise<{ items: Prompt[]; nextCursor: string | null }> => {
     const all = await (promptStorage as any).getAll();
     const sorted = [...all].sort((a, b) => {
       const ad = a.lastUsed ? new Date(a.lastUsed).getTime() : new Date(a.created).getTime();
@@ -256,23 +262,23 @@ export const promptStorage = {
     });
     let startIndex = 0;
     if (cursor) {
-      const idx = sorted.findIndex(it => it.id === cursor);
+      const idx = sorted.findIndex((it) => it.id === cursor);
       startIndex = idx >= 0 ? idx + 1 : 0;
     }
     const items = sorted.slice(startIndex, startIndex + limit);
     const last = items[items.length - 1] || null;
     const nextCursor = last ? last.id : null;
     return { items, nextCursor };
-  }
+  },
 };
 
 // Storage result helper for UI
 export const createStorageResult = <T>(
-  data: T, 
-  success: boolean = true, 
+  data: T,
+  success: boolean = true,
   error?: string
 ): StorageResult<T> => ({
   data,
   success,
-  error
+  error,
 });

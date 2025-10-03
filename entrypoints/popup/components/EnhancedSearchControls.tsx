@@ -31,11 +31,15 @@ export const EnhancedSearchControls: React.FC = () => {
     setSelectedWorkspace,
     resetFilters,
   } = useUnifiedStore();
-  
+
   const searchInputRef = useRef<HTMLInputElement>(null);
-  
-  const hasActiveFilters = searchTerm || filterTag !== 'all' || showPinned || 
-                          contentFilter !== 'all' || selectedWorkspace !== 'all';
+
+  const hasActiveFilters =
+    searchTerm ||
+    filterTag !== 'all' ||
+    showPinned ||
+    contentFilter !== 'all' ||
+    selectedWorkspace !== 'all';
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -44,7 +48,7 @@ export const EnhancedSearchControls: React.FC = () => {
         searchInputRef.current?.focus();
       }
     };
-    
+
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
@@ -76,7 +80,7 @@ export const EnhancedSearchControls: React.FC = () => {
       </div>
 
       {/* Enhanced Controls Row */}
-  <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {/* Left Column */}
         <div className="space-y-2">
           {/* Content Type Filter */}
@@ -85,7 +89,10 @@ export const EnhancedSearchControls: React.FC = () => {
               <FileText className="h-3.5 w-3.5 text-gray-500" />
               <MessageSquare className="h-3.5 w-3.5 text-gray-500" />
             </div>
-            <Select value={contentFilter} onValueChange={(value) => setContentFilter(value as typeof contentFilter)}>
+            <Select
+              value={contentFilter}
+              onValueChange={(value) => setContentFilter(value as typeof contentFilter)}
+            >
               <SelectTrigger className="h-8 px-2.5 bg-white border-gray-300 rounded-md text-[13px] flex-1">
                 <SelectValue />
               </SelectTrigger>
@@ -117,7 +124,9 @@ export const EnhancedSearchControls: React.FC = () => {
               <SelectContent className="rounded-lg border-gray-200 shadow-lg">
                 <SelectItem value="all">All Workspaces</SelectItem>
                 {workspaces.map((workspace) => (
-                  <SelectItem key={workspace} value={workspace}>{workspace}</SelectItem>
+                  <SelectItem key={workspace} value={workspace}>
+                    {workspace}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -152,7 +161,9 @@ export const EnhancedSearchControls: React.FC = () => {
                 <SelectContent className="rounded-lg border-gray-200 shadow-lg">
                   <SelectItem value="all">All Tags</SelectItem>
                   {allTags.map((tag) => (
-                    <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                    <SelectItem key={tag} value={tag}>
+                      {tag}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

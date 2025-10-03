@@ -1,5 +1,3 @@
-
-
 Design language research for the DialogDrive extension
 1 Design language principles and aesthetics
 1.1 Apple (Human Interface Guidelines)
@@ -195,4 +193,3 @@ w3.org
 Maintain consistency across light and dark modes – implement both themes with attention to contrast and adjust accent colours accordingly. Provide a toggle in the settings.
 
 By following these guidelines and combining the strengths of Apple’s human‑centred clarity, Google’s structured colour system and OpenAI’s calm, neutral aesthetic, the DialogDrive extension can deliver a cohesive and professional user experience that feels both polished and approachable.
-

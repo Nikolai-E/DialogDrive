@@ -61,14 +61,17 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
     setResumedDraftAt(record.updatedAt);
   }, []);
 
-  const draftPayload = useMemo<ChatDraftData>(() => ({
-    title: formData.title ?? '',
-    url: formData.url ?? '',
-    workspace: formData.workspace ?? 'General',
-    tags: Array.isArray(formData.tags) ? [...formData.tags] : [],
-    platform: formData.platform ?? 'chatgpt',
-    isPinned: Boolean(formData.isPinned),
-  }), [formData]);
+  const draftPayload = useMemo<ChatDraftData>(
+    () => ({
+      title: formData.title ?? '',
+      url: formData.url ?? '',
+      workspace: formData.workspace ?? 'General',
+      tags: Array.isArray(formData.tags) ? [...formData.tags] : [],
+      platform: formData.platform ?? 'chatgpt',
+      isPinned: Boolean(formData.isPinned),
+    }),
+    [formData]
+  );
 
   const {
     hydrated: draftHydrated,
@@ -173,10 +176,8 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
     const workspace = (formData.workspace || 'General').trim() || 'General';
     const tags = Array.from(
       new Set(
-        (formData.tags || [])
-          .map((tag) => sanitizeTagLabel(tag).toLowerCase())
-          .filter(Boolean),
-      ),
+        (formData.tags || []).map((tag) => sanitizeTagLabel(tag).toLowerCase()).filter(Boolean)
+      )
     );
 
     const base = {
@@ -208,9 +209,9 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
           toast.success('Bookmark added!');
         }
       });
-  discardDraft();
-  setResumedDraftAt(null);
-  handleClose();
+      discardDraft();
+      setResumedDraftAt(null);
+      handleClose();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save bookmark';
       toast.error(message);
@@ -281,7 +282,8 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
               <AlertTitle>Draft updated elsewhere</AlertTitle>
               <AlertDescription className="flex flex-col gap-2">
                 <span>
-                  Another window saved new edits {formatRelativeTime(draftConflict.remote.updatedAt)}.
+                  Another window saved new edits{' '}
+                  {formatRelativeTime(draftConflict.remote.updatedAt)}.
                 </span>
                 <div className="flex gap-2">
                   <Button size="sm" variant="secondary" onClick={handleApplyRemoteDraft}>
@@ -409,7 +411,11 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
             {(formData.tags || []).length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-1">
                 {(formData.tags || []).map((tag) => (
-                  <Badge key={tag} variant="secondary" className="flex items-center gap-1 h-6 text-[11px]">
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="flex items-center gap-1 h-6 text-[11px]"
+                  >
                     {tag}
                     <X className="h-3 w-3 cursor-pointer" onClick={() => handleRemoveTag(tag)} />
                   </Badge>

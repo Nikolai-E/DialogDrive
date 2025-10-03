@@ -7,7 +7,11 @@ export type AppErrorType =
   | 'UnknownError';
 
 export class AppError extends Error {
-  constructor(public kind: AppErrorType, message: string, public cause?: unknown) {
+  constructor(
+    public kind: AppErrorType,
+    message: string,
+    public cause?: unknown
+  ) {
     super(message);
     this.name = kind;
   }
@@ -15,7 +19,8 @@ export class AppError extends Error {
 
 export const mapBrowserError = (e: any): AppError => {
   const msg = typeof e?.message === 'string' ? e.message : String(e);
-  if (/QUOTA_EXCEEDED_ERR|quota|exceed/i.test(msg)) return new AppError('StorageQuotaError', msg, e);
+  if (/QUOTA_EXCEEDED_ERR|quota|exceed/i.test(msg))
+    return new AppError('StorageQuotaError', msg, e);
   if (/permission|denied|forbidden/i.test(msg)) return new AppError('PermissionError', msg, e);
   if (/network|fetch|timeout/i.test(msg)) return new AppError('NetworkError', msg, e);
   if (/not found|missing/i.test(msg)) return new AppError('NotFoundError', msg, e);

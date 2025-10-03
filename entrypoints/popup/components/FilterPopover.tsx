@@ -9,7 +9,7 @@ export const FilterPopover: React.FC = () => {
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [showWorkspaceDropdown, setShowWorkspaceDropdown] = useState(false);
   const [showTagsDropdown, setShowTagsDropdown] = useState(false);
-  
+
   const sortRef = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
   const tagsRef = useRef<HTMLDivElement>(null);
@@ -30,9 +30,12 @@ export const FilterPopover: React.FC = () => {
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (sortRef.current && !sortRef.current.contains(event.target as Node)) setShowSortDropdown(false);
-      if (workspaceRef.current && !workspaceRef.current.contains(event.target as Node)) setShowWorkspaceDropdown(false);
-      if (tagsRef.current && !tagsRef.current.contains(event.target as Node)) setShowTagsDropdown(false);
+      if (sortRef.current && !sortRef.current.contains(event.target as Node))
+        setShowSortDropdown(false);
+      if (workspaceRef.current && !workspaceRef.current.contains(event.target as Node))
+        setShowWorkspaceDropdown(false);
+      if (tagsRef.current && !tagsRef.current.contains(event.target as Node))
+        setShowTagsDropdown(false);
     };
     document.addEventListener('mousedown', handleClickOutside, { passive: true });
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -42,7 +45,7 @@ export const FilterPopover: React.FC = () => {
     { value: 'recent', label: 'Recent' },
     { value: 'usage', label: 'Usage' },
     { value: 'alphabetical', label: 'A-Z' },
-    { value: 'created', label: 'Created' }
+    { value: 'created', label: 'Created' },
   ];
 
   return (
@@ -60,19 +63,30 @@ export const FilterPopover: React.FC = () => {
           >
             <div className="flex items-center gap-1.5 truncate">
               <SortAsc className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="truncate text-xs">{sortOptions.find(opt => opt.value === sortBy)?.label}</span>
+              <span className="truncate text-xs">
+                {sortOptions.find((opt) => opt.value === sortBy)?.label}
+              </span>
             </div>
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           {showSortDropdown && (
-            <div role="menu" className="absolute top-full left-0 mt-1 w-full bg-popover border border-border rounded-md shadow-lg z-10 p-1">
+            <div
+              role="menu"
+              className="absolute top-full left-0 mt-1 w-full bg-popover border border-border rounded-md shadow-lg z-10 p-1"
+            >
               {sortOptions.map((option) => (
                 <button
                   key={option.value}
                   role="menuitemradio"
                   aria-checked={sortBy === option.value}
-                  onClick={() => { setSortBy(option.value as SortOption); setShowSortDropdown(false); }}
-                  className={cn('w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60', sortBy === option.value ? 'bg-primary/10 text-primary' : 'text-foreground')}
+                  onClick={() => {
+                    setSortBy(option.value as SortOption);
+                    setShowSortDropdown(false);
+                  }}
+                  className={cn(
+                    'w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60',
+                    sortBy === option.value ? 'bg-primary/10 text-primary' : 'text-foreground'
+                  )}
                 >
                   {option.label}
                 </button>
@@ -85,7 +99,12 @@ export const FilterPopover: React.FC = () => {
           variant={showPinned ? 'default' : 'outline'}
           size="sm"
           onClick={() => setShowPinned(!showPinned)}
-          className={cn('h-8 w-full gap-1.5', showPinned ? 'bg-[#1f1f21] text-white' : 'bg-card text-foreground border-border hover:bg-muted/60')}
+          className={cn(
+            'h-8 w-full gap-1.5',
+            showPinned
+              ? 'bg-[#1f1f21] text-white'
+              : 'bg-card text-foreground border-border hover:bg-muted/60'
+          )}
           aria-pressed={showPinned}
         >
           <Pin className="h-3.5 w-3.5" />
@@ -103,15 +122,47 @@ export const FilterPopover: React.FC = () => {
           >
             <div className="flex items-center gap-1.5 truncate">
               <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="truncate text-xs">{selectedWorkspace === 'all' ? 'Workspace' : selectedWorkspace}</span>
+              <span className="truncate text-xs">
+                {selectedWorkspace === 'all' ? 'Workspace' : selectedWorkspace}
+              </span>
             </div>
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           {showWorkspaceDropdown && (
-            <div role="menu" className="absolute top-full left-0 mt-1 w-full bg-popover border border-border rounded-md shadow-lg z-10 max-h-48 overflow-y-auto p-1">
-              <button role="menuitemradio" aria-checked={selectedWorkspace === 'all'} onClick={() => { setSelectedWorkspace('all'); setShowWorkspaceDropdown(false); }} className={cn('w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60', selectedWorkspace === 'all' ? 'bg-primary/10 text-primary' : 'text-foreground')}>All Workspaces</button>
+            <div
+              role="menu"
+              className="absolute top-full left-0 mt-1 w-full bg-popover border border-border rounded-md shadow-lg z-10 max-h-48 overflow-y-auto p-1"
+            >
+              <button
+                role="menuitemradio"
+                aria-checked={selectedWorkspace === 'all'}
+                onClick={() => {
+                  setSelectedWorkspace('all');
+                  setShowWorkspaceDropdown(false);
+                }}
+                className={cn(
+                  'w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60',
+                  selectedWorkspace === 'all' ? 'bg-primary/10 text-primary' : 'text-foreground'
+                )}
+              >
+                All Workspaces
+              </button>
               {workspaces.map((workspace) => (
-                <button key={workspace} role="menuitemradio" aria-checked={selectedWorkspace === workspace} onClick={() => { setSelectedWorkspace(workspace); setShowWorkspaceDropdown(false); }} className={cn('w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60 truncate', selectedWorkspace === workspace ? 'bg-primary/10 text-primary' : 'text-foreground')}>
+                <button
+                  key={workspace}
+                  role="menuitemradio"
+                  aria-checked={selectedWorkspace === workspace}
+                  onClick={() => {
+                    setSelectedWorkspace(workspace);
+                    setShowWorkspaceDropdown(false);
+                  }}
+                  className={cn(
+                    'w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60 truncate',
+                    selectedWorkspace === workspace
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-foreground'
+                  )}
+                >
                   {workspace}
                 </button>
               ))}
@@ -135,10 +186,38 @@ export const FilterPopover: React.FC = () => {
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
           {showTagsDropdown && (
-            <div role="menu" className="absolute top-full left-0 mt-1 w-full bg-popover border border-border rounded-md shadow-lg z-10 max-h-48 overflow-y-auto p-1">
-              <button role="menuitemradio" aria-checked={filterTag === 'all'} onClick={() => { setFilterTag('all'); setShowTagsDropdown(false); }} className={cn('w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60', filterTag === 'all' ? 'bg-primary/10 text-primary' : 'text-foreground')}>All Tags</button>
+            <div
+              role="menu"
+              className="absolute top-full left-0 mt-1 w-full bg-popover border border-border rounded-md shadow-lg z-10 max-h-48 overflow-y-auto p-1"
+            >
+              <button
+                role="menuitemradio"
+                aria-checked={filterTag === 'all'}
+                onClick={() => {
+                  setFilterTag('all');
+                  setShowTagsDropdown(false);
+                }}
+                className={cn(
+                  'w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60',
+                  filterTag === 'all' ? 'bg-primary/10 text-primary' : 'text-foreground'
+                )}
+              >
+                All Tags
+              </button>
               {allTags.map((tag) => (
-                <button key={tag} role="menuitemradio" aria-checked={filterTag === tag} onClick={() => { setFilterTag(tag); setShowTagsDropdown(false); }} className={cn('w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60 truncate', filterTag === tag ? 'bg-primary/10 text-primary' : 'text-foreground')}>
+                <button
+                  key={tag}
+                  role="menuitemradio"
+                  aria-checked={filterTag === tag}
+                  onClick={() => {
+                    setFilterTag(tag);
+                    setShowTagsDropdown(false);
+                  }}
+                  className={cn(
+                    'w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60 truncate',
+                    filterTag === tag ? 'bg-primary/10 text-primary' : 'text-foreground'
+                  )}
+                >
                   {tag}
                 </button>
               ))}

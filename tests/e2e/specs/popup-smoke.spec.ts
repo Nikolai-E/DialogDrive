@@ -12,10 +12,10 @@ test.describe('Popup smoke', () => {
     await page.goto(getPopupUrl(extensionUrl));
 
     await expect(page.getByRole('heading', { name: 'DialogDrive' })).toBeVisible();
-  await page.locator('button[aria-controls="create-menu"]').click();
-  await expect(page.getByRole('menuitem', { name: /new prompt/i })).toBeVisible();
+    await page.locator('button[aria-controls="create-menu"]').click();
+    await expect(page.getByRole('menuitem', { name: /new prompt/i })).toBeVisible();
 
-  await page.getByRole('menuitem', { name: /new prompt/i }).click();
+    await page.getByRole('menuitem', { name: /new prompt/i }).click();
 
     await expect(page.getByRole('heading', { name: /create new prompt/i })).toBeVisible();
 

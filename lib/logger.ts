@@ -31,6 +31,10 @@ export const logPromptAction = (action: string, promptId?: string, data?: any) =
 
 export const logStorageAction = (action: string, success: boolean, error?: Error) => {
   if (isDevelopment) {
-    console.log(`[Storage] ${action}`, { success, error: error?.message, timestamp: new Date().toISOString() });
+    console.log(`[Storage] ${action}`, {
+      success,
+      error: error?.message,
+      timestamp: new Date().toISOString(),
+    });
   }
 };

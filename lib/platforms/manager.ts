@@ -9,33 +9,33 @@ class PlatformManager {
     new ChatGPTAdapter(),
     // Add more adapters here as needed
   ];
-  
+
   getCurrentAdapter(): PlatformAdapter | null {
-    return this.adapters.find(adapter => adapter.detect()) || null;
+    return this.adapters.find((adapter) => adapter.detect()) || null;
   }
-  
+
   async paste(text: string): Promise<boolean> {
     // Ask the detected adapter to handle the paste, falling back to clipboard copy.
     const adapter = this.getCurrentAdapter();
     if (!adapter) {
       return this.fallbackPaste(text);
     }
-    
+
     await adapter.isReady();
     return adapter.paste(text);
   }
-  
+
   async capture() {
     // Request the latest conversation snapshot from the active adapter.
     const adapter = this.getCurrentAdapter();
     if (!adapter) {
       return { success: false, error: 'Platform not supported' };
     }
-    
+
     await adapter.isReady();
     return adapter.capture();
   }
-  
+
   private async fallbackPaste(text: string): Promise<boolean> {
     // Last resort copy to clipboard when we can't reach the DOM.
     try {

@@ -24,11 +24,14 @@ async function openPopup(context: any, extensionUrl: string) {
 }
 
 test.describe('Draft restore and prefs persistence', () => {
-  test('prompt draft restores after navigating away and back', async ({ context, extensionUrl }) => {
+  test('prompt draft restores after navigating away and back', async ({
+    context,
+    extensionUrl,
+  }) => {
     const page = await openPopup(context, extensionUrl);
 
     // Open New Prompt
-  await page.locator('button[aria-controls="create-menu"]').click();
+    await page.locator('button[aria-controls="create-menu"]').click();
     await page.getByRole('menuitem', { name: /new prompt/i }).click();
 
     await expect(page.getByRole('heading', { name: /create new prompt/i })).toBeVisible();
@@ -40,7 +43,7 @@ test.describe('Draft restore and prefs persistence', () => {
     await page.getByRole('button', { name: /back/i }).click();
 
     // Re-open prompt create, expect alert or fields hydrated
-  await page.locator('button[aria-controls="create-menu"]').click();
+    await page.locator('button[aria-controls="create-menu"]').click();
     await page.getByRole('menuitem', { name: /new prompt/i }).click();
 
     // Either the banner or the fields must reflect saved data
@@ -59,7 +62,7 @@ test.describe('Draft restore and prefs persistence', () => {
     await page.getByRole('menuitem', { name: /text tools/i }).click();
 
     // If tips are showing, hide them; if hidden, show then hide
-  const showButton = page.getByRole('button', { name: /show what these text tools do/i });
+    const showButton = page.getByRole('button', { name: /show what these text tools do/i });
     const hideButton = page.getByRole('button', { name: /hide/i });
 
     if (await showButton.isVisible()) {
@@ -71,12 +74,14 @@ test.describe('Draft restore and prefs persistence', () => {
     // Allow async storage write to settle
     await page.waitForTimeout(400);
 
-  // Reload popup and ensure hidden remains hidden
-  await page.reload();
+    // Reload popup and ensure hidden remains hidden
+    await page.reload();
 
     await page.getByRole('tab', { name: /tools/i }).click();
     await page.getByRole('menuitem', { name: /text tools/i }).click();
     // After hydration the description block should not be present; the Show button should be visible
-    await expect(page.getByRole('button', { name: /show what these text tools do/i })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /show what these text tools do/i })
+    ).toBeVisible();
   });
 });

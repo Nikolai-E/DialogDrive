@@ -17,8 +17,12 @@ interface UnifiedItemProps {
 }
 
 // shallow compare helper for primitives/flat props we care about
-const areUnifiedItemPropsEqual = (prev: Readonly<UnifiedItemProps>, next: Readonly<UnifiedItemProps>) => {
-  const a = prev.item; const b = next.item;
+const areUnifiedItemPropsEqual = (
+  prev: Readonly<UnifiedItemProps>,
+  next: Readonly<UnifiedItemProps>
+) => {
+  const a = prev.item;
+  const b = next.item;
   return (
     a.id === b.id &&
     a.title === b.title &&
@@ -31,16 +35,16 @@ const areUnifiedItemPropsEqual = (prev: Readonly<UnifiedItemProps>, next: Readon
 };
 
 export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => {
-  const { 
-    setEditingPrompt, 
+  const {
+    setEditingPrompt,
     setEditingChat,
-    setCurrentView, 
-    deletePrompt, 
+    setCurrentView,
+    deletePrompt,
     deleteChat,
-    togglePinPrompt, 
+    togglePinPrompt,
     togglePinChat,
     incrementUsage,
-    incrementChatAccess
+    incrementChatAccess,
   } = useUnifiedStore();
 
   const handleCardClick = async () => {
@@ -61,13 +65,16 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
       logger.debug('Pasting to active tab (len)', finalText.length);
       // Prefer pasting into the active tab via content script; fallback to clipboard
       try {
-        const tabs = await (window as any).browser?.tabs?.query({ active: true, currentWindow: true })
-          ?? await api.tabs?.query({ active: true, currentWindow: true });
+        const tabs =
+          (await (window as any).browser?.tabs?.query({ active: true, currentWindow: true })) ??
+          (await api.tabs?.query({ active: true, currentWindow: true }));
         const tabId = tabs && tabs[0] && tabs[0].id;
         if (tabId) {
           try {
-            await (window as any).browser?.tabs?.sendMessage(tabId, { type: 'PASTE_PROMPT', text: finalText })
-              ?? await api.tabs?.sendMessage(tabId, { type: 'PASTE_PROMPT', text: finalText });
+            (await (window as any).browser?.tabs?.sendMessage(tabId, {
+              type: 'PASTE_PROMPT',
+              text: finalText,
+            })) ?? (await api.tabs?.sendMessage(tabId, { type: 'PASTE_PROMPT', text: finalText }));
             toast.success('Prompt pasted into chat');
             await incrementUsage(prompt.id);
             return;
@@ -160,11 +167,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
     const data = item.data as Prompt | ChatBookmark;
     if (!data.tags || data.tags.length === 0) return null;
     const displayTags = data.tags.slice(0, 3);
-    return (
-      <span className="text-muted-foreground/70 truncate">
-        {displayTags.join(', ')}
-      </span>
-    );
+    return <span className="text-muted-foreground/70 truncate">{displayTags.join(', ')}</span>;
   };
 
   return (
@@ -189,20 +192,23 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
         {/* Row 1: Public Tag + Title + Pin + Open */}
         <div className="flex items-center gap-2 mb-1.5">
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            {item.type === 'chat' && (() => {
-              const privacyInfo = getPrivacyInfo();
-              return !privacyInfo?.isPrivate ? (
-                <span
-                  className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide bg-green-100 text-green-700 shrink-0"
-                  title="Public share link - works without login"
-                >
-                  Public
-                </span>
-              ) : null;
-            })()}
-            <span className="truncate text-[12.5px] font-semibold text-foreground/95">{item.title}</span>
+            {item.type === 'chat' &&
+              (() => {
+                const privacyInfo = getPrivacyInfo();
+                return !privacyInfo?.isPrivate ? (
+                  <span
+                    className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide bg-green-100 text-green-700 shrink-0"
+                    title="Public share link - works without login"
+                  >
+                    Public
+                  </span>
+                ) : null;
+              })()}
+            <span className="truncate text-[12.5px] font-semibold text-foreground/95">
+              {item.title}
+            </span>
           </div>
-          
+
           <div className="flex items-center gap-1 flex-shrink-0">
             <Button
               variant="ghost"
@@ -245,14 +251,16 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
         <div className="flex items-center gap-2.25">
           <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground flex-1 min-w-0">
             {item.isPinned && (
-              <span className="rounded-full bg-accent/20 px-1.5 py-0.5 text-[10px] font-medium text-accent-foreground shrink-0">Pinned</span>
+              <span className="rounded-full bg-accent/20 px-1.5 py-0.5 text-[10px] font-medium text-accent-foreground shrink-0">
+                Pinned
+              </span>
             )}
             <span className="inline-flex items-center rounded-full border border-border/70 bg-[hsl(var(--surface-subtle))] px-2 py-0.5 text-[10.5px] text-muted-foreground/80 whitespace-nowrap">
               {item.workspace || 'General'}
             </span>
             {renderTags()}
           </div>
-          
+
           <div className="flex items-center gap-1 flex-shrink-0">
             <Button
               variant="ghost"

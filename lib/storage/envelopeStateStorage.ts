@@ -21,7 +21,10 @@ export function withEnvelope(base: StateStorage, schemaVersion: number): StateSt
         const parsed = JSON.parse(raw) as Envelope | Record<string, unknown>;
         // If it's an envelope, unwrap to { state, version } for createJSONStorage
         if (parsed && typeof parsed === 'object' && 'state' in parsed && 'updatedAt' in parsed) {
-          const version = typeof (parsed as Envelope).version === 'number' ? (parsed as Envelope).version : schemaVersion;
+          const version =
+            typeof (parsed as Envelope).version === 'number'
+              ? (parsed as Envelope).version
+              : schemaVersion;
           return JSON.stringify({ state: (parsed as Envelope).state, version });
         }
         return raw;

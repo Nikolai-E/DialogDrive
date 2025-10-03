@@ -60,17 +60,20 @@ export const chromeLocalStateStorage: StateStorage = {
   removeItem: (name) => removeFromArea('local', name),
 };
 
-export function createChromeSyncStateStorage(onFallback?: (name: string, value: string, error: unknown) => void): StateStorage {
+export function createChromeSyncStateStorage(
+  onFallback?: (name: string, value: string, error: unknown) => void
+): StateStorage {
   return {
-    getItem: (name) => readFromArea('sync', name).then(async (value) => {
-      if (value !== null) return value;
-      // Attempt to read fallback copy from local if sync has nothing.
-      const localValue = await readFromArea('local', name);
-      if (localValue !== null) {
-        onFallback?.(name, localValue, new Error('Sync storage missing; using local fallback'));
-      }
-      return localValue;
-    }),
+    getItem: (name) =>
+      readFromArea('sync', name).then(async (value) => {
+        if (value !== null) return value;
+        // Attempt to read fallback copy from local if sync has nothing.
+        const localValue = await readFromArea('local', name);
+        if (localValue !== null) {
+          onFallback?.(name, localValue, new Error('Sync storage missing; using local fallback'));
+        }
+        return localValue;
+      }),
     setItem: async (name, value) => {
       try {
         await writeToArea('sync', name, value);

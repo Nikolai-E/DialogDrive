@@ -36,7 +36,8 @@ function ensureInitialized() {
             logStorageError({
               area: 'storage-listener',
               key,
-              reason: listenerError instanceof Error ? listenerError.message : String(listenerError),
+              reason:
+                listenerError instanceof Error ? listenerError.message : String(listenerError),
               stack: listenerError instanceof Error ? listenerError.stack : undefined,
             });
           }

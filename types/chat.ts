@@ -14,14 +14,14 @@ export interface ChatBookmark {
   lastAccessed?: string;
   accessCount: number;
   isPinned: boolean;
-  
+
   // Metadata
   conversationId?: string;
   shareId?: string; // For share URLs
   participantCount?: number;
   estimatedTokens?: number;
   isOwner?: boolean; // True if using direct conversation URL (requires login)
-  
+
   // Optional scraped content for offline access
   scrapedContent?: {
     summary: string;

@@ -16,11 +16,10 @@ const commandHandlers = {
       if (prompts.length === 0) return;
 
       // Get most recently used prompt
-      const latestPrompt = prompts
-        .sort((a, b) => 
-          new Date(b.lastUsed || b.created).getTime() - 
-          new Date(a.lastUsed || a.created).getTime()
-        )[0];
+      const latestPrompt = prompts.sort(
+        (a, b) =>
+          new Date(b.lastUsed || b.created).getTime() - new Date(a.lastUsed || a.created).getTime()
+      )[0];
 
       // Try send to active tab; fallback to clipboard
       try {
@@ -28,7 +27,7 @@ const commandHandlers = {
         if (tabs[0]?.id) {
           await browser.tabs.sendMessage(tabs[0].id, {
             type: 'PASTE_PROMPT',
-            text: latestPrompt.text
+            text: latestPrompt.text,
           });
           await promptStorage.incrementUsage(latestPrompt.id);
           return;
@@ -48,7 +47,7 @@ const commandHandlers = {
       const tabs = await browser.tabs.query({ active: true, currentWindow: true });
       if (tabs[0]?.id) {
         const response = await browser.tabs.sendMessage(tabs[0].id, {
-          type: 'CAPTURE_CHAT'
+          type: 'CAPTURE_CHAT',
         });
 
         if (response?.success && response.url && response.title) {
@@ -58,16 +57,17 @@ const commandHandlers = {
             data: {
               title: response.title,
               url: response.url,
-              platform: (response.platform || (response.url.includes('chatgpt') ? 'chatgpt' : 'chatgpt')),
+              platform:
+                response.platform || (response.url.includes('chatgpt') ? 'chatgpt' : 'chatgpt'),
               workspace: 'General',
               tags: [],
               scrapedContent: {
                 summary: response.title,
                 messageCount: response.messageCount || 0,
                 lastMessage: response.lastMessage || '',
-                scrapedAt: new Date().toISOString()
-              }
-            }
+                scrapedAt: new Date().toISOString(),
+              },
+            },
           });
         }
       }
@@ -105,7 +105,7 @@ const commandHandlers = {
     } catch (error) {
       logger.error('Failed to open quick search:', error);
     }
-  }
+  },
 };
 
 // Context menu items
@@ -115,37 +115,31 @@ const contextMenuItems = [
     id: 'save-selection-as-prompt',
     title: 'Save selection as prompt',
     contexts: ['selection'],
-    documentUrlPatterns: ['*://*/*']
+    documentUrlPatterns: ['*://*/*'],
   },
   {
     id: 'paste-latest-prompt',
     title: 'Paste latest prompt',
     contexts: ['editable'],
-    documentUrlPatterns: [
-      '*://chatgpt.com/*',
-      '*://chat.openai.com/*'
-    ]
+    documentUrlPatterns: ['*://chatgpt.com/*', '*://chat.openai.com/*'],
   },
   {
     id: 'save-chat-bookmark',
     title: 'Save chat as bookmark',
     contexts: ['page'],
-    documentUrlPatterns: [
-      '*://chatgpt.com/*',
-      '*://chat.openai.com/*'
-    ]
+    documentUrlPatterns: ['*://chatgpt.com/*', '*://chat.openai.com/*'],
   },
   {
     id: 'separator-1',
     type: 'separator' as const,
-    contexts: ['all']
+    contexts: ['all'],
   },
   {
     id: 'open-dialogdrive',
     title: 'Open DialogDrive',
     contexts: ['all'],
-    documentUrlPatterns: ['*://*/*']
-  }
+    documentUrlPatterns: ['*://*/*'],
+  },
 ];
 
 // Initialize keyboard shortcuts
@@ -172,7 +166,7 @@ export function initializeContextMenu() {
 
     // Create new items
     // Recreate each context-menu entry from our local descriptor list.
-    contextMenuItems.forEach(item => {
+    contextMenuItems.forEach((item) => {
       if (browser.contextMenus) {
         browser.contextMenus.create(item as any);
       }
@@ -185,15 +179,15 @@ export function initializeContextMenu() {
           case 'save-selection-as-prompt':
             await handleSaveSelectionAsPrompt(info, tab);
             break;
-            
+
           case 'paste-latest-prompt':
             await commandHandlers['paste-latest-prompt']();
             break;
-            
+
           case 'save-chat-bookmark':
             await handleSaveChatBookmark(tab);
             break;
-            
+
           case 'open-dialogdrive':
             if (browser.action) {
               await browser.action.openPopup();
@@ -220,7 +214,7 @@ async function handleSaveSelectionAsPrompt(info: any, tab?: any) {
       tags: ['selection', 'captured'],
       usageCount: 0,
       isPinned: false,
-      includeTimestamp: true
+      includeTimestamp: true,
     });
 
     // Show notification
@@ -229,7 +223,7 @@ async function handleSaveSelectionAsPrompt(info: any, tab?: any) {
         type: 'basic',
         iconUrl: 'icon/icon-48.png',
         title: 'DialogDrive',
-        message: 'Selection saved as prompt'
+        message: 'Selection saved as prompt',
       });
     }
 
@@ -252,16 +246,16 @@ async function handleSaveChatBookmark(tab?: any) {
         data: {
           title: response.title,
           url: response.url,
-          platform: (response.platform || (response.url.includes('chatgpt') ? 'chatgpt' : 'chatgpt')),
+          platform: response.platform || (response.url.includes('chatgpt') ? 'chatgpt' : 'chatgpt'),
           workspace: 'General',
           tags: [],
           scrapedContent: {
             summary: response.title,
             messageCount: response.messageCount || 0,
             lastMessage: response.lastMessage || '',
-            scrapedAt: new Date().toISOString()
-          }
-        }
+            scrapedAt: new Date().toISOString(),
+          },
+        },
       });
 
       if (browser.notifications) {
@@ -269,7 +263,7 @@ async function handleSaveChatBookmark(tab?: any) {
           type: 'basic',
           iconUrl: 'icon/icon-48.png',
           title: 'DialogDrive',
-          message: 'Chat saved as bookmark'
+          message: 'Chat saved as bookmark',
         });
       }
     }
@@ -280,4 +274,3 @@ async function handleSaveChatBookmark(tab?: any) {
 
 // Global shortcut detection for content scripts
 // Removed unused initializeGlobalShortcuts (content-level)
-

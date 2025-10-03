@@ -24,17 +24,19 @@ export function useGlobalShortcuts() {
         setCurrentView('chat-form');
         setEditingChat(null);
       }
-      
+
       // Ctrl/Cmd+S to focus search (intercepts Save Page)
       else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         e.stopPropagation();
-        const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+        const searchInput = document.querySelector(
+          'input[placeholder*="Search"]'
+        ) as HTMLInputElement;
         if (searchInput) {
           searchInput.focus();
         }
       }
-      
+
       // Escape to go back to list view
       else if (e.key === 'Escape') {
         if (currentView !== 'list') {
