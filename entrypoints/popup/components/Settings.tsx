@@ -198,7 +198,7 @@ export const Settings: React.FC = () => {
               <Button
                 variant="outline"
                 className="h-8 text-[12.5px]"
-                onClick={() => browser.tabs.create({ url: 'https://chromewebstore.google.com/detail/dialogdrive' })}
+                onClick={() => browser.tabs.create({ url: 'https://chromewebstore.google.com/detail/dialogdrive/belhaomgpobfemnleoglnpnkfkkdechd' })}
               >
                 <ExternalLink className="h-3.5 w-3.5 mr-2" /> Chrome Web Store listing
               </Button>

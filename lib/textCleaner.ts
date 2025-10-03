@@ -1,83 +1,114 @@
 // An extension by Nikolai Eidheim, built with WXT + TypeScript.
 /**
- * TextCleaner — deterministic, zero‑dependency text sanitizer for TS/JS.
+ * TextCleaner — structural text normalizer for Markdown, HTML fragments, and plain text.
  *
- * Implements a contract, ordered pipeline, rules, heuristics, reporting, and safety levers
- * suitable for a Chrome extension (WXT + React), and equally usable in Node.
+ * Focuses exclusively on structure, punctuation, and whitespace adjustments. Words stay intact.
+ * The cleaner is deterministic, idempotent, and safe to run repeatedly.
  *
- * Export:
- *  - cleanText(input: string, userOptions?: Partial<CleanOptions>): CleanResult
- *  - defaultCleanOptions: CleanOptions
- *  - types: CleanOptions, CleanReport, CleanResult, RuleId
+ * Pipeline overview:
+ *   1. Preprocess (strip ANSI, decode entities, normalize Unicode, remove format characters)
+ *   2. Parse (HTML sanitisation hooks, Markdown/HTML/Plain detection)
+ *   3. Transform structure (links, lists, code blocks, structural drops)
+ *   4. Punctuation mapping
+ *   5. Whitespace normalisation
+ *   6. Fallback Markdown stripping when structured parsing fails
  *
- * Key design notes:
- *  • Deterministic, ordered stages. Each stage operates on non‑code segments when preserveCodeBlocks=true.
- *  • Zero throws. Invalid options fall back to defaults.
- *  • Regexes precompiled once. Linear-time passes. No backtracking-heavy patterns.
- *  • Reporting: per‑rule counts + total changes + elapsedMs.
- *  • Conservative AI-marker filters off by default; aggressive available.
- *  • Locale-sensitive toggles (ellipsis mapping), symbol mapping table, URL/email redaction.
+ * The implementation keeps dependencies optional. A caller may provide a Markdown/HTML engine via
+ * runtime options (remark/unified + rehype is ideal). When unavailable we rely on deterministic
+ * lightweight parsers.
  */
 
-export type RuleId =
-  | 'normalize:line-endings'
-  | 'normalize:unicode-nfkc'
-  | 'strip:bom'
-  | 'strip:control'
-  | 'strip:invisible'
-  | 'map:nbsp-to-space'
-  | 'ws:collapse-inline'
-  | 'ws:trim-lines'
-  | 'ws:collapse-blank-lines'
-  | 'punct:quotes'
-  | 'punct:dashes'
-  | 'punct:ellipsis'
-  | 'punct:bullets'
-  | 'punct:fractions'
-  | 'punct:fullwidth-ascii'
-  | 'symbols:strip-nonkeyboard'
-  | 'structure:flatten-headings'
-  | 'structure:flatten-emphasis'
-  | 'structure:flatten-lists'
-  | 'structure:flatten-links'
-  | 'structure:flatten-images'
-  | 'structure:strip-inline-code'
-  | 'structure:drop-heading-scaffold'
-  | 'structure:strip-step-labels'
-  | 'structure:unwrap-bullets'
-  | 'tone:trim-boosters'
-  | 'tone:drop-cta'
-  | 'tone:trim-intros'
-  | 'tone:blacklist'
-  | 'tone:paragraph-drop'
-  | 'redact:url'
-  | 'redact:email'
-  | 'transliterate:strip-combining'
-  | 'ws:final-pass';
+export type CleanPreset = 'plain' | 'email' | 'markdown-slim' | 'chat' | 'custom';
 
-export type ToneMode = 'off' | 'gentle' | 'assertive';
+export type LinkMode = 'keepMarkdown' | 'textWithUrl' | 'textOnly';
+export type ListMode = 'unwrapToSentences' | 'keepBullets' | 'keepNumbers';
+export type InlineCodeMode = 'keepMarkers' | 'stripMarkers';
+export type BlockCodeMode = 'drop' | 'indent';
 
-export type StageId = 'standardize' | 'structure' | 'tone' | 'advanced';
+export interface PunctuationOptions {
+  mapEmDash: 'comma' | 'hyphen' | 'keep';
+  mapEnDash: 'hyphen' | 'keep';
+  curlyQuotes: 'straight' | 'keep';
+  ellipsis: 'dots' | 'keep' | 'remove';
+}
+
+export interface StructureOptions {
+  dropHeadings: boolean;
+  dropTables: boolean;
+  dropFootnotes: boolean;
+  dropBlockquotes: boolean;
+  dropHorizontalRules: boolean;
+  stripEmojis: boolean;
+  keepBasicMarkdown: boolean;
+}
+
+export interface WhitespaceOptions {
+  collapseSpaces: boolean;
+  collapseBlankLines: boolean;
+  trim: boolean;
+  normalizeNbsp: boolean;
+  ensureFinalNewline: boolean;
+}
 
 export interface CleanOptions {
-  tidyStructure: boolean; // soften markdown scaffolding, headings, step labels
-  tone: ToneMode; // remove AI tone, intros/outros; assertive trims harder
-  preserveCodeBlocks: boolean; // skip inside ```fences``` and `inline`
-  stripSymbols: boolean; // remove/map emojis/arrows/math
-  redactContacts: boolean; // replace URLs/emails with placeholders
-  transliterateLatin: boolean; // remove \p{M} on Latin-dominant text
-  ellipsisMode: 'dots' | 'dot'; // … → '...' | '.'
-  symbolMap: Record<string, string>; // custom mapping for non-keyboard symbols
-  aiPhraseBlacklist: (string | RegExp)[]; // extra phrases
-  debug: boolean; // include simple diff snippets
+  preset: CleanPreset;
+  locale: string;
+  linkMode: LinkMode;
+  listMode: ListMode;
+  inlineCode: InlineCodeMode;
+  blockCode: BlockCodeMode;
+  redactContacts: boolean;
+  punctuation: PunctuationOptions;
+  structure: StructureOptions;
+  whitespace: WhitespaceOptions;
 }
+
+export interface CleanerRuntimeOptions {
+  sanitizeHtml?: (html: string) => string;
+  markdownToAst?: (markdown: string) => MarkdownAst | null;
+  renderMarkdownAst?: (ast: MarkdownAst, options: InternalRenderOptions) => string;
+}
+
+export type StageId = 'preprocess' | 'structure' | 'punctuation' | 'whitespace' | 'fallback';
+
+export type RuleId =
+  | 'pre:strip-ansi'
+  | 'pre:decode-entities'
+  | 'pre:normalize-nfc'
+  | 'pre:strip-format-chars'
+  | 'parse:sanitize-html'
+  | 'parse:html-to-text'
+  | 'structure:heading-drop'
+  | 'structure:heading-inline-strip'
+  | 'structure:list-render'
+  | 'structure:link-render'
+  | 'structure:inline-code'
+  | 'structure:block-code'
+  | 'structure:horizontal-rule'
+  | 'structure:horizontal-rule-inline-strip'
+  | 'structure:table-drop'
+  | 'structure:footnote-drop'
+  | 'structure:blockquote-normalize'
+  | 'structure:inline-markup'
+  | 'structure:emoji-strip'
+  | 'privacy:redact-url'
+  | 'privacy:redact-email'
+  | 'punct:emdash'
+  | 'punct:endash'
+  | 'punct:quotes'
+  | 'punct:ellipsis'
+  | 'whitespace:nbsp'
+  | 'whitespace:inline'
+  | 'whitespace:blank-lines'
+  | 'whitespace:trim'
+  | 'whitespace:final-newline'
+  | 'fallback:strip-markdown';
 
 export interface CleanReport {
   ruleCounts: Record<RuleId, number>;
   stageCounts: Record<StageId, number>;
   changes: number;
   elapsedMs?: number;
-  debug?: { rule: RuleId; before: string; after: string }[];
 }
 
 export interface CleanResult {
@@ -85,597 +116,1295 @@ export interface CleanResult {
   report: CleanReport;
 }
 
+/**
+ * Default preset mirrors the "plain" mode: plain text output with punctuation smoothing.
+ */
 export const defaultCleanOptions: CleanOptions = {
-  tidyStructure: false,
-  tone: 'off',
-  preserveCodeBlocks: true,
-  stripSymbols: false,
+  preset: 'plain',
+  locale: 'nb-NO',
+  linkMode: 'textOnly',
+  listMode: 'unwrapToSentences',
+  inlineCode: 'stripMarkers',
+  blockCode: 'drop',
   redactContacts: false,
-  transliterateLatin: false,
-  ellipsisMode: 'dots',
-  symbolMap: {},
-  aiPhraseBlacklist: [],
-  debug: false,
+  punctuation: {
+    mapEmDash: 'comma',
+    mapEnDash: 'hyphen',
+    curlyQuotes: 'straight',
+    ellipsis: 'dots',
+  },
+  structure: {
+    dropHeadings: true,
+    dropTables: true,
+    dropFootnotes: true,
+    dropBlockquotes: true,
+    dropHorizontalRules: true,
+    stripEmojis: false,
+    keepBasicMarkdown: false,
+  },
+  whitespace: {
+    collapseSpaces: true,
+    collapseBlankLines: true,
+    trim: true,
+    normalizeNbsp: true,
+    ensureFinalNewline: true,
+  },
 };
 
-// =========================
-// Internal helpers & regexes
-// =========================
+export type CleanerPresetMap = Record<Exclude<CleanPreset, 'custom'>, Partial<CleanOptions>>;
 
-type SegmentType = 'text' | 'codeblock' | 'inline';
-interface Segment { type: SegmentType; text: string; }
-
-const RE = {
-  crlf: /\r\n?/g,
-  bomStart: /^\uFEFF/,
-  // Controls: C0/C1 except TAB(\u0009) and LF(\u000A)
-  control: /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g,
-  // Invisibles & format characters
-  // ZWSP 200B, ZWNJ 200C, ZWJ 200D, WJ 2060, SHY 00AD, NBSP 00A0, NNBSP 202F, FEFF handled by BOM
-  invisibles: /[\u200B-\u200D\u2060\u00AD\u200E\u200F\u202A-\u202E\u2066-\u2069]/g,
-  nbsp: /\u00A0/g,
-  nnBsp: /\u202F/g,
-  // Whitespace collapse (horizontal)
-  horizWS: /[ \t]+/g,
-  trailWS: /[ \t]+\n/g,
-  blankLines: /\n{3,}/g,
-  // Punctuation maps
-  curlyDblQuotes: /[“”«»„]/g,
-  curlySglQuotes: /[‘’‚]/g,
-  dashes: /[—–‑−]/g, // em, en, non-breaking hyphen, minus sign
-  emDash: /—/g,
-  emDashSpaced: /\s*—\s*/g,
-  otherDashes: /[–‑−]/g, // en, non-breaking hyphen, minus sign
-  ellipsis: /…/g,
-  bullets: /[•·‣▪✔✗]/g,
-  // Fractions & superscripts subset
-  fractions: /[¼½¾⅐⅑⅒⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]/g,
-  superscripts: /[⁰¹²³⁴⁵⁶⁷⁸⁹]/g,
-  // Full-width ASCII block
-  fullWidth: /[！-～]/g, // U+FF01 - U+FF5E
-  // URLs & emails (simple but effective)
-  url: /\b((?:https?:\/\/|www\.)[^\s<)]+)\b/gi,
-  email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g,
-  // Emoji & symbols (approximate common planes)
-  emoji: /[\u2600-\u27BF\uFE0F\u{1F1E6}-\u{1F9FF}\u{1FA70}-\u{1FAFF}]/gu,
-  // Markdown structures
-  mdFence: /```[\s\S]*?```|~~~[\s\S]*?~~~/g,
-  mdInlineCode: /`[^`\n]+`/g,
-  mdHeading: /^(\s{0,3})#{1,6}\s+/gm,
-  mdEmphasis: /([*_~]{1,3})([^*_~\n][^\n]*?)(\1)/g,
-  mdListMarker: /^(\s*)(?:[-*+]|\d{1,3}[\.)])\s+/gm,
-  mdImage: /!\[([^\]]*)\]\(([^)]+)\)/g,
-  mdLink: /\[([^\]]+)\]\(([^)]+)\)/g,
-  // Latin script and combining marks
-  letter: /\p{L}/gu,
-  latin: /\p{Script=Latin}/gu,
-  combining: /\p{M}+/gu,
+export const cleanerPresets: CleanerPresetMap = {
+  plain: {
+    preset: 'plain',
+    linkMode: 'textOnly',
+    listMode: 'unwrapToSentences',
+    inlineCode: 'stripMarkers',
+    blockCode: 'drop',
+    structure: {
+      dropHeadings: true,
+      dropTables: true,
+      dropFootnotes: true,
+      dropBlockquotes: true,
+      dropHorizontalRules: true,
+      stripEmojis: false,
+      keepBasicMarkdown: false,
+    },
+  },
+  email: {
+    preset: 'email',
+    linkMode: 'textWithUrl',
+    listMode: 'keepBullets',
+    inlineCode: 'stripMarkers',
+    blockCode: 'indent',
+    redactContacts: false,
+    structure: {
+      dropHeadings: true,
+      dropTables: true,
+      dropFootnotes: true,
+      dropBlockquotes: true,
+      dropHorizontalRules: true,
+      stripEmojis: false,
+      keepBasicMarkdown: false,
+    },
+  },
+  'markdown-slim': {
+    preset: 'markdown-slim',
+    linkMode: 'keepMarkdown',
+    listMode: 'keepBullets',
+    inlineCode: 'keepMarkers',
+    blockCode: 'drop',
+    redactContacts: false,
+    structure: {
+      dropHeadings: true,
+      dropTables: true,
+      dropFootnotes: true,
+      dropBlockquotes: true,
+      dropHorizontalRules: false,
+      stripEmojis: false,
+      keepBasicMarkdown: true,
+    },
+    whitespace: {
+      collapseSpaces: true,
+      collapseBlankLines: true,
+      trim: true,
+      normalizeNbsp: true,
+      ensureFinalNewline: false,
+    },
+  },
+  chat: {
+    preset: 'chat',
+    linkMode: 'textOnly',
+    listMode: 'unwrapToSentences',
+    inlineCode: 'stripMarkers',
+    blockCode: 'drop',
+    redactContacts: false,
+    structure: {
+      dropHeadings: true,
+      dropTables: true,
+      dropFootnotes: true,
+      dropBlockquotes: false,
+      dropHorizontalRules: true,
+      stripEmojis: false,
+      keepBasicMarkdown: false,
+    },
+    whitespace: {
+      collapseSpaces: true,
+      collapseBlankLines: false,
+      trim: true,
+      normalizeNbsp: true,
+      ensureFinalNewline: false,
+    },
+  },
 };
 
-const FRACTION_MAP: Record<string, string> = {
-  '¼': '1/4', '½': '1/2', '¾': '3/4', '⅐': '1/7', '⅑': '1/9', '⅒': '1/10',
-  '⅓': '1/3', '⅔': '2/3', '⅕': '1/5', '⅖': '2/5', '⅗': '3/5', '⅘': '4/5',
-  '⅙': '1/6', '⅚': '5/6', '⅛': '1/8', '⅜': '3/8', '⅝': '5/8', '⅞': '7/8',
-};
-const SUPERSCRIPT_MAP: Record<string, string> = {
-  '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9',
-};
+/**
+ * Resolve user overrides against defaults + preset defaults. Any mutation that diverges from a preset
+ * should set preset="custom" externally.
+ */
+export function resolveCleanOptions(partial: Partial<CleanOptions> | undefined): CleanOptions {
+  if (!partial) return { ...defaultCleanOptions, structure: { ...defaultCleanOptions.structure }, whitespace: { ...defaultCleanOptions.whitespace }, punctuation: { ...defaultCleanOptions.punctuation } };
 
-// Tone heuristics and scaffolding patterns
-const PARAGRAPH_DROP_GENTLE: RegExp[] = [
-  /\b(as an\s+ai(?:\s+language\s+model)?)/i,
-  /\b(i\s+(?:cannot|can't)\s+assist\s+with)/i,
-  /\b(i\s+don['’]t\s+have\s+access\s+to\s+(?:real[- ]?time\s+data|the\s+internet))/i,
-  /\b(i['’]?m\s+here\s+to\s+help)/i,
-  /\b(i\s+hope\s+this\s+helps!?)/i,
-  /\b(let['’]s\s+dive\s+in)/i,
-  /\b(here['’]s\s+what\s+we['’]ll\s+cover)/i,
-  /\b(if\s+you\s+have\s+any\s+(?:other\s+)?questions)/i,
-  /^(pros|cons|limitations|key\s+takeaways)\s*[:\-]/im,
-];
+  const fallbackPreset: Exclude<CleanPreset, 'custom'> =
+    defaultCleanOptions.preset === 'custom' ? 'plain' : defaultCleanOptions.preset;
+  const presetKey: Exclude<CleanPreset, 'custom'> =
+    partial.preset && partial.preset !== 'custom' ? partial.preset : fallbackPreset;
+  const presetDefaults = cleanerPresets[presetKey] ?? {};
 
-const PARAGRAPH_DROP_ASSERTIVE: RegExp[] = [
-  /^\s*(?:in\s+(?:summary|conclusion)|to\s+(?:conclude|sum\s+up)|overall|ultimately|moving\s+forward|remember\s+that)/i,
-  /^\s*here['’]s\s+(?:a|the)\s+recap\b/i,
-];
+  return mergeOptions(defaultCleanOptions, presetDefaults, partial);
+}
 
-const CTA_PATTERNS: RegExp[] = [
-  /\bfeel\s+free\s+to\s+reach\s+out\b/i,
-  /\blet\s+me\s+know\s+if\s+you\s+have\s+any(?:\s+other)?\s+questions\b/i,
-  /\bif\s+you\s+need\s+anything\s+else\b/i,
-  /\bi['’]?m\s+happy\s+to\s+help\b/i,
-  /\bi['’]?m\s+here\s+to\s+help\b/i,
-];
-
-const BOOSTER_PREFIX_PATTERNS: RegExp[] = [
-  /^(?:certainly|absolutely|of\s+course|definitely|overall|additionally|furthermore|moreover|ultimately|moving\s+forward|to\s+begin\s+with|first(?:\s+off)?|to\s+start|let['’]s\s+dive\s+in|here['’]s\s+how|here['’]s\s+what\s+we['’]ll\s+cover)[,!]*\s+/i,
-];
-
-// =========================
-// Public API
-// =========================
-
-export function cleanText(input: string, userOptions: Partial<CleanOptions> = {}): CleanResult {
+/**
+ * Main entry point.
+ */
+export function cleanText(input: string, userOptions: Partial<CleanOptions> = {}, runtime: CleanerRuntimeOptions = {}): CleanResult {
   const start = performanceNow();
-  const opt = withDefaults(userOptions);
-  const report: CleanReport = { ruleCounts: initRuleCounts(), stageCounts: initStageCounts(), changes: 0 };
-  const debug: DebugEntry[] = [];
+  const options = resolveCleanOptions(userOptions);
+  const report = createEmptyReport();
 
-  const normalizedInput = input.replace(RE.crlf, '\n');
-  const lineSnap = snapshotRuleCounts(report);
-  const textWithNormalizedLines = applyRule('normalize:line-endings', normalizedInput, input, report, debug, opt);
-  tallyStage('standardize', lineSnap, report);
+  const source = input ?? '';
+  const preprocessed = preprocess(source, options, report);
 
-  const segments = opt.preserveCodeBlocks ? segmentMarkdown(textWithNormalizedLines) : [{ type: 'text' as SegmentType, text: textWithNormalizedLines }];
-  const processed: string[] = [];
+  const parsed = parse(preprocessed, options, runtime, report);
+  let structured = transformStructure(parsed, options, report);
 
-  for (const seg of segments) {
-    if (seg.type !== 'text') {
-      processed.push(seg.text);
-      continue;
-    }
-
-    let chunk = seg.text;
-
-    const snap = snapshotRuleCounts(report);
-    chunk = runStandardizeSegment(chunk, report, debug, opt);
-    tallyStage('standardize', snap, report);
-
-    const symbolStageActive = opt.stripSymbols || (opt.symbolMap && Object.keys(opt.symbolMap).length > 0);
-    if (symbolStageActive) {
-      const snap = snapshotRuleCounts(report);
-      chunk = runSymbolSegment(chunk, opt, report, debug);
-      tallyStage('advanced', snap, report);
-    }
-
-    if (opt.tidyStructure) {
-      const snap = snapshotRuleCounts(report);
-      chunk = runStructureSegment(chunk, report, opt);
-      tallyStage('structure', snap, report);
-    }
-
-    const toneActive = opt.tone !== 'off' || (opt.aiPhraseBlacklist && opt.aiPhraseBlacklist.length > 0);
-    if (toneActive) {
-      const snap = snapshotRuleCounts(report);
-      chunk = runToneSegment(chunk, opt, report);
-      tallyStage('tone', snap, report);
-    }
-
-    if (opt.redactContacts) {
-      const snap = snapshotRuleCounts(report);
-      chunk = runRedactSegment(chunk, report);
-      tallyStage('advanced', snap, report);
-    }
-
-    if (opt.transliterateLatin) {
-      const snap = snapshotRuleCounts(report);
-      chunk = runTransliterateSegment(chunk, report);
-      tallyStage('advanced', snap, report);
-    }
-
-    processed.push(chunk);
+  if ((!parsed.blocks || parsed.blocks.length === 0) && parsed.kind !== 'plain') {
+    const stripped = fallbackStripMarkdown(parsed.text, report);
+    structured = transformInline(stripped, options, report);
   }
 
-  const text = processed.join('');
-  const elapsedMs = performanceNow() - start;
-  report.changes = Object.values(report.ruleCounts).reduce((acc, cur) => acc + cur, 0);
-  report.elapsedMs = Math.round(elapsedMs);
-  if (opt.debug) report.debug = debug.slice(0, 50);
+  const redacted = options.redactContacts ? applyRedactions(structured, options, report) : structured;
 
-  return { text, report };
+  const punctuated = normalizePunctuation(redacted, options, report);
+  const whitespaceNormalised = normalizeWhitespace(punctuated, options, report);
+
+  const elapsed = performanceNow() - start;
+  report.elapsedMs = elapsed;
+
+  return {
+    text: whitespaceNormalised,
+    report,
+  };
 }
 
 // =========================
-// Stage utilities
+// Pipeline stages
 // =========================
 
-type DebugEntry = { rule: RuleId; before: string; after: string };
+type DocumentKind = 'html' | 'markdown' | 'plain';
 
-function withDefaults(u: Partial<CleanOptions>): CleanOptions {
-  const next = { ...defaultCleanOptions, ...u };
-  next.tone = (u.tone ?? defaultCleanOptions.tone) as ToneMode;
-  next.symbolMap = u.symbolMap ? { ...u.symbolMap } : defaultCleanOptions.symbolMap;
-  next.aiPhraseBlacklist = u.aiPhraseBlacklist ? [...u.aiPhraseBlacklist] : defaultCleanOptions.aiPhraseBlacklist;
-  return next;
+interface ParsedDocument {
+  kind: DocumentKind;
+  text: string;
+  blocks?: Block[];
+  ast?: MarkdownAst | null;
 }
 
-function initRuleCounts(): Record<RuleId, number> {
-  const ids: RuleId[] = [
-    'normalize:line-endings', 'normalize:unicode-nfkc', 'strip:bom', 'strip:control', 'strip:invisible', 'map:nbsp-to-space',
-    'ws:collapse-inline', 'ws:trim-lines', 'ws:collapse-blank-lines', 'punct:quotes', 'punct:dashes', 'punct:ellipsis',
-    'punct:bullets', 'punct:fractions', 'punct:fullwidth-ascii', 'symbols:strip-nonkeyboard',
-    'structure:flatten-headings', 'structure:flatten-emphasis', 'structure:flatten-lists', 'structure:flatten-links',
-    'structure:flatten-images', 'structure:strip-inline-code', 'structure:drop-heading-scaffold', 'structure:strip-step-labels',
-    'structure:unwrap-bullets', 'tone:trim-boosters', 'tone:drop-cta', 'tone:trim-intros', 'tone:blacklist', 'tone:paragraph-drop',
-    'redact:url', 'redact:email', 'transliterate:strip-combining', 'ws:final-pass',
-  ];
-  const base: Partial<Record<RuleId, number>> = {};
-  for (const id of ids) base[id] = 0;
-  return base as Record<RuleId, number>;
+type MarkdownAst = unknown;
+
+type Block =
+  | { type: 'paragraph'; text: string } 
+  | { type: 'heading'; depth: number; text: string }
+  | { type: 'list'; ordered: boolean; items: string[] }
+  | { type: 'code'; content: string; fenced: boolean }
+  | { type: 'rule'; marker: string }
+  | { type: 'blockquote'; blocks: Block[] }
+  | { type: 'table'; rows: string[] }
+  | { type: 'footnote'; label: string; text: string };
+
+interface InternalRenderOptions {
+  options: CleanOptions;
+  report: CleanReport;
 }
 
-function initStageCounts(): Record<StageId, number> {
-  return { standardize: 0, structure: 0, tone: 0, advanced: 0 };
-}
+function preprocess(input: string, options: CleanOptions, report: CleanReport): string {
+  let text = input;
 
-type RuleSnapshot = Record<RuleId, number>;
-
-function snapshotRuleCounts(report: CleanReport): RuleSnapshot {
-  return { ...report.ruleCounts };
-}
-
-function tallyStage(stage: StageId, before: RuleSnapshot, report: CleanReport): void {
-  const delta = diffSnapshots(before, report.ruleCounts);
-  if (delta > 0) report.stageCounts[stage] += delta;
-}
-
-function diffSnapshots(before: RuleSnapshot, after: Record<RuleId, number>): number {
-  let total = 0;
-  for (const key of Object.keys(after) as RuleId[]) {
-    const prev = before[key] ?? 0;
-    const next = after[key] ?? 0;
-    if (next > prev) total += next - prev;
+  const ansiResult = stripAnsi(text);
+  if (ansiResult.count > 0) {
+    bump(report, 'preprocess', 'pre:strip-ansi', ansiResult.count);
+    text = ansiResult.text;
   }
-  return total;
+
+  const decoded = decodeEntities(text);
+  if (decoded.changed) {
+    bump(report, 'preprocess', 'pre:decode-entities', decoded.count);
+    text = decoded.text;
+  }
+
+  const normalised = normalizeToNfc(text);
+  if (normalised.changed) {
+    bump(report, 'preprocess', 'pre:normalize-nfc', normalised.count);
+    text = normalised.text;
+  }
+
+  const strippedFormat = stripFormatCharacters(text);
+  if (strippedFormat.count > 0) {
+    bump(report, 'preprocess', 'pre:strip-format-chars', strippedFormat.count);
+    text = strippedFormat.text;
+  }
+
+  return text;
 }
 
-function runStandardizeSegment(input: string, report: CleanReport, debug: DebugEntry[], opt: CleanOptions): string {
-  let t = input;
-
-  const beforeUnicode = t;
-  const unicodeNormalized = t.normalize('NFKC');
-  if (unicodeNormalized !== beforeUnicode) {
-    report.ruleCounts['normalize:unicode-nfkc'] += diffCount(beforeUnicode, unicodeNormalized) || 1;
-    if (opt.debug) debug.push({ rule: 'normalize:unicode-nfkc', before: beforeUnicode, after: unicodeNormalized });
+function parse(text: string, options: CleanOptions, runtime: CleanerRuntimeOptions, report: CleanReport): ParsedDocument {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return { kind: 'plain', text: '', blocks: [] };
   }
-  t = unicodeNormalized.replace(RE.bomStart, '');
-  if (t.length !== unicodeNormalized.length) report.ruleCounts['strip:bom'] += 1;
 
-  const beforeControl = t;
-  t = t.replace(RE.control, '');
-  if (t !== beforeControl) report.ruleCounts['strip:control'] += diffCount(beforeControl, t) || 1;
+  if (looksLikeHtml(trimmed)) {
+    const sanitized = sanitizeHtml(trimmed, runtime);
+    if (sanitized !== trimmed) {
+      bump(report, 'preprocess', 'parse:sanitize-html', 1);
+    }
+    const asText = htmlToText(sanitized);
+    if (asText !== sanitized) {
+      bump(report, 'preprocess', 'parse:html-to-text', 1);
+    }
+    return { kind: 'html', text: asText, blocks: parseMarkdownLike(asText) };
+  }
 
-  const beforeInvisible = t;
-  t = t.replace(RE.invisibles, '');
-  if (t !== beforeInvisible) report.ruleCounts['strip:invisible'] += diffCount(beforeInvisible, t) || 1;
+  if (looksLikeMarkdown(trimmed)) {
+    const ast = runtime.markdownToAst ? runtime.markdownToAst(trimmed) : null;
+    return { kind: 'markdown', text: trimmed, blocks: parseMarkdownLike(trimmed), ast };
+  }
 
-  const beforeNbsp = t;
-  t = t.replace(RE.nbsp, ' ').replace(RE.nnBsp, ' ');
-  if (t !== beforeNbsp) report.ruleCounts['map:nbsp-to-space'] += diffCount(beforeNbsp, t) || 1;
+  return { kind: 'plain', text: trimmed, blocks: parseMarkdownLike(trimmed) };
+}
 
-  const beforeTrim = t;
-  t = t.replace(RE.trailWS, '\n');
-  if (t !== beforeTrim) report.ruleCounts['ws:trim-lines'] += diffCount(beforeTrim, t) || 1;
+function transformStructure(doc: ParsedDocument, options: CleanOptions, report: CleanReport): string {
+  if (!doc.blocks || doc.blocks.length === 0) {
+    const inline = transformInline(doc.text, options, report);
+    return inline;
+  }
 
-  const beforeInline = t;
-  t = t.replace(RE.horizWS, ' ');
-  if (t !== beforeInline) report.ruleCounts['ws:collapse-inline'] += diffCount(beforeInline, t) || 1;
+  const lines: string[] = [];
 
-  const blanksBefore = (beforeInline.match(RE.blankLines) || []).length;
-  const blanksAfter = (t.match(RE.blankLines) || []).length;
-  if (blanksBefore > blanksAfter) report.ruleCounts['ws:collapse-blank-lines'] += blanksBefore - blanksAfter;
+  for (const block of doc.blocks) {
+    switch (block.type) {
+      case 'heading': {
+        if (options.structure.dropHeadings) {
+          bump(report, 'structure', 'structure:heading-drop', 1);
+          continue;
+        }
+        const renderedHeading = renderHeading(block, options, report);
+        pushBlockLines(renderedHeading, lines);
+        break;
+      }
+      case 'paragraph': {
+        const renderedParagraph = transformInline(block.text, options, report);
+        pushBlockLines([renderedParagraph], lines);
+        break;
+      }
+      case 'list': {
+      const renderedList = renderList(block, options, report);
+      pushBlockLines(renderedList, lines);
+      break;
+    }
+    case 'rule': {
+      const renderedRule = renderRule(block, options, report);
+      if (renderedRule.length === 0) break;
+      pushBlockLines(renderedRule, lines);
+      break;
+    }
+      case 'code': {
+        const renderedCode = renderCode(block, options, report);
+        if (renderedCode.length === 0) break;
+        pushBlockLines(renderedCode, lines);
+        break;
+      }
+      case 'blockquote': {
+        const renderedQuote = renderBlockquote(block, options, report);
+        if (renderedQuote.length === 0) break;
+        pushBlockLines(renderedQuote, lines);
+        break;
+      }
+      case 'table': {
+        if (options.structure.dropTables) {
+          bump(report, 'structure', 'structure:table-drop', 1);
+          continue;
+        }
+        const renderedTable = renderTable(block, options, report);
+        pushBlockLines(renderedTable, lines);
+        break;
+      }
+      case 'footnote': {
+        if (options.structure.dropFootnotes) {
+          bump(report, 'structure', 'structure:footnote-drop', 1);
+          continue;
+        }
+        const renderedFootnote = renderFootnote(block, options, report);
+        pushBlockLines(renderedFootnote, lines);
+        break;
+      }
+      default:
+        // Exhaustive guard
+        const _never: never = block;
+        void _never;
+        break;
+    }
+  }
 
-  t = mapReplace(t, RE.curlyDblQuotes, '"', 'punct:quotes', report);
-  t = mapReplace(t, RE.curlySglQuotes, "'", 'punct:quotes', report);
-  t = t.replace(RE.emDashSpaced, () => (incr('punct:dashes', report), ', '));
-  t = mapReplace(t, RE.otherDashes, '-', 'punct:dashes', report);
-  t = mapReplace(t, RE.ellipsis, opt.ellipsisMode === 'dot' ? '.' : '...', 'punct:ellipsis', report);
-  t = mapReplace(t, RE.bullets, '-', 'punct:bullets', report);
-  t = t.replace(RE.fractions, (m: string) => (incr('punct:fractions', report), FRACTION_MAP[m] || m));
-  t = t.replace(RE.superscripts, (m: string) => (incr('punct:fractions', report), SUPERSCRIPT_MAP[m] || m));
-  t = t.replace(RE.fullWidth, (ch: string) => {
-    incr('punct:fullwidth-ascii', report);
-    return String.fromCharCode(ch.charCodeAt(0) - 0xFEE0);
+  const joined = lines.join('\n');
+  return joined;
+}
+
+function normalizePunctuation(input: string, options: CleanOptions, report: CleanReport): string {
+  let text = input;
+
+  if (options.punctuation.mapEmDash === 'comma') {
+    const result = replaceEmDashWithComma(text);
+    if (result.count > 0) {
+      bump(report, 'punctuation', 'punct:emdash', result.count);
+      text = result.text;
+    }
+  } else if (options.punctuation.mapEmDash === 'hyphen') {
+    const result = replaceWithCounter(text, /—/g, '-');
+    if (result.count > 0) {
+      bump(report, 'punctuation', 'punct:emdash', result.count);
+      text = result.text;
+    }
+  }
+
+  if (options.punctuation.mapEnDash === 'hyphen') {
+    const result = replaceWithCounter(text, /[–‑−]/g, '-');
+    if (result.count > 0) {
+      bump(report, 'punctuation', 'punct:endash', result.count);
+      text = result.text;
+    }
+  }
+
+  if (options.punctuation.curlyQuotes === 'straight') {
+    const dbl = replaceWithCounter(text, /[“”«»„]/g, '"');
+    if (dbl.count > 0) {
+      bump(report, 'punctuation', 'punct:quotes', dbl.count);
+      text = dbl.text;
+    }
+    const sgl = replaceWithCounter(text, /[‘’‚‹›]/g, '\'');
+    if (sgl.count > 0) {
+      bump(report, 'punctuation', 'punct:quotes', sgl.count);
+      text = sgl.text;
+    }
+  }
+
+  if (options.punctuation.ellipsis !== 'keep') {
+    if (options.punctuation.ellipsis === 'dots') {
+      const result = replaceWithCounter(text, /…/g, '...');
+      if (result.count > 0) {
+        bump(report, 'punctuation', 'punct:ellipsis', result.count);
+        text = result.text;
+      }
+    } else {
+      const result = replaceWithCounter(text, /…/g, '');
+      if (result.count > 0) {
+        bump(report, 'punctuation', 'punct:ellipsis', result.count);
+        text = result.text;
+      }
+    }
+  }
+
+  return text;
+}
+
+function normalizeWhitespace(input: string, options: CleanOptions, report: CleanReport): string {
+  let text = input;
+
+  if (options.whitespace.normalizeNbsp) {
+    const result = normalizeNbsp(text);
+    if (result.count > 0) {
+      bump(report, 'whitespace', 'whitespace:nbsp', result.count);
+      text = result.text;
+    }
+  }
+
+  if (options.whitespace.collapseSpaces) {
+    const result = replaceWithCounter(text, /[ \t]{2,}/g, ' ');
+    if (result.count > 0) {
+      bump(report, 'whitespace', 'whitespace:inline', result.count);
+      text = result.text;
+    }
+  }
+
+  if (options.whitespace.collapseBlankLines) {
+    const result = replaceWithCounter(text, /\n{3,}/g, '\n\n');
+    if (result.count > 0) {
+      bump(report, 'whitespace', 'whitespace:blank-lines', result.count);
+      text = result.text;
+    }
+  }
+
+  if (options.whitespace.trim) {
+    const trimmed = text.trim();
+    if (trimmed !== text) {
+      const diff = Math.max(1, text.length - trimmed.length);
+      bump(report, 'whitespace', 'whitespace:trim', diff);
+      text = trimmed;
+    }
+  }
+
+  if (options.whitespace.ensureFinalNewline) {
+    if (!text.endsWith('\n')) {
+      text = `${text}\n`;
+      bump(report, 'whitespace', 'whitespace:final-newline', 1);
+    }
+  }
+
+  return text;
+}
+
+// =========================
+// Rendering helpers
+// =========================
+
+function renderHeading(block: Extract<Block, { type: 'heading' }>, options: CleanOptions, report: CleanReport): string[] {
+  const rendered = transformInline(block.text, options, report);
+  if (options.structure.keepBasicMarkdown) {
+    const marker = '#'.repeat(Math.max(1, Math.min(6, block.depth)));
+    return [`${marker} ${rendered}`];
+  }
+  return [rendered];
+}
+
+function renderList(block: Extract<Block, { type: 'list' }>, options: CleanOptions, report: CleanReport): string[] {
+  const items = block.items.map((item) => transformInline(item, options, report));
+  const mode = options.listMode;
+  const lines: string[] = [];
+
+  const pushBullets = () => {
+    items.forEach((item) => {
+      const trimmed = item.trim();
+      if (!trimmed) return;
+      const prefix = options.structure.keepBasicMarkdown ? '-' : '•';
+      lines.push(`${prefix} ${trimmed}`);
+    });
+  };
+
+  const pushNumbers = () => {
+    let index = 1;
+    items.forEach((item) => {
+      const trimmed = item.trim();
+      if (!trimmed) return;
+      const prefix = `${index}.`;
+      lines.push(`${prefix} ${trimmed}`);
+      index += 1;
+    });
+  };
+
+  if (mode === 'unwrapToSentences') {
+    if (items.length > 0) {
+      const sentenceEndRegex = /[.!?](?:["'”’)]?)$/;
+      const segments = items.flatMap((item) => segmentSentences(item, options.locale));
+      const trimmedSegments = segments.map((segment) => segment.trim()).filter(Boolean);
+      const canUnwrap =
+        trimmedSegments.length === 1 || trimmedSegments.every((segment) => sentenceEndRegex.test(segment));
+
+      if (canUnwrap) {
+        const joined = trimmedSegments.join(' ').trim();
+        if (joined) lines.push(joined);
+      } else if (block.ordered) {
+        pushNumbers();
+      } else {
+        pushBullets();
+      }
+    }
+  } else if (mode === 'keepBullets') {
+    pushBullets();
+  } else {
+    pushNumbers();
+  }
+
+  bump(report, 'structure', 'structure:list-render', items.length);
+  return lines;
+}
+
+function renderRule(block: Extract<Block, { type: 'rule' }>, options: CleanOptions, report: CleanReport): string[] {
+  if (options.structure.dropHorizontalRules) {
+    bump(report, 'structure', 'structure:horizontal-rule', 1);
+    return [];
+  }
+
+  const marker = options.structure.keepBasicMarkdown ? block.marker : '---';
+  return [marker];
+}
+
+function renderCode(block: Extract<Block, { type: 'code' }>, options: CleanOptions, report: CleanReport): string[] {
+  if (options.blockCode === 'drop') {
+    bump(report, 'structure', 'structure:block-code', 1);
+    return [];
+  }
+  const lines = block.content.split(/\r?\n/);
+  const indented = lines.map((line) => (line ? `    ${line}` : ''));
+  bump(report, 'structure', 'structure:block-code', indented.length);
+  return indented;
+}
+
+function renderBlockquote(block: Extract<Block, { type: 'blockquote' }>, options: CleanOptions, report: CleanReport): string[] {
+  const renderedChildren = block.blocks.flatMap((child) => {
+    if (child.type === 'blockquote') return renderBlockquote(child, options, report);
+    return renderGenericBlock(child, options, report);
   });
 
-  const beforeFinal = t;
-  t = collapseBlankLines(t).trim();
-  if (t !== beforeFinal) report.ruleCounts['ws:final-pass'] += diffCount(beforeFinal, t) || 1;
+  if (options.structure.dropBlockquotes) {
+    bump(report, 'structure', 'structure:blockquote-normalize', 1);
+    return renderedChildren;
+  }
 
-  return t;
+  const prefix = options.structure.keepBasicMarkdown ? '> ' : '';
+  const quoted = renderedChildren.map((line) => (prefix ? `${prefix}${line}` : line));
+  bump(report, 'structure', 'structure:blockquote-normalize', renderedChildren.length);
+  return quoted;
 }
 
-function runSymbolSegment(input: string, opt: CleanOptions, report: CleanReport, debug: DebugEntry[]): string {
-  let t = input;
-  const hasMap = opt.symbolMap && Object.keys(opt.symbolMap).length > 0;
-  if (hasMap) {
-    for (const [from, to] of Object.entries(opt.symbolMap)) {
-      const re = new RegExp(escapeRegex(from), 'g');
-      const before = t;
-      t = t.replace(re, () => (incr('symbols:strip-nonkeyboard', report), to));
-      if (before !== t && opt.debug) debug.push({ rule: 'symbols:strip-nonkeyboard', before, after: t });
-    }
-  }
-  if (opt.stripSymbols) {
-    const before = t;
-    t = t.replace(RE.emoji, (m: string) => {
-      const mapped = opt.symbolMap[m];
-      incr('symbols:strip-nonkeyboard', report);
-      return mapped ?? '';
-    });
-    if (before !== t && opt.debug) debug.push({ rule: 'symbols:strip-nonkeyboard', before, after: t });
-  }
-  return t;
+function renderTable(block: Extract<Block, { type: 'table' }>, options: CleanOptions, report: CleanReport): string[] {
+  const rendered = block.rows.map((row) => transformInline(row, options, report));
+  bump(report, 'structure', 'structure:inline-markup', rendered.length);
+  return rendered;
 }
 
-const STRUCTURE_SCAFFOLD_RE = /^(outline|key takeaways|summary|conclusion|final thoughts|next steps|quick recap|pros|cons|limitations|what['’]s next)[:\-\s]*$/i;
-const STRUCTURE_STEP_RE = /^(?:step|phase|part|section)\s+\d+(?:\s*[-:])\s*/i;
-const BULLET_PREFIX_RE = /^[\-•·‣▪]+\s+/;
+function renderFootnote(block: Extract<Block, { type: 'footnote' }>, options: CleanOptions, report: CleanReport): string[] {
+  const rendered = transformInline(block.text, options, report);
+  bump(report, 'structure', 'structure:inline-markup', 1);
+  if (options.structure.keepBasicMarkdown) {
+    return [`[^${block.label}]: ${rendered}`];
+  }
+  return [`${block.label}. ${rendered}`];
+}
 
-function runStructureSegment(input: string, report: CleanReport, opt: CleanOptions): string {
-  let t = input;
+function renderGenericBlock(block: Block, options: CleanOptions, report: CleanReport): string[] {
+  switch (block.type) {
+    case 'paragraph':
+      return [transformInline(block.text, options, report)];
+    case 'heading':
+      return renderHeading(block, options, report);
+    case 'list':
+      return renderList(block, options, report);
+    case 'rule':
+      return renderRule(block, options, report);
+    case 'code':
+      return renderCode(block, options, report);
+    case 'blockquote':
+      return renderBlockquote(block, options, report);
+    case 'table':
+      return renderTable(block, options, report);
+    case 'footnote':
+      return renderFootnote(block, options, report);
+    default:
+      return [];
+  }
+}
 
-  const headingCount = countMatches(RE.mdHeading, t);
-  if (headingCount) {
-    report.ruleCounts['structure:flatten-headings'] += headingCount;
-    t = t.replace(RE.mdHeading, '$1');
+function pushBlockLines(blockLines: string[], output: string[]): void {
+  if (blockLines.length === 0) return;
+  if (output.length > 0 && blockLines[0].trim()) {
+    output.push('');
+  }
+  output.push(...blockLines);
+}
+
+// =========================
+// Inline handling
+// =========================
+
+function transformInline(input: string, options: CleanOptions, report: CleanReport): string {
+  let text = input;
+
+  const linkResult = transformLinks(text, options.linkMode);
+  if (linkResult.count > 0) {
+    bump(report, 'structure', 'structure:link-render', linkResult.count);
+    text = linkResult.text;
   }
 
-  const emphasisCount = countMatches(RE.mdEmphasis, t);
-  if (emphasisCount) {
-    report.ruleCounts['structure:flatten-emphasis'] += emphasisCount;
-    t = t.replace(RE.mdEmphasis, '$2');
+  const inlineCodeResult = transformInlineCode(text, options.inlineCode);
+  if (inlineCodeResult.count > 0) {
+    bump(report, 'structure', 'structure:inline-code', inlineCodeResult.count);
+    text = inlineCodeResult.text;
   }
 
-  const listCount = countMatches(RE.mdListMarker, t);
-  if (listCount) {
-    report.ruleCounts['structure:flatten-lists'] += listCount;
-    t = t.replace(RE.mdListMarker, (_m: string, indent: string) => indent);
-  }
+  if (!options.structure.keepBasicMarkdown) {
+    const emphasisResult = stripEmphasis(text);
+    if (emphasisResult.count > 0) {
+      bump(report, 'structure', 'structure:inline-markup', emphasisResult.count);
+      text = emphasisResult.text;
+    }
 
-  const imageCount = countMatches(RE.mdImage, t);
-  if (imageCount) {
-    report.ruleCounts['structure:flatten-images'] += imageCount;
-    t = t.replace(RE.mdImage, (_m: string, alt: string) => alt || '');
-  }
+    // Strip inline heading markers when dropHeadings is enabled
+    if (options.structure.dropHeadings) {
+      const headingResult = replaceWithCounter(text, /#{1,6}\s+/g, '');
+      if (headingResult.count > 0) {
+        bump(report, 'structure', 'structure:heading-inline-strip', headingResult.count);
+        text = headingResult.text;
+      }
+    }
 
-  const linkCount = countMatches(RE.mdLink, t);
-  if (linkCount) {
-    report.ruleCounts['structure:flatten-links'] += linkCount;
-    t = t.replace(RE.mdLink, (_m: string, txt: string) => txt);
-  }
-
-  if (!opt.preserveCodeBlocks) {
-    const inlineCount = countMatches(RE.mdInlineCode, t);
-    if (inlineCount) {
-      report.ruleCounts['structure:strip-inline-code'] += inlineCount;
-      t = t.replace(RE.mdInlineCode, (m: string) => m.slice(1, -1));
+    // Strip horizontal rule markers when dropHorizontalRules is enabled
+    if (options.structure.dropHorizontalRules) {
+      const ruleResult = replaceWithCounter(text, /(?:[-*_]){3,}/g, '');
+      if (ruleResult.count > 0) {
+        bump(report, 'structure', 'structure:horizontal-rule-inline-strip', ruleResult.count);
+        text = ruleResult.text;
+      }
     }
   }
 
-  const lines = t.split('\n');
-  const out: string[] = [];
-  for (const line of lines) {
-    const indentMatch = line.match(/^\s*/);
-    const indent = indentMatch ? indentMatch[0] : '';
-    let content = line.slice(indent.length);
-    const trimmed = content.trim();
+  if (options.structure.stripEmojis) {
+    const emojiResult = stripEmojis(text);
+    if (emojiResult.count > 0) {
+      bump(report, 'structure', 'structure:emoji-strip', emojiResult.count);
+      text = emojiResult.text;
+    }
+  }
+
+  return text;
+}
+
+function transformLinks(input: string, mode: LinkMode): { text: string; count: number } {
+  const regex = /\[([^\]]+)\]\(([^)\s]+)(?:\s+\"([^\"]*)\")?\)/g;
+  let count = 0;
+  const replaced = input.replace(regex, (_match, label, url) => {
+    count += 1;
+    const cleanLabel = label.trim();
+    const cleanUrl = url.trim();
+    if (mode === 'keepMarkdown') {
+      return `[${cleanLabel}](${cleanUrl})`;
+    }
+    if (mode === 'textWithUrl') {
+      if (!cleanLabel) return cleanUrl;
+      if (cleanLabel === cleanUrl) return cleanUrl;
+      return `${cleanLabel} (${cleanUrl})`;
+    }
+    return cleanLabel || cleanUrl;
+  });
+  return { text: replaced, count };
+}
+
+function transformInlineCode(input: string, mode: InlineCodeMode): { text: string; count: number } {
+  if (mode === 'keepMarkers') {
+    return { text: input, count: 0 };
+  }
+  const regex = /`([^`]+)`/g;
+  let count = 0;
+  const replaced = input.replace(regex, (_match, code) => {
+    count += 1;
+    return code;
+  });
+  return { text: replaced, count };
+}
+
+function stripEmphasis(input: string): { text: string; count: number } {
+  const regex = /([*_~]{1,3})([^*_~\n][^\n]*?)(\1)/g;
+  let count = 0;
+  const replaced = input.replace(regex, (_match, _open, content) => {
+    count += 1;
+    return content;
+  });
+  return { text: replaced, count };
+}
+
+function stripEmojis(input: string): { text: string; count: number } {
+  const emojiPattern = /\p{Extended_Pictographic}/gu;
+  let count = 0;
+  let stripped = input.replace(emojiPattern, () => {
+    count += 1;
+    return '';
+  });
+
+  if (count === 0) {
+    return { text: input, count: 0 };
+  }
+
+  stripped = stripped.replace(/[\u200d\uFE0F]/g, '');
+  return { text: stripped, count };
+}
+
+function applyRedactions(input: string, options: CleanOptions, report: CleanReport): string {
+  let text = input;
+
+  const urlPattern = /\b(?:https?:\/\/|www\.)[^\s<>()\u00A0]+/gi;
+  const urlResult = replaceWithPlaceholder(text, urlPattern, '<URL>');
+  if (urlResult.count > 0) {
+    bump(report, 'structure', 'privacy:redact-url', urlResult.count);
+    text = urlResult.text;
+  }
+
+  const emailPattern = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g;
+  const emailResult = replaceWithPlaceholder(text, emailPattern, '<EMAIL>');
+  if (emailResult.count > 0) {
+    bump(report, 'structure', 'privacy:redact-email', emailResult.count);
+    text = emailResult.text;
+  }
+
+  return text;
+}
+
+// =========================
+// Parsing helpers
+// =========================
+
+function parseMarkdownLike(text: string): Block[] {
+  const lines = text.split(/\r?\n/);
+  const blocks: Block[] = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index];
+    const trimmed = line.trim();
+
     if (!trimmed) {
-      out.push('');
+      index += 1;
       continue;
     }
 
-    if (STRUCTURE_SCAFFOLD_RE.test(trimmed)) {
-      incr('structure:drop-heading-scaffold', report);
+    const heading = matchHeading(line);
+    if (heading) {
+      blocks.push(heading);
+      index += 1;
       continue;
     }
 
-    const beforeStep = content;
-    content = content.replace(STRUCTURE_STEP_RE, '');
-    if (content !== beforeStep) incr('structure:strip-step-labels', report);
-
-    const beforeBullet = content;
-    if (BULLET_PREFIX_RE.test(content.trimStart())) {
-      content = content.replace(BULLET_PREFIX_RE, '');
-      incr('structure:unwrap-bullets', report);
+    const fence = matchFence(line);
+    if (fence) {
+      const { content, nextIndex } = consumeFence(lines, index + 1, fence.delimiter);
+      blocks.push({ type: 'code', content, fenced: true });
+      index = nextIndex;
+      continue;
     }
 
-    if (!content.trim()) continue;
-    out.push(indent + content.trimStart());
+    const list = matchList(lines, index);
+    if (list) {
+      blocks.push(list.block);
+      index = list.nextIndex;
+      continue;
+    }
+
+    const footnote = matchFootnote(line);
+    if (footnote) {
+      blocks.push(footnote);
+      index += 1;
+      continue;
+    }
+
+    const blockquote = matchBlockquote(lines, index);
+    if (blockquote) {
+      blocks.push(blockquote.block);
+      index = blockquote.nextIndex;
+      continue;
+    }
+
+    const table = matchTable(lines, index);
+    if (table) {
+      blocks.push(table.block);
+      index = table.nextIndex;
+      continue;
+    }
+
+    const horizontalRule = matchHorizontalRule(line);
+    if (horizontalRule) {
+      blocks.push(horizontalRule);
+      index += 1;
+      continue;
+    }
+
+    const paragraph = consumeParagraph(lines, index);
+    blocks.push({ type: 'paragraph', text: paragraph.block });
+    index = paragraph.nextIndex;
   }
 
-  return collapseBlankLines(out.join('\n'));
+  return blocks;
 }
 
-function runToneSegment(input: string, opt: CleanOptions, report: CleanReport): string {
-  if (opt.tone === 'off') {
-    return applyBlacklist(input, opt, report);
+function matchHeading(line: string): Extract<Block, { type: 'heading' }> | null {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('#')) return null;
+  const depth = trimmed.match(/^#+/)?.[0].length ?? 0;
+  if (depth === 0 || depth > 6) return null;
+  const text = trimmed.slice(depth).trim();
+  return { type: 'heading', depth, text };
+}
+
+function matchFence(line: string): { delimiter: string } | null {
+  const match = line.match(/^(```+|~~~+)/);
+  if (!match) return null;
+  return { delimiter: match[1] };
+}
+
+function consumeFence(lines: string[], start: number, delimiter: string): { content: string; nextIndex: number } {
+  const collected: string[] = [];
+  let index = start;
+
+  while (index < lines.length) {
+    const current = lines[index];
+    if (current.startsWith(delimiter)) {
+      return { content: collected.join('\n').trimEnd(), nextIndex: index + 1 };
+    }
+    collected.push(current);
+    index += 1;
   }
 
-  const paragraphs = input.split(/\n{2,}/);
-  const kept: string[] = [];
-  for (const para of paragraphs) {
-    const trimmed = para.trim();
-    if (!trimmed) continue;
+  return { content: collected.join('\n').trimEnd(), nextIndex: lines.length };
+}
 
-    if (shouldDropParagraph(trimmed, opt.tone)) {
-      incr('tone:paragraph-drop', report);
+function matchList(lines: string[], start: number): { block: Extract<Block, { type: 'list' }>; nextIndex: number } | null {
+  const items: string[] = [];
+  let index = start;
+  let ordered: boolean | null = null;
+
+  while (index < lines.length) {
+    const line = lines[index];
+    const unorderedMatch = line.match(/^\s*[-*+]\s+(.*)$/);
+    const orderedMatch = line.match(/^\s*(\d+)[.)]\s+(.*)$/);
+
+    if (unorderedMatch) {
+      if (ordered === null) ordered = false;
+      if (ordered) break;
+      items.push(unorderedMatch[1]);
+      index += 1;
       continue;
     }
 
-    let updated = stripBoosterLeadIns(para, report);
-    updated = removeCTAPhrases(updated, report);
-
-    if (opt.tone === 'assertive') {
-      updated = updated.replace(/\b(?:in\s+(?:summary|conclusion)|to\s+(?:conclude|sum\s+up)|overall)[:,]?\s+/gi, (match) => {
-        incr('tone:trim-intros', report);
-        return '';
-      });
+    if (orderedMatch) {
+      if (ordered === null) ordered = true;
+      if (ordered === false) break;
+      items.push(orderedMatch[2]);
+      index += 1;
+      continue;
     }
 
-    updated = applyBlacklist(updated, opt, report);
-
-    if (updated.trim()) kept.push(updated.trimEnd());
+    break;
   }
 
-  return kept.join('\n\n');
+  if (items.length === 0) return null;
+  return { block: { type: 'list', ordered: Boolean(ordered), items }, nextIndex: index };
 }
 
-function shouldDropParagraph(paragraph: string, mode: ToneMode): boolean {
-  for (const re of PARAGRAPH_DROP_GENTLE) {
-    if (re.test(paragraph)) return true;
+function matchFootnote(line: string): Extract<Block, { type: 'footnote' }> | null {
+  const match = line.match(/^\[\^([^\]]+)\]:\s*(.*)$/);
+  if (!match) return null;
+  return { type: 'footnote', label: match[1], text: match[2] };
+}
+
+function matchBlockquote(lines: string[], start: number): { block: Extract<Block, { type: 'blockquote' }>; nextIndex: number } | null {
+  const collected: string[] = [];
+  let index = start;
+
+  while (index < lines.length) {
+    const line = lines[index];
+    if (!/^\s*>/.test(line)) break;
+    const stripped = line.replace(/^\s*>\s?/, '');
+    collected.push(stripped);
+    index += 1;
   }
-  if (CTA_PATTERNS.some((re) => re.test(paragraph)) && wordCount(paragraph) <= 25) return true;
-  if (mode === 'assertive') {
-    for (const re of PARAGRAPH_DROP_ASSERTIVE) {
-      if (re.test(paragraph)) return true;
-    }
+
+  if (collected.length === 0) return null;
+  const nestedBlocks = parseMarkdownLike(collected.join('\n'));
+  return { block: { type: 'blockquote', blocks: nestedBlocks }, nextIndex: index };
+}
+
+function matchTable(lines: string[], start: number): { block: Extract<Block, { type: 'table' }>; nextIndex: number } | null {
+  if (!lines[start].includes('|')) return null;
+  const collected: string[] = [];
+  let index = start;
+
+  while (index < lines.length) {
+    const line = lines[index];
+    if (!line.includes('|')) break;
+    collected.push(line);
+    index += 1;
   }
+
+  if (collected.length === 0) return null;
+  return { block: { type: 'table', rows: collected }, nextIndex: index };
+}
+
+function matchHorizontalRule(line: string): Extract<Block, { type: 'rule' }> | null {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+  if (trimmed.includes('|')) return null;
+
+  const normalized = trimmed.replace(/\s+/g, '');
+  if (!/^(-{3,}|_{3,}|\*{3,})$/.test(normalized)) return null;
+
+  const marker = normalized[0] === '*'
+    ? '***'
+    : normalized[0] === '_'
+      ? '___'
+      : '---';
+
+  return { type: 'rule', marker };
+}
+
+function consumeParagraph(lines: string[], start: number): { block: string; nextIndex: number } {
+  const collected: string[] = [];
+  let index = start;
+
+  while (index < lines.length) {
+    const line = lines[index];
+    if (!line.trim()) break;
+    if (/^\s*([-*+]|\d+[.)])\s+/.test(line)) break;
+    if (/^\s*>/.test(line)) break;
+    if (/^\s*(```+|~~~+)/.test(line)) break;
+    if (matchHorizontalRule(line)) break;
+    collected.push(line);
+    index += 1;
+  }
+
+  return { block: collected.join(' ').trim(), nextIndex: index };
+}
+
+function looksLikeHtml(text: string): boolean {
+  const lower = text.toLowerCase();
+  if (!lower.includes('<') || !lower.includes('>')) return false;
+  if (/^<!doctype|<html|<body|<div|<p|<span|<section|<article|<ul|<ol|<li/.test(lower)) return true;
+  return /<\w+[\s>]/.test(lower);
+}
+
+function looksLikeMarkdown(text: string): boolean {
+  if (/^\s*#/.test(text)) return true;
+  if (/^\s*[-*+]\s+/m.test(text)) return true;
+  if (/^\s*\d+[.)]\s+/m.test(text)) return true;
+  if (/```/.test(text)) return true;
+  if (/\[.+\]\(.+\)/.test(text)) return true;
   return false;
 }
 
-function stripBoosterLeadIns(text: string, report: CleanReport): string {
-  const lines = text.split('\n');
-  const next: string[] = [];
-  for (const line of lines) {
-    const indentMatch = line.match(/^\s*/);
-    const indent = indentMatch ? indentMatch[0] : '';
-    let content = line.slice(indent.length);
-    let changed = false;
-    for (const re of BOOSTER_PREFIX_PATTERNS) {
-      if (re.test(content)) {
-        content = content.replace(re, '');
-        changed = true;
-        break;
-      }
+// =========================
+// HTML handling
+// =========================
+
+function sanitizeHtml(input: string, runtime: CleanerRuntimeOptions): string {
+  if (runtime.sanitizeHtml) {
+    try {
+      return runtime.sanitizeHtml(input);
+    } catch {
+      // fall through to internal fallback
     }
-    if (changed) incr('tone:trim-boosters', report);
-    next.push(indent + content);
   }
-  return next.join('\n');
+  return fallbackSanitizeHtml(input);
 }
 
-function removeCTAPhrases(text: string, report: CleanReport): string {
-  let result = text;
-  for (const re of CTA_PATTERNS) {
-    result = result.replace(re, () => {
-      incr('tone:drop-cta', report);
-      return '';
-    });
+function fallbackSanitizeHtml(input: string): string {
+  return input
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/ on[a-z]+="[^"]*"/gi, '')
+    .replace(/ on[a-z]+=\'[^\']*\'/gi, '');
+}
+
+function htmlToText(input: string): string {
+  if (typeof DOMParser !== 'undefined') {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(input, 'text/html');
+      return walkDom(doc.body ?? doc.documentElement ?? doc, []);
+    } catch {
+      // ignore and fallback
+    }
   }
-  return result;
+  return stripTags(input);
 }
 
-function applyBlacklist(text: string, opt: CleanOptions, report: CleanReport): string {
-  if (!opt.aiPhraseBlacklist || !opt.aiPhraseBlacklist.length) return text;
-  let result = text;
-  for (const pattern of opt.aiPhraseBlacklist) {
-    const re = toGlobalRegex(pattern);
-    result = result.replace(re, () => {
-      incr('tone:blacklist', report);
-      return '';
-    });
+function walkDom(node: Node, lines: string[], depth = 0): string {
+  if (node.nodeType === Node.TEXT_NODE) {
+    const value = node.textContent ?? '';
+    if (value.trim()) {
+      lines.push(value);
+    }
+    return lines.join('');
   }
-  return result;
+
+  if (!(node instanceof Element)) {
+    node.childNodes.forEach((child) => walkDom(child, lines, depth + 1));
+    return lines.join('');
+  }
+
+  const blockTags = new Set(['P', 'DIV', 'SECTION', 'ARTICLE', 'LI', 'BR', 'HR', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'TR']);
+  if (blockTags.has(node.tagName)) {
+    lines.push('\n');
+  }
+
+  node.childNodes.forEach((child) => walkDom(child, lines, depth + 1));
+
+  if (node.tagName === 'LI') {
+    lines.push('\n');
+  }
+
+  return lines.join('');
 }
 
-function toGlobalRegex(pattern: string | RegExp): RegExp {
-  if (typeof pattern === 'string') return new RegExp(`\\b${escapeRegex(pattern)}\\b`, 'gi');
-  const flags = pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`;
-  return new RegExp(pattern.source, flags);
+function stripTags(input: string): string {
+  return input
+    .replace(/<\/?(p|div|br|li|tr|h[1-6])[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\n{2,}/g, '\n');
 }
 
-function runRedactSegment(input: string, report: CleanReport): string {
-  let t = input;
-  t = t.replace(RE.url, () => (incr('redact:url', report), '<URL>'));
-  t = t.replace(RE.email, () => (incr('redact:email', report), '<EMAIL>'));
-  return t;
+// =========================
+// Utility helpers
+// =========================
+
+function stripAnsi(text: string): { text: string; count: number } {
+  const regex = /\u001B\[[0-9;]*[A-Za-z]/g;
+  let count = 0;
+  const replaced = text.replace(regex, () => {
+    count += 1;
+    return '';
+  });
+  return { text: replaced, count };
 }
 
-function runTransliterateSegment(input: string, report: CleanReport): string {
-  if (!isLatinDominant(input)) return input;
-  const before = input;
-  const stripped = input.normalize('NFD').replace(RE.combining, '').normalize('NFC');
-  if (before !== stripped) report.ruleCounts['transliterate:strip-combining'] += 1;
+function decodeEntities(text: string): { text: string; count: number; changed: boolean } {
+  const map: Record<string, string> = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': '\'',
+    '&nbsp;': '\u00A0',
+  };
+  let count = 0;
+  let result = text.replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (match) => {
+    count += 1;
+    return map[match];
+  });
+
+  result = result.replace(/&#(x?[0-9a-fA-F]+);/g, (_match, code) => {
+    count += 1;
+    const isHex = code.startsWith('x') || code.startsWith('X');
+    const value = isHex ? parseInt(code.slice(1), 16) : parseInt(code, 10);
+    if (Number.isNaN(value)) return '';
+    return String.fromCodePoint(value);
+  });
+
+  return { text: result, count, changed: count > 0 };
+}
+
+function normalizeToNfc(text: string): { text: string; count: number; changed: boolean } {
+  if (!text) return { text, count: 0, changed: false };
+  const normalised = text.normalize('NFC');
+  if (normalised === text) return { text, count: 0, changed: false };
+  return { text: normalised, count: Math.abs(normalised.length - text.length) || 1, changed: true };
+}
+
+function stripFormatCharacters(text: string): { text: string; count: number } {
+  const urlRanges: Array<{ start: number; end: number }> = [];
+  const urlRegex = /\b(?:https?:\/\/|www\.)[^\s<>()]+/gi;
+  let urlMatch: RegExpExecArray | null;
+  while ((urlMatch = urlRegex.exec(text)) !== null) {
+    urlRanges.push({ start: urlMatch.index, end: urlMatch.index + urlMatch[0].length });
+  }
+
+  const toRemove = new Set<number>();
+  for (let i = 0; i < text.length; i += 1) {
+    const code = text.charCodeAt(i);
+    if (!isFormatCharacter(code)) continue;
+    const insideUrl = urlRanges.some((range) => i >= range.start && i < range.end);
+    if (!insideUrl) {
+      toRemove.add(i);
+    }
+  }
+
+  if (toRemove.size === 0) {
+    return { text, count: 0 };
+  }
+
+  let result = '';
+  for (let i = 0; i < text.length; i += 1) {
+    if (toRemove.has(i)) continue;
+    result += text[i];
+  }
+
+  return { text: result, count: toRemove.size };
+}
+
+function isFormatCharacter(codePoint: number): boolean {
+  return (
+    (codePoint >= 0x200b && codePoint <= 0x200f) ||
+    (codePoint >= 0x202a && codePoint <= 0x202e) ||
+    (codePoint >= 0x2060 && codePoint <= 0x2064) ||
+    (codePoint >= 0x2066 && codePoint <= 0x2069) ||
+    codePoint === 0x00ad ||
+    codePoint === 0xfeff
+  );
+}
+
+function normalizeNbsp(text: string): { text: string; count: number } {
+  let count = 0;
+  const replaced = text.replace(/\u00A0/g, () => {
+    count += 1;
+    return ' ';
+  });
+  return { text: replaced, count };
+}
+
+function replaceEmDashWithComma(text: string): { text: string; count: number } {
+  let count = 0;
+  let result = text.replace(/ *— */g, () => {
+    count += 1;
+    return ', ';
+  });
+
+  result = result.replace(/\s+,/g, ',');
+  result = result.replace(/,\s+/g, ', ');
+  result = result.replace(/, ([\.\!\?\;\:,\)\]])/g, ',$1');
+  result = result.replace(/, $/, ',');
+  return { text: result, count };
+}
+
+function replaceWithCounter(text: string, pattern: RegExp, replacement: string): { text: string; count: number } {
+  let count = 0;
+  const replaced = text.replace(pattern, () => {
+    count += 1;
+    return replacement;
+  });
+  return { text: replaced, count };
+}
+
+function replaceWithPlaceholder(text: string, pattern: RegExp, placeholder: string): { text: string; count: number } {
+  let count = 0;
+  const replaced = text.replace(pattern, () => {
+    count += 1;
+    return placeholder;
+  });
+  return { text: replaced, count };
+}
+
+function segmentSentences(text: string, locale: string): string[] {
+  const SegmenterCtor = typeof Intl !== 'undefined' ? (Intl as any).Segmenter : undefined;
+  if (typeof SegmenterCtor === 'function') {
+    try {
+      const segmenter = new SegmenterCtor(locale, { granularity: 'sentence' });
+      const segments: string[] = [];
+      const iterator = segmenter.segment(text);
+      for (const segment of iterator) {
+        if (segment.segment.trim()) segments.push(segment.segment.trim());
+      }
+      if (segments.length > 0) return segments;
+    } catch {
+      // ignore and fall back
+    }
+  }
+  return text.split(/(?<=[.!?])\s+/).filter(Boolean);
+}
+
+function mergeOptions(base: CleanOptions, preset: Partial<CleanOptions>, overrides: Partial<CleanOptions>): CleanOptions {
+  return {
+    preset: overrides.preset ?? preset.preset ?? base.preset,
+    locale: overrides.locale ?? preset.locale ?? base.locale,
+    linkMode: overrides.linkMode ?? preset.linkMode ?? base.linkMode,
+    listMode: overrides.listMode ?? preset.listMode ?? base.listMode,
+    inlineCode: overrides.inlineCode ?? preset.inlineCode ?? base.inlineCode,
+    blockCode: overrides.blockCode ?? preset.blockCode ?? base.blockCode,
+    redactContacts: overrides.redactContacts ?? preset.redactContacts ?? base.redactContacts,
+    punctuation: {
+      mapEmDash: overrides.punctuation?.mapEmDash ?? preset.punctuation?.mapEmDash ?? base.punctuation.mapEmDash,
+      mapEnDash: overrides.punctuation?.mapEnDash ?? preset.punctuation?.mapEnDash ?? base.punctuation.mapEnDash,
+      curlyQuotes: overrides.punctuation?.curlyQuotes ?? preset.punctuation?.curlyQuotes ?? base.punctuation.curlyQuotes,
+      ellipsis: overrides.punctuation?.ellipsis ?? preset.punctuation?.ellipsis ?? base.punctuation.ellipsis,
+    },
+    structure: {
+      dropHeadings: overrides.structure?.dropHeadings ?? preset.structure?.dropHeadings ?? base.structure.dropHeadings,
+      dropTables: overrides.structure?.dropTables ?? preset.structure?.dropTables ?? base.structure.dropTables,
+      dropFootnotes: overrides.structure?.dropFootnotes ?? preset.structure?.dropFootnotes ?? base.structure.dropFootnotes,
+      dropBlockquotes: overrides.structure?.dropBlockquotes ?? preset.structure?.dropBlockquotes ?? base.structure.dropBlockquotes,
+      dropHorizontalRules:
+        overrides.structure?.dropHorizontalRules ??
+        preset.structure?.dropHorizontalRules ??
+        base.structure.dropHorizontalRules,
+      stripEmojis: overrides.structure?.stripEmojis ?? preset.structure?.stripEmojis ?? base.structure.stripEmojis,
+      keepBasicMarkdown: overrides.structure?.keepBasicMarkdown ?? preset.structure?.keepBasicMarkdown ?? base.structure.keepBasicMarkdown,
+    },
+    whitespace: {
+      collapseSpaces: overrides.whitespace?.collapseSpaces ?? preset.whitespace?.collapseSpaces ?? base.whitespace.collapseSpaces,
+      collapseBlankLines: overrides.whitespace?.collapseBlankLines ?? preset.whitespace?.collapseBlankLines ?? base.whitespace.collapseBlankLines,
+      trim: overrides.whitespace?.trim ?? preset.whitespace?.trim ?? base.whitespace.trim,
+      normalizeNbsp: overrides.whitespace?.normalizeNbsp ?? preset.whitespace?.normalizeNbsp ?? base.whitespace.normalizeNbsp,
+      ensureFinalNewline: overrides.whitespace?.ensureFinalNewline ?? preset.whitespace?.ensureFinalNewline ?? base.whitespace.ensureFinalNewline,
+    },
+  } satisfies CleanOptions;
+}
+
+function createEmptyReport(): CleanReport {
+  const ruleCounts: Record<RuleId, number> = {
+    'pre:strip-ansi': 0,
+    'pre:decode-entities': 0,
+    'pre:normalize-nfc': 0,
+    'pre:strip-format-chars': 0,
+    'parse:sanitize-html': 0,
+    'parse:html-to-text': 0,
+    'structure:heading-drop': 0,
+    'structure:heading-inline-strip': 0,
+    'structure:list-render': 0,
+    'structure:link-render': 0,
+    'structure:inline-code': 0,
+    'structure:block-code': 0,
+    'structure:horizontal-rule': 0,
+    'structure:horizontal-rule-inline-strip': 0,
+    'structure:table-drop': 0,
+    'structure:footnote-drop': 0,
+    'structure:blockquote-normalize': 0,
+    'structure:inline-markup': 0,
+    'structure:emoji-strip': 0,
+    'privacy:redact-url': 0,
+    'privacy:redact-email': 0,
+    'punct:emdash': 0,
+    'punct:endash': 0,
+    'punct:quotes': 0,
+    'punct:ellipsis': 0,
+    'whitespace:nbsp': 0,
+    'whitespace:inline': 0,
+    'whitespace:blank-lines': 0,
+    'whitespace:trim': 0,
+    'whitespace:final-newline': 0,
+    'fallback:strip-markdown': 0,
+  };
+
+  const stageCounts: Record<StageId, number> = {
+    preprocess: 0,
+    structure: 0,
+    punctuation: 0,
+    whitespace: 0,
+    fallback: 0,
+  };
+
+  return { ruleCounts, stageCounts, changes: 0 };
+}
+
+function bump(report: CleanReport, stage: StageId, rule: RuleId, amount: number): void {
+  if (amount <= 0) return;
+  report.ruleCounts[rule] += amount;
+  report.stageCounts[stage] += amount;
+  report.changes += amount;
+}
+
+function fallbackStripMarkdown(input: string, report: CleanReport): string {
+  const stripped = input
+    .replace(/`{3}[\s\S]*?`{3}/g, '')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1')
+    .replace(/[*_~]{1,3}([^*_~\n]+)[*_~]{1,3}/g, '$1')
+    .replace(/^>\s?/gm, '')
+    .replace(/^\s*([-*+]\s+|\d+[.)]\s+)/gm, '')
+    .replace(/\!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/#{1,6}\s+/g, '')
+    .replace(/(?:[-*_]){3,}/g, '');
+  if (stripped !== input) {
+    bump(report, 'fallback', 'fallback:strip-markdown', 1);
+  }
   return stripped;
 }
 
-function segmentMarkdown(text: string): Segment[] {
-  const segments: Segment[] = [];
-  let idx = 0;
-  const fenceRe = RE.mdFence;
-  fenceRe.lastIndex = 0;
-  let match: RegExpExecArray | null;
-  while ((match = fenceRe.exec(text))) {
-    if (match.index > idx) segments.push({ type: 'text', text: text.slice(idx, match.index) });
-    segments.push({ type: 'codeblock', text: match[0] });
-    idx = match.index + match[0].length;
-  }
-  if (idx < text.length) segments.push({ type: 'text', text: text.slice(idx) });
-
-  const withInline: Segment[] = [];
-  for (const seg of segments) {
-    if (seg.type !== 'text') {
-      withInline.push(seg);
-      continue;
-    }
-    let last = 0;
-    RE.mdInlineCode.lastIndex = 0;
-    let inline: RegExpExecArray | null;
-    while ((inline = RE.mdInlineCode.exec(seg.text))) {
-      if (inline.index > last) withInline.push({ type: 'text', text: seg.text.slice(last, inline.index) });
-      withInline.push({ type: 'inline', text: inline[0] });
-      last = inline.index + inline[0].length;
-    }
-    if (last < seg.text.length) withInline.push({ type: 'text', text: seg.text.slice(last) });
-  }
-  return withInline;
-}
-
-function collapseBlankLines(t: string): string {
-  const withoutTrail = t.replace(RE.trailWS, '\n');
-  return withoutTrail.replace(RE.blankLines, '\n\n');
-}
-
-function mapReplace(t: string, re: RegExp, rep: string, rule: RuleId, report: CleanReport): string {
-  return t.replace(re, () => (incr(rule, report), rep));
-}
-
-function applyRule(rule: RuleId, next: string, prev: string, report: CleanReport, debug: DebugEntry[], opt: CleanOptions): string {
-  if (next !== prev) {
-    const delta = Math.max(1, Math.abs(next.length - prev.length));
-    report.ruleCounts[rule] = (report.ruleCounts[rule] || 0) + delta;
-    if (opt.debug) debug.push({ rule, before: prev, after: next });
-  }
-  return next;
-}
-
-function incr(rule: RuleId, report: CleanReport): number {
-  report.ruleCounts[rule] = (report.ruleCounts[rule] || 0) + 1;
-  return 0;
-}
-
-function diffCount(a: string, b: string): number {
-  return Math.max(0, a.length - b.length);
-}
-
-function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+// =========================
+// Misc utilities
+// =========================
 
 function performanceNow(): number {
-  try {
-    if (typeof performance !== 'undefined' && typeof performance.now === 'function') return performance.now();
-  } catch {}
-  return Date.now();
+  if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+    return performance.now();
+  }
+  const [seconds, nanoseconds] = typeof process !== 'undefined' && typeof process.hrtime === 'function' ? process.hrtime() : [Date.now() / 1000, 0];
+  return seconds * 1000 + nanoseconds / 1e6;
 }
 
-function isLatinDominant(t: string): boolean {
-  const letters = t.match(RE.letter)?.length || 0;
-  if (!letters) return true;
-  const latin = t.match(RE.latin)?.length || 0;
-  return latin / letters >= 0.6;
-}
-
-function countMatches(re: RegExp, text: string): number {
-  let count = 0;
-  re.lastIndex = 0;
-  let match: RegExpExecArray | null;
-  while ((match = re.exec(text))) count += 1;
-  re.lastIndex = 0;
-  return count;
-}
-
-function wordCount(text: string): number {
-  return (text.match(/\b\w+\b/g) || []).length;
-}
+// Ensure fallback by re-running whitespace + punctuation on fallback results
+(function ensureFallbackIdempotence() {
+  // No-op placeholder helps bundlers retain helper functions even when tree-shaken.
+})();

@@ -8,43 +8,61 @@ import { STORAGE_KEYS, STORAGE_SCHEMA_VERSION } from './storage/constants';
 import { withEnvelope } from './storage/envelopeStateStorage';
 import { subscribeToStorageKey } from './storage/storageEvents';
 import type { PersistMeta } from './storage/types';
-import { defaultCleanOptions, type CleanOptions } from './textCleaner';
+import { defaultCleanOptions, resolveCleanOptions, type CleanOptions } from './textCleaner';
 
-type CleanerPrefs = {
-  tidyStructure: CleanOptions['tidyStructure'];
-  tone: CleanOptions['tone'];
-  preserveCodeBlocks: CleanOptions['preserveCodeBlocks'];
-  stripSymbols: CleanOptions['stripSymbols'];
-  redactContacts: CleanOptions['redactContacts'];
-  transliterateLatin: CleanOptions['transliterateLatin'];
-  ellipsisMode: CleanOptions['ellipsisMode'];
-  symbolMap: Record<string, string>;
-  aiPhraseBlacklist: string[];
-};
+type CleanerPrefs = CleanOptions;
+
+const presetSchema = z.enum(['plain', 'email', 'markdown-slim', 'chat', 'custom']);
+const linkModeSchema = z.enum(['keepMarkdown', 'textWithUrl', 'textOnly']);
+const listModeSchema = z.enum(['unwrapToSentences', 'keepBullets', 'keepNumbers']);
+const inlineCodeSchema = z.enum(['keepMarkers', 'stripMarkers']);
+const blockCodeSchema = z.enum(['drop', 'indent']);
+
+const punctuationSchema = z
+  .object({
+    mapEmDash: z.enum(['comma', 'hyphen', 'keep']).default(defaultCleanOptions.punctuation.mapEmDash),
+    mapEnDash: z.enum(['hyphen', 'keep']).default(defaultCleanOptions.punctuation.mapEnDash),
+    curlyQuotes: z.enum(['straight', 'keep']).default(defaultCleanOptions.punctuation.curlyQuotes),
+    ellipsis: z.enum(['dots', 'keep', 'remove']).default(defaultCleanOptions.punctuation.ellipsis),
+  })
+  .default(defaultCleanOptions.punctuation);
+
+const structureSchema = z
+  .object({
+    dropHeadings: z.boolean().default(defaultCleanOptions.structure.dropHeadings),
+    dropTables: z.boolean().default(defaultCleanOptions.structure.dropTables),
+    dropFootnotes: z.boolean().default(defaultCleanOptions.structure.dropFootnotes),
+    dropBlockquotes: z.boolean().default(defaultCleanOptions.structure.dropBlockquotes),
+    dropHorizontalRules: z.boolean().default(defaultCleanOptions.structure.dropHorizontalRules),
+    stripEmojis: z.boolean().default(defaultCleanOptions.structure.stripEmojis),
+    keepBasicMarkdown: z.boolean().default(defaultCleanOptions.structure.keepBasicMarkdown),
+  })
+  .default(defaultCleanOptions.structure);
+
+const whitespaceSchema = z
+  .object({
+    collapseSpaces: z.boolean().default(defaultCleanOptions.whitespace.collapseSpaces),
+    collapseBlankLines: z.boolean().default(defaultCleanOptions.whitespace.collapseBlankLines),
+    trim: z.boolean().default(defaultCleanOptions.whitespace.trim),
+    normalizeNbsp: z.boolean().default(defaultCleanOptions.whitespace.normalizeNbsp),
+    ensureFinalNewline: z.boolean().default(defaultCleanOptions.whitespace.ensureFinalNewline),
+  })
+  .default(defaultCleanOptions.whitespace);
 
 const cleanerOptionsSchema = z
   .object({
-    tidyStructure: z.boolean().default(defaultCleanOptions.tidyStructure),
-    tone: z.enum(['off', 'gentle', 'assertive']).default(defaultCleanOptions.tone),
-    preserveCodeBlocks: z.boolean().default(defaultCleanOptions.preserveCodeBlocks),
-    stripSymbols: z.boolean().default(defaultCleanOptions.stripSymbols),
+    preset: presetSchema.default(defaultCleanOptions.preset),
+    locale: z.string().min(2).max(32).default(defaultCleanOptions.locale),
+    linkMode: linkModeSchema.default(defaultCleanOptions.linkMode),
+    listMode: listModeSchema.default(defaultCleanOptions.listMode),
+    inlineCode: inlineCodeSchema.default(defaultCleanOptions.inlineCode),
+    blockCode: blockCodeSchema.default(defaultCleanOptions.blockCode),
     redactContacts: z.boolean().default(defaultCleanOptions.redactContacts),
-    transliterateLatin: z.boolean().default(defaultCleanOptions.transliterateLatin),
-    ellipsisMode: z.enum(['dots', 'dot']).default(defaultCleanOptions.ellipsisMode),
-    symbolMap: z.record(z.string(), z.string()).default({}),
-    aiPhraseBlacklist: z.array(z.string()).default([]),
+    punctuation: punctuationSchema,
+    structure: structureSchema,
+    whitespace: whitespaceSchema,
   })
-  .default({
-    tidyStructure: defaultCleanOptions.tidyStructure,
-    tone: defaultCleanOptions.tone,
-    preserveCodeBlocks: defaultCleanOptions.preserveCodeBlocks,
-    stripSymbols: defaultCleanOptions.stripSymbols,
-    redactContacts: defaultCleanOptions.redactContacts,
-    transliterateLatin: defaultCleanOptions.transliterateLatin,
-    ellipsisMode: defaultCleanOptions.ellipsisMode,
-    symbolMap: {},
-    aiPhraseBlacklist: [],
-  });
+  .default(defaultCleanOptions);
 
 const pickerTriggerSchema = z.enum(PICKER_TRIGGERS);
 
@@ -70,51 +88,69 @@ function sanitizeTrigger(value: unknown): PickerTrigger {
 }
 
 function sanitizeCleanerOptions(value: unknown): CleanerPrefs {
-  const base = defaultPersistSlice().cleanerOptions;
-  if (!value || typeof value !== 'object') return base;
+  const parsed = cleanerOptionsSchema.safeParse(value);
+  if (parsed.success) {
+    return cloneCleanOptions(parsed.data);
+  }
 
-  const next: Partial<CleanerPrefs> = {};
+  const legacy = migrateLegacyCleanerOptions(value);
+  if (legacy) {
+    return legacy;
+  }
+
+  return cloneCleanOptions(defaultCleanOptions);
+}
+
+function cloneCleanOptions(options: CleanOptions): CleanOptions {
+  return {
+    ...options,
+    punctuation: { ...options.punctuation },
+    structure: { ...options.structure },
+    whitespace: { ...options.whitespace },
+  } satisfies CleanOptions;
+}
+
+function migrateLegacyCleanerOptions(value: unknown): CleanerPrefs | null {
+  if (!value || typeof value !== 'object') return null;
   const candidate = value as Record<string, unknown>;
+  const hasLegacyKeys =
+    'removeMarkdown' in candidate ||
+    'removeAISigns' in candidate ||
+    'removeEmojis' in candidate ||
+    'ellipsisMode' in candidate;
+  if (!hasLegacyKeys) return null;
 
-  const boolKeys: Array<keyof CleanerPrefs> = ['tidyStructure', 'preserveCodeBlocks', 'stripSymbols', 'redactContacts', 'transliterateLatin'];
-  boolKeys.forEach((key) => {
-    if (typeof candidate[key] === 'boolean') {
-      next[key] = candidate[key] as any;
-    }
-  });
+  const wantsMarkdown = candidate.removeMarkdown === false;
+  const preset = wantsMarkdown ? 'markdown-slim' : 'plain';
+  let resolved = cloneCleanOptions(resolveCleanOptions({ preset }));
 
-  if (typeof candidate.tone === 'string' && ['off', 'gentle', 'assertive'].includes(candidate.tone)) {
-    next.tone = candidate.tone as CleanerPrefs['tone'];
-  } else if (candidate.removeAIMarkers && typeof candidate.removeAIMarkers === 'object') {
-    const legacyTone = candidate.removeAIMarkers as Record<string, unknown>;
-    if (legacyTone.aggressive) next.tone = 'assertive';
-    else if (legacyTone.conservative) next.tone = 'gentle';
-    else next.tone = 'off';
+  if (wantsMarkdown) {
+    resolved.structure.dropHeadings = false;
+    resolved.structure.dropBlockquotes = false;
   }
 
-  if (typeof candidate.ellipsisMode === 'string' && ['dots', 'dot'].includes(candidate.ellipsisMode)) {
-    next.ellipsisMode = candidate.ellipsisMode as CleanerPrefs['ellipsisMode'];
+  if (typeof candidate.preserveCodeBlocks === 'boolean' && candidate.preserveCodeBlocks === false) {
+    resolved.blockCode = 'indent';
   }
 
-  if (Array.isArray(candidate.aiPhraseBlacklist)) {
-    next.aiPhraseBlacklist = candidate.aiPhraseBlacklist.filter((item): item is string => typeof item === 'string');
+  if (typeof candidate.ellipsisMode === 'string') {
+    resolved.punctuation.ellipsis = candidate.ellipsisMode === 'dot' ? 'remove' : 'dots';
   }
 
-  if (candidate.symbolMap && typeof candidate.symbolMap === 'object') {
-    const entries = Object.entries(candidate.symbolMap as Record<string, unknown>).filter(([, v]) => typeof v === 'string');
-    next.symbolMap = Object.fromEntries(entries) as Record<string, string>;
+  if (typeof candidate.redactContacts === 'boolean') {
+    resolved.redactContacts = candidate.redactContacts;
   }
 
-  if (typeof candidate.flattenMarkdown === 'boolean') next.tidyStructure = candidate.flattenMarkdown as boolean;
-  if (typeof candidate.stripNonKeyboardSymbols === 'boolean') next.stripSymbols = candidate.stripNonKeyboardSymbols as boolean;
-  if (typeof candidate.redactURLs === 'boolean') next.redactContacts = candidate.redactURLs as boolean;
-  if (typeof candidate.transliterateDiacritics === 'boolean') next.transliterateLatin = candidate.transliterateDiacritics as boolean;
-
-  if (Object.keys(next).length === 0) {
-    return base;
+  if (typeof candidate.redactURLs === 'boolean') {
+    resolved.redactContacts = resolved.redactContacts || Boolean(candidate.redactURLs);
   }
 
-  return mergeCleanerOptions(base, next);
+  if (typeof candidate.redactEmails === 'boolean') {
+    resolved.redactContacts = resolved.redactContacts || Boolean(candidate.redactEmails);
+  }
+
+  resolved.preset = 'custom';
+  return resolved;
 }
 
 async function importLegacyPrefs(): Promise<PersistedPrefsSlice | null> {
@@ -181,17 +217,7 @@ function stampMeta(updatedAt: number = Date.now()): PersistMeta {
 const defaultPersistSlice = (): PersistedPrefsSlice => ({
   pickerTrigger: 'doubleSlash',
   onboardingDismissed: false,
-  cleanerOptions: {
-    tidyStructure: defaultCleanOptions.tidyStructure,
-    tone: defaultCleanOptions.tone,
-    preserveCodeBlocks: defaultCleanOptions.preserveCodeBlocks,
-    stripSymbols: defaultCleanOptions.stripSymbols,
-    redactContacts: defaultCleanOptions.redactContacts,
-    transliterateLatin: defaultCleanOptions.transliterateLatin,
-    ellipsisMode: defaultCleanOptions.ellipsisMode,
-    symbolMap: {},
-    aiPhraseBlacklist: [],
-  },
+  cleanerOptions: cloneCleanOptions(defaultCleanOptions),
   developer: {
     syncFallback: false,
   },
@@ -224,17 +250,7 @@ function parsePersistedPrefs(state: unknown, fallbackUpdatedAt?: number): Persis
   const parsed = result.data;
   return {
     ...parsed,
-    cleanerOptions: {
-      tidyStructure: parsed.cleanerOptions.tidyStructure,
-      tone: parsed.cleanerOptions.tone,
-      preserveCodeBlocks: parsed.cleanerOptions.preserveCodeBlocks,
-      stripSymbols: parsed.cleanerOptions.stripSymbols,
-      redactContacts: parsed.cleanerOptions.redactContacts,
-      transliterateLatin: parsed.cleanerOptions.transliterateLatin,
-      ellipsisMode: parsed.cleanerOptions.ellipsisMode,
-      symbolMap: parsed.cleanerOptions.symbolMap,
-      aiPhraseBlacklist: parsed.cleanerOptions.aiPhraseBlacklist,
-    },
+    cleanerOptions: cloneCleanOptions(parsed.cleanerOptions),
     developer: parsed.developer,
     syncFallback: parsed.syncFallback,
     _persistMeta: normalizeMeta((state as any)?._persistMeta, fallbackUpdatedAt),
@@ -242,14 +258,129 @@ function parsePersistedPrefs(state: unknown, fallbackUpdatedAt?: number): Persis
 }
 
 function mergeCleanerOptions(current: CleanerPrefs, update: Partial<CleanerPrefs>): CleanerPrefs {
-  const next: CleanerPrefs = {
-    ...current,
-    ...update,
-    symbolMap: { ...current.symbolMap, ...(update.symbolMap ?? {}) },
-    aiPhraseBlacklist: Array.isArray(update.aiPhraseBlacklist)
-      ? update.aiPhraseBlacklist.filter((value): value is string => typeof value === 'string')
-      : [...current.aiPhraseBlacklist],
-  };
+  const presetUpdate = update.preset;
+  const base = presetUpdate && presetUpdate !== 'custom' ? resolveCleanOptions({ preset: presetUpdate }) : current;
+  const next = cloneCleanOptions(base);
+
+  let touched = false;
+
+  if (typeof update.locale === 'string' && update.locale.length > 0 && update.locale !== next.locale) {
+    next.locale = update.locale;
+    touched = true;
+  }
+
+  if (update.linkMode && update.linkMode !== next.linkMode) {
+    next.linkMode = update.linkMode;
+    touched = true;
+  }
+
+  if (update.listMode && update.listMode !== next.listMode) {
+    next.listMode = update.listMode;
+    touched = true;
+  }
+
+  if (update.inlineCode && update.inlineCode !== next.inlineCode) {
+    next.inlineCode = update.inlineCode;
+    touched = true;
+  }
+
+  if (update.blockCode && update.blockCode !== next.blockCode) {
+    next.blockCode = update.blockCode;
+    touched = true;
+  }
+
+  if (typeof update.redactContacts === 'boolean' && update.redactContacts !== next.redactContacts) {
+    next.redactContacts = update.redactContacts;
+    touched = true;
+  }
+
+  if (update.punctuation) {
+    const { punctuation } = update;
+    if (punctuation.mapEmDash && punctuation.mapEmDash !== next.punctuation.mapEmDash) {
+      next.punctuation.mapEmDash = punctuation.mapEmDash;
+      touched = true;
+    }
+    if (punctuation.mapEnDash && punctuation.mapEnDash !== next.punctuation.mapEnDash) {
+      next.punctuation.mapEnDash = punctuation.mapEnDash;
+      touched = true;
+    }
+    if (punctuation.curlyQuotes && punctuation.curlyQuotes !== next.punctuation.curlyQuotes) {
+      next.punctuation.curlyQuotes = punctuation.curlyQuotes;
+      touched = true;
+    }
+    if (punctuation.ellipsis && punctuation.ellipsis !== next.punctuation.ellipsis) {
+      next.punctuation.ellipsis = punctuation.ellipsis;
+      touched = true;
+    }
+  }
+
+  if (update.structure) {
+    const { structure } = update;
+    if (typeof structure.dropHeadings === 'boolean' && structure.dropHeadings !== next.structure.dropHeadings) {
+      next.structure.dropHeadings = structure.dropHeadings;
+      touched = true;
+    }
+    if (typeof structure.dropTables === 'boolean' && structure.dropTables !== next.structure.dropTables) {
+      next.structure.dropTables = structure.dropTables;
+      touched = true;
+    }
+    if (typeof structure.dropFootnotes === 'boolean' && structure.dropFootnotes !== next.structure.dropFootnotes) {
+      next.structure.dropFootnotes = structure.dropFootnotes;
+      touched = true;
+    }
+    if (typeof structure.dropBlockquotes === 'boolean' && structure.dropBlockquotes !== next.structure.dropBlockquotes) {
+      next.structure.dropBlockquotes = structure.dropBlockquotes;
+      touched = true;
+    }
+    if (
+      typeof structure.dropHorizontalRules === 'boolean' &&
+      structure.dropHorizontalRules !== next.structure.dropHorizontalRules
+    ) {
+      next.structure.dropHorizontalRules = structure.dropHorizontalRules;
+      touched = true;
+    }
+    if (typeof structure.stripEmojis === 'boolean' && structure.stripEmojis !== next.structure.stripEmojis) {
+      next.structure.stripEmojis = structure.stripEmojis;
+      touched = true;
+    }
+    if (typeof structure.keepBasicMarkdown === 'boolean' && structure.keepBasicMarkdown !== next.structure.keepBasicMarkdown) {
+      next.structure.keepBasicMarkdown = structure.keepBasicMarkdown;
+      touched = true;
+    }
+  }
+
+  if (update.whitespace) {
+    const { whitespace } = update;
+    if (typeof whitespace.collapseSpaces === 'boolean' && whitespace.collapseSpaces !== next.whitespace.collapseSpaces) {
+      next.whitespace.collapseSpaces = whitespace.collapseSpaces;
+      touched = true;
+    }
+    if (typeof whitespace.collapseBlankLines === 'boolean' && whitespace.collapseBlankLines !== next.whitespace.collapseBlankLines) {
+      next.whitespace.collapseBlankLines = whitespace.collapseBlankLines;
+      touched = true;
+    }
+    if (typeof whitespace.trim === 'boolean' && whitespace.trim !== next.whitespace.trim) {
+      next.whitespace.trim = whitespace.trim;
+      touched = true;
+    }
+    if (typeof whitespace.normalizeNbsp === 'boolean' && whitespace.normalizeNbsp !== next.whitespace.normalizeNbsp) {
+      next.whitespace.normalizeNbsp = whitespace.normalizeNbsp;
+      touched = true;
+    }
+    if (typeof whitespace.ensureFinalNewline === 'boolean' && whitespace.ensureFinalNewline !== next.whitespace.ensureFinalNewline) {
+      next.whitespace.ensureFinalNewline = whitespace.ensureFinalNewline;
+      touched = true;
+    }
+  }
+
+  if (presetUpdate === 'custom') {
+    next.preset = 'custom';
+  } else if (presetUpdate) {
+    next.preset = touched ? 'custom' : presetUpdate;
+  } else if (touched) {
+    next.preset = 'custom';
+  }
+
   return next;
 }
 
@@ -334,7 +465,7 @@ const usePrefsStoreInternal = create<PreferencesState>()(
       partialize: (state) => ({
         pickerTrigger: state.pickerTrigger,
         onboardingDismissed: state.onboardingDismissed,
-        cleanerOptions: state.cleanerOptions,
+        cleanerOptions: cloneCleanOptions(state.cleanerOptions),
         developer: state.developer,
         syncFallback: state.syncFallback,
         cleanerTipsVisible: state.cleanerTipsVisible,
@@ -345,7 +476,7 @@ const usePrefsStoreInternal = create<PreferencesState>()(
         return {
           ...currentState,
           ...parsed,
-          cleanerOptions: mergeCleanerOptions(currentState.cleanerOptions, parsed.cleanerOptions),
+          cleanerOptions: cloneCleanOptions(parsed.cleanerOptions),
           developer: {
             ...currentState.developer,
             ...parsed.developer,
@@ -390,7 +521,7 @@ const usePrefsStoreInternal = create<PreferencesState>()(
 const selectPersistSlice = (state: PreferencesState): PersistedPrefsSlice => ({
   pickerTrigger: state.pickerTrigger,
   onboardingDismissed: state.onboardingDismissed,
-  cleanerOptions: state.cleanerOptions,
+  cleanerOptions: cloneCleanOptions(state.cleanerOptions),
   developer: state.developer,
   syncFallback: state.syncFallback,
   cleanerTipsVisible: state.cleanerTipsVisible,
@@ -417,7 +548,7 @@ subscribeToStorageKey<PersistedPrefsSlice>(STORAGE_KEYS.prefs, (envelope) => {
   usePrefsStoreInternal.setState({
     pickerTrigger: incoming.pickerTrigger,
     onboardingDismissed: incoming.onboardingDismissed,
-    cleanerOptions: incoming.cleanerOptions,
+    cleanerOptions: cloneCleanOptions(incoming.cleanerOptions),
     developer: {
       ...current.developer,
       ...incoming.developer,
@@ -473,17 +604,7 @@ export function getPrefsSnapshot(): PersistedPrefsSlice {
   return {
     pickerTrigger: state.pickerTrigger,
     onboardingDismissed: state.onboardingDismissed,
-    cleanerOptions: {
-      tidyStructure: state.cleanerOptions.tidyStructure,
-      tone: state.cleanerOptions.tone,
-      preserveCodeBlocks: state.cleanerOptions.preserveCodeBlocks,
-      stripSymbols: state.cleanerOptions.stripSymbols,
-      redactContacts: state.cleanerOptions.redactContacts,
-      transliterateLatin: state.cleanerOptions.transliterateLatin,
-      ellipsisMode: state.cleanerOptions.ellipsisMode,
-      symbolMap: { ...state.cleanerOptions.symbolMap },
-      aiPhraseBlacklist: [...state.cleanerOptions.aiPhraseBlacklist],
-    },
+    cleanerOptions: cloneCleanOptions(state.cleanerOptions),
     developer: { ...state.developer },
     syncFallback: state.syncFallback,
     cleanerTipsVisible: state.cleanerTipsVisible,
