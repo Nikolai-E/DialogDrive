@@ -80,7 +80,8 @@ test.describe('Draft restore and prefs persistence', () => {
       }
     }
     
-    // Allow async storage write to settle
+    // Allow async storage write to settle before reload
+    // Using timeout here is intentional - we need to ensure storage.set() completes
     await page.waitForTimeout(400);
 
     // Reload popup and ensure hidden remains hidden

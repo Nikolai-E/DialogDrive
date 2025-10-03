@@ -28,7 +28,7 @@ test.describe('Filter dropdown toggle behavior', () => {
 
     // First click - should open the menu
     await sortButton.click();
-    await page.waitForTimeout(300);
+    await expect(sortMenu).toBeVisible({ timeout: 1000 });
 
     const afterFirstClick = await sortMenu.isVisible();
     console.log(`After first click: menu ${afterFirstClick ? 'visible' : 'hidden'}`);
@@ -36,7 +36,7 @@ test.describe('Filter dropdown toggle behavior', () => {
 
     // Second click on same button - should close the menu
     await sortButton.click();
-    await page.waitForTimeout(300);
+    await expect(sortMenu).not.toBeVisible({ timeout: 1000 });
 
     const afterSecondClick = await sortMenu.isVisible().catch(() => false);
     console.log(`After second click: menu ${afterSecondClick ? 'visible' : 'hidden'}`);
@@ -56,7 +56,7 @@ test.describe('Filter dropdown toggle behavior', () => {
 
     // First click - open
     await workspaceButton.click();
-    await page.waitForTimeout(300);
+    await expect(workspaceMenu).toBeVisible({ timeout: 1000 });
 
     const afterFirstClick = await workspaceMenu.isVisible();
     console.log(`After first click: workspace menu ${afterFirstClick ? 'visible' : 'hidden'}`);
@@ -64,7 +64,7 @@ test.describe('Filter dropdown toggle behavior', () => {
 
     // Second click - close
     await workspaceButton.click();
-    await page.waitForTimeout(300);
+    await expect(workspaceMenu).not.toBeVisible({ timeout: 1000 });
 
     const afterSecondClick = await workspaceMenu.isVisible().catch(() => false);
     console.log(`After second click: workspace menu ${afterSecondClick ? 'visible' : 'hidden'}`);
@@ -85,7 +85,7 @@ test.describe('Filter dropdown toggle behavior', () => {
 
     // First click - open
     await toolsButton.click();
-    await page.waitForTimeout(300);
+    await expect(toolsMenu).toBeVisible({ timeout: 1000 });
 
     const afterFirstClick = await toolsMenu.isVisible();
     console.log(`After first click: tools menu ${afterFirstClick ? 'visible' : 'hidden'}`);
@@ -93,7 +93,7 @@ test.describe('Filter dropdown toggle behavior', () => {
 
     // Second click - close
     await toolsButton.click();
-    await page.waitForTimeout(300);
+    await expect(toolsMenu).not.toBeVisible({ timeout: 1000 });
 
     const afterSecondClick = await toolsMenu.isVisible().catch(() => false);
     console.log(`After second click: tools menu ${afterSecondClick ? 'visible' : 'hidden'}`);

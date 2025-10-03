@@ -164,7 +164,8 @@ test.describe('Text Cleaner - Comprehensive Tests', () => {
       await page.getByTestId('option-em-dash-keep').click();
       
       await rawInput.fill('Test \u2014 dash');
-      await page.waitForTimeout(100); // Wait for reactive update
+      // Wait for reactive update by checking output value changes
+      await expect(cleanedOutput).toHaveValue(/Test.*dash/, { timeout: 2000 });
       let cleaned = await cleanedOutput.inputValue();
       expect(cleaned).toContain('\u2014');
 
@@ -172,7 +173,8 @@ test.describe('Text Cleaner - Comprehensive Tests', () => {
       await page.getByTestId('option-ellipsis-remove').click();
       
       await rawInput.fill('Test\u2026');
-      await page.waitForTimeout(100);
+      // Wait for reactive update
+      await expect(cleanedOutput).toHaveValue(/Test/, { timeout: 2000 });
       cleaned = await cleanedOutput.inputValue();
       expect(cleaned.trim()).toBe('Test');
     });
@@ -320,7 +322,8 @@ test.describe('Text Cleaner - Comprehensive Tests', () => {
       }
 
       await rawInput.fill('\u2013 Test \u2014 item with https://example.com');
-      await page.waitForTimeout(100);
+      // Wait for reactive update
+      await expect(cleanedOutput).toHaveValue(/Test.*item/, { timeout: 2000 });
       let cleaned = await cleanedOutput.inputValue();
 
       // All features should be off
@@ -330,7 +333,8 @@ test.describe('Text Cleaner - Comprehensive Tests', () => {
 
       // Enable only anonymize
       await anonymize.click();
-      await page.waitForTimeout(100);
+      // Wait for reactive update after clicking
+      await expect(cleanedOutput).toHaveValue(/<URL>/, { timeout: 2000 });
       cleaned = await cleanedOutput.inputValue();
 
       expect(cleaned).toContain('\u2013'); // Markdown still preserved
@@ -444,7 +448,8 @@ test.describe('Text Cleaner - Comprehensive Tests', () => {
         .filter({ hasText: /^Code blocks/ })
         .getByRole('button', { name: /keep indented/i });
       await keepIndented.click();
-      await page.waitForTimeout(100);
+      // Wait for reactive update after mode change
+      await expect(cleanedOutput).toHaveValue(/code here/, { timeout: 2000 });
 
       cleaned = await cleanedOutput.inputValue();
       // Code should be present and indented (has spaces before it)
