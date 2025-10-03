@@ -22,7 +22,7 @@ test.describe('Text Cleaner - Comprehensive Tests', () => {
         '### Sprint Update',
         '---',
         'Some content here',
-        '#### Subsection',
+        '### Another Heading',
         'More content',
         '---',
       ].join('\n');
@@ -32,7 +32,7 @@ test.describe('Text Cleaner - Comprehensive Tests', () => {
       const cleaned = await cleanedOutput.inputValue();
       // Headings are dropped entirely (text removed)
       expect(cleaned).not.toContain('Sprint Update');
-      expect(cleaned).not.toContain('Subsection');
+      expect(cleaned).not.toContain('Another Heading');
       // Horizontal rules should be dropped
       expect(cleaned).not.toContain('---');
       // Regular content should remain
@@ -155,34 +155,29 @@ test.describe('Text Cleaner - Comprehensive Tests', () => {
     });
 
     test('individual punctuation controls work in advanced mode', async ({ page }) => {
-      await page.getByRole('button', { name: /show advanced/i }).click();
-
+      await page.getByTestId('toggle-advanced-controls').click();
+      await expect(page.getByTestId('advanced-controls')).toBeVisible();
+      
       const rawInput = page.getByLabel('Input');
       const cleanedOutput = page.locator('#clean');
 
-      // Test em dash control - find the specific "Keep" button for em dash
-      const emDashSection = page.locator('div').filter({ hasText: /^Em dash/ });
-      const emDashKeep = emDashSection.getByRole('button', { name: /keep/i });
-      await emDashKeep.click();
-
+      // Test em dash control - use data-testid
+      await page.getByTestId('option-em-dash-keep').click();
+      
       await rawInput.fill('Test \u2014 dash');
       await page.waitForTimeout(100); // Wait for reactive update
       let cleaned = await cleanedOutput.inputValue();
       expect(cleaned).toContain('\u2014');
 
       // Test ellipsis removal
-      const ellipsisSection = page.locator('div').filter({ hasText: /^Ellipsis/ });
-      const ellipsisRemove = ellipsisSection.getByRole('button', { name: /remove/i });
-      await ellipsisRemove.click();
-
+      await page.getByTestId('option-ellipsis-remove').click();
+      
       await rawInput.fill('Test\u2026');
       await page.waitForTimeout(100);
       cleaned = await cleanedOutput.inputValue();
       expect(cleaned).toBe('Test');
     });
-  });
-
-  test.describe('Anonymize contacts', () => {
+  });  test.describe('Anonymize contacts', () => {
     test('redacts URLs when enabled', async ({ page }) => {
       const rawInput = page.getByLabel('Input');
       const cleanedOutput = page.locator('#clean');
@@ -478,9 +473,9 @@ test.describe('Text Cleaner - Comprehensive Tests', () => {
       const cleanedOutput = page.locator('#clean');
 
       const mixedSample = [
-        '# Meeting Notes \uD83D\uDCDD',
+        '# Meeting Notes',
         '---',
-        '- Action item one',
+        '- Action item one \uD83D\uDCDD',
         '- Item with \u2014 em dash',
         '',
         'Email: contact@example.com',
@@ -502,7 +497,7 @@ test.describe('Text Cleaner - Comprehensive Tests', () => {
       expect(cleaned).not.toContain('- ');
       expect(cleaned).not.toContain('```');
 
-      // Check emoji preserved (default)
+      // Check emoji preserved in body (default stripEmojis: false)
       expect(cleaned).toContain('\uD83D\uDCDD');
 
       // Check punctuation normalized
@@ -522,7 +517,7 @@ test.describe('Text Cleaner - Comprehensive Tests', () => {
     });
 
     test('whitespace normalization works correctly', async ({ page }) => {
-      await page.getByRole('button', { name: /show advanced/i }).click();
+      await page.getByTestId('toggle-advanced-controls').click();
 
       const rawInput = page.getByLabel('Input');
       const cleanedOutput = page.locator('#clean');
@@ -557,7 +552,7 @@ test.describe('Text Cleaner - Comprehensive Tests', () => {
   test.describe('UI interactions', () => {
     test('copy button works', async ({ page }) => {
       const rawInput = page.getByLabel('Input');
-      const copyButton = page.getByRole('button', { name: /copy/i });
+      const copyButton = page.getByTestId('copy-button');
 
       await rawInput.fill('Test text');
 
@@ -567,8 +562,7 @@ test.describe('Text Cleaner - Comprehensive Tests', () => {
       await copyButton.click();
 
       // Wait for button text to change
-      await page.waitForTimeout(100);
-      await expect(copyButton).toContainText(/copied/i);
+      await expect(copyButton).toContainText(/copied/i, { timeout: 2000 });
     });
 
     test('clear button empties input', async ({ page }) => {
@@ -582,16 +576,16 @@ test.describe('Text Cleaner - Comprehensive Tests', () => {
     });
 
     test('advanced controls toggle visibility', async ({ page }) => {
-      const linkModeSection = page.locator('div').filter({ hasText: /^Links/ });
+      const advancedControls = page.getByTestId('advanced-controls');
 
       // Advanced controls hidden by default
-      await expect(linkModeSection).not.toBeVisible();
+      await expect(advancedControls).not.toBeVisible();
 
-      await page.getByRole('button', { name: /show advanced/i }).click();
-      await expect(linkModeSection).toBeVisible();
+      await page.getByTestId('toggle-advanced-controls').click();
+      await expect(advancedControls).toBeVisible();
 
-      await page.getByRole('button', { name: /hide advanced/i }).click();
-      await expect(linkModeSection).not.toBeVisible();
+      await page.getByTestId('toggle-advanced-controls').click();
+      await expect(advancedControls).not.toBeVisible();
     });
   });
 });

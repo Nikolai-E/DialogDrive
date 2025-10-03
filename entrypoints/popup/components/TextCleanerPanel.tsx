@@ -150,13 +150,14 @@ export const TextCleanerPanel: React.FC = () => {
             variant="ghost"
             className="h-6 px-2 text-[10px]"
             onClick={() => setShowAdvanced((prev) => !prev)}
+            data-testid="toggle-advanced-controls"
           >
             {showAdvanced ? 'Hide advanced' : 'Show advanced'}
           </Button>
         </div>
 
         {showAdvanced && (
-          <div className="mt-2 space-y-2 rounded-md border border-muted bg-muted/10 p-2">
+          <div className="mt-2 space-y-2 rounded-md border border-muted bg-muted/10 p-2" data-testid="advanced-controls">
             <SectionHeading label="Links & Lists" />
             <div className="space-y-1.5">
               <OptionGroup
@@ -330,6 +331,7 @@ export const TextCleanerPanel: React.FC = () => {
             onChange={(e) => setRaw(e.target.value)}
             placeholder="Paste text here"
             className="flex-1 min-h-[120px] resize-y text-[12px] bg-transparent border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-3 py-2"
+            data-testid="text-cleaner-input"
           />
         </div>
         <div className="flex flex-col min-h-0">
@@ -348,6 +350,7 @@ export const TextCleanerPanel: React.FC = () => {
                 className="bg-foreground text-white hover:opacity-90"
                 onClick={() => copyToClipboard(result.text)}
                 disabled={!result.text}
+                data-testid="copy-button"
               >
                 <ClipboardCopy className="h-3.5 w-3.5" /> {isCopied ? 'Copied' : 'Copy'}
               </Button>
@@ -465,7 +468,7 @@ const OptionGroup: React.FC<{
   options: Array<{ value: string; label: string }>;
   onChange: (value: string) => void;
 }> = ({ label, value, options, onChange }) => (
-  <div className="flex items-center justify-between gap-2">
+  <div className="flex items-center justify-between gap-2" data-testid={`option-group-${label.toLowerCase().replace(/\s+/g, '-')}`}>
     <span className="text-[11px] font-medium text-foreground leading-tight">{label}</span>
     <div className="inline-flex rounded-md border border-input overflow-hidden">
       {options.map((option) => (
@@ -475,6 +478,7 @@ const OptionGroup: React.FC<{
           variant={option.value === value ? 'secondary' : 'outline'}
           className="h-6 px-3 text-[11px]"
           onClick={() => onChange(option.value)}
+          data-testid={`option-${label.toLowerCase().replace(/\s+/g, '-')}-${option.value}`}
         >
           {option.label}
         </Button>
@@ -521,6 +525,7 @@ const DescriptionBlock: React.FC<{
       <button
         className="text-[11px] font-medium text-foreground underline underline-offset-2 hover:text-foreground/80"
         onClick={onToggleDescription}
+        data-testid="show-description-button"
       >
         Why clean text?
       </button>
