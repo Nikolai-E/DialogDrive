@@ -7,6 +7,7 @@ import type { AppStats, SortOption, ViewType } from '../types/app';
 import type { AddChatBookmark, ChatBookmark, WorkspaceItem } from '../types/chat';
 import type { Prompt } from '../types/prompt';
 import { chatStorage } from './chatStorage';
+import { logSilentError } from './errorHandler';
 import { logger } from './logger';
 import { secureStorage } from './secureStorageV2';
 import { promptStorage } from './storage';
@@ -775,7 +776,9 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
           const updated = { ...c, workspace: 'General' };
           try {
             await chatStorage.update(updated);
-          } catch {}
+          } catch (error) {
+            logSilentError('unifiedStore.deleteWorkspace.chatUpdate', error);
+          }
           updatedChats.push(updated);
         } else {
           updatedChats.push(c);
@@ -823,7 +826,9 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
           const updated = { ...c, tags: c.tags.filter((t) => t !== tag) };
           try {
             await chatStorage.update(updated);
-          } catch {}
+          } catch (error) {
+            logSilentError('unifiedStore.deleteTag.chatUpdate', error);
+          }
           updatedChats.push(updated);
         } else {
           updatedChats.push(c);

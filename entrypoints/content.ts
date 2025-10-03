@@ -139,10 +139,14 @@ function setupPromptPicker() {
     const g: any = globalThis as any;
     try {
       if (g?.browser?.runtime?.id) return g.browser;
-    } catch {}
+    } catch {
+      // TODO: Add structured error logging using logSilentError() - intentional silent fail for API detection
+    }
     try {
       if (g?.chrome?.runtime?.id) return g.chrome;
-    } catch {}
+    } catch {
+      // TODO: Add structured error logging using logSilentError() - intentional silent fail for API detection
+    }
     return null;
   }
 

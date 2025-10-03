@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/aler
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
+import { logSilentError } from '../../../lib/errorHandler';
 import { Label } from '../../../components/ui/label';
 import { Switch } from '../../../components/ui/switch';
 import { useDraftStore, type ChatDraftData, type DraftRecord } from '../../../lib/draftStore';
@@ -143,7 +144,9 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
       if (host.includes('gemini') || host.includes('google')) return 'gemini';
       if (host.includes('claude') || host.includes('anthropic')) return 'claude';
       if (host.includes('deepseek')) return 'deepseek';
-    } catch {}
+    } catch (error) {
+      logSilentError('ChatForm.detectPlatform', error);
+    }
     return 'chatgpt';
   };
 
@@ -168,7 +171,8 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
     let normalizedUrl: string;
     try {
       normalizedUrl = new URL(urlInput).toString();
-    } catch {
+    } catch (error) {
+      logSilentError('ChatForm.urlNormalization', error);
       toast.error('Please enter a valid URL (include https://)');
       return;
     }

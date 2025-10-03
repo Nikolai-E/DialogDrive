@@ -16,6 +16,7 @@ import { useDraftStore, type DraftRecord, type PromptDraftData } from '../../../
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { useAutosaveDraft } from '../../../lib/useAutosaveDraft';
 import { formatRelativeTime } from '../../../lib/utils';
+import { logSilentError } from '../../../lib/errorHandler';
 import type { Prompt } from '../../../types/prompt';
 import { sanitizeTagLabel } from '../../floating-save/tagHelpers';
 import TagSelect from './TagSelect';
@@ -451,7 +452,9 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
                   if (!workspaces.includes(ws)) {
                     try {
                       addWorkspace(ws);
-                    } catch {}
+                    } catch (error) {
+                      logSilentError('PromptForm.addWorkspace', error);
+                    }
                   }
                   // Select it in the form either way
                   setWorkspace(ws);
