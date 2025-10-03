@@ -132,7 +132,14 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
         <div className="flex items-center gap-3 min-w-0">
           <div className="min-w-0 flex-1">
             <div className="text-xs font-medium text-foreground truncate">{prompt.title}</div>
-            <div className="text-[11px] text-muted-foreground truncate">{prompt.workspace || 'General'}</div>
+            <div className="text-[11px] text-muted-foreground truncate">
+              {prompt.workspace || 'General'}
+              {prompt.tags && prompt.tags.length > 0 && (
+                <span className="ml-1.5 text-muted-foreground/70">
+                  • {prompt.tags.slice(0, 3).join(', ')}
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {/* Action buttons */}
@@ -143,7 +150,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
               className={`${prompt.isPinned ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200' : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'} p-1.5 rounded-md transition-all duration-150`}
               title={prompt.isPinned ? 'Unpin prompt' : 'Pin prompt'}
             >
-              <Pin className="w-3.5 h-3.5" />
+              <Pin className="w-4 h-4" />
             </button>
 
             <button
@@ -153,7 +160,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
               className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-150"
               title="Edit prompt"
             >
-              <Edit2 className="w-3.5 h-3.5" />
+              <Edit2 className="w-4 h-4" />
             </button>
 
             <button
@@ -163,7 +170,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
               className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all duration-150"
               title="Delete prompt"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         </div>

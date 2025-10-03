@@ -2,7 +2,7 @@ import React from 'react';
 // Use whichever tabs API is available (browser or chrome)
 const api = (window as any).browser ?? (window as any).chrome;
 
-import { Edit2, ExternalLink, FileText, MessageSquare, Pin, Trash2 } from 'lucide-react';
+import { Edit2, ExternalLink, Pin, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../../components/ui/button';
 import { ChatStorage } from '../../../lib/chatStorage';
@@ -149,28 +149,21 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
     }
   };
 
-  const renderChatMeta = () => {
+  const getPrivacyInfo = () => {
     if (item.type !== 'chat') return null;
     const chat = item.data as ChatBookmark;
-    const platformNames: Record<string, string> = { chatgpt: 'ChatGPT', gemini: 'Gemini', claude: 'Claude', deepseek: 'DeepSeek' };
     const { isOwnerOnly } = ChatStorage.parseUrl(chat.url);
-    const isShareLink = !isOwnerOnly;
+    return { isPrivate: isOwnerOnly };
+  };
 
+  const renderTags = () => {
+    const data = item.data as Prompt | ChatBookmark;
+    if (!data.tags || data.tags.length === 0) return null;
+    const displayTags = data.tags.slice(0, 3);
     return (
-      <>
-        <span className="inline-flex items-center rounded-full border border-border/70 bg-[hsl(var(--surface-subtle))] px-2.5 py-0.5 text-[11px] text-muted-foreground/80">
-          {platformNames[chat.platform] || chat.platform}
-        </span>
-        <span
-          className={cn(
-            'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide',
-            isShareLink ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'
-          )}
-          title={isShareLink ? 'Public share link - works without login' : 'Private conversation - requires login'}
-        >
-          {isShareLink ? 'Public' : 'Private'}
-        </span>
-      </>
+      <span className="text-muted-foreground/70 truncate">
+        {displayTags.join(', ')}
+      </span>
     );
   };
 
@@ -193,19 +186,22 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
           'hover:border-border/60 hover:bg-[hsl(var(--card))] hover:shadow-[0_5px_14px_rgba(15,23,42,0.14)]'
         )}
       >
-        {/* Row 1: Icon + Title + Pin + Open */}
-        <div className="flex items-center gap-2.25 mb-1.5">
-          <div className="flex-shrink-0">
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-              {item.type === 'prompt' ? (
-                <FileText className="h-3 w-3" />
-              ) : (
-                <MessageSquare className="h-3 w-3" />
-              )}
-            </span>
+        {/* Row 1: Public Tag + Title + Pin + Open */}
+        <div className="flex items-center gap-2 mb-1.5">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            {item.type === 'chat' && (() => {
+              const privacyInfo = getPrivacyInfo();
+              return !privacyInfo?.isPrivate ? (
+                <span
+                  className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide bg-green-100 text-green-700 shrink-0"
+                  title="Public share link - works without login"
+                >
+                  Public
+                </span>
+              ) : null;
+            })()}
+            <span className="truncate text-[12.5px] font-semibold text-foreground/95">{item.title}</span>
           </div>
-          
-          <span className="truncate text-[12.5px] font-semibold text-foreground/95 flex-1 min-w-0">{item.title}</span>
           
           <div className="flex items-center gap-1 flex-shrink-0">
             <Button
@@ -219,7 +215,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
               )}
               title={item.isPinned ? `Unpin ${item.type}` : `Pin ${item.type}`}
             >
-              <Pin className="h-3 w-3" />
+              <Pin className="h-3.5 w-3.5" />
             </Button>
             {item.type === 'chat' && (
               <Button
@@ -239,7 +235,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
                 className="h-6 w-6 rounded-full text-muted-foreground transition-colors hover:text-foreground"
                 title="Open chat in new tab"
               >
-                <ExternalLink className="h-3 w-3" />
+                <ExternalLink className="h-3.5 w-3.5" />
               </Button>
             )}
           </div>
@@ -254,11 +250,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
             <span className="inline-flex items-center rounded-full border border-border/70 bg-[hsl(var(--surface-subtle))] px-2 py-0.5 text-[10.5px] text-muted-foreground/80 whitespace-nowrap">
               {item.workspace || 'General'}
             </span>
-            {item.type === 'chat' ? (
-              renderChatMeta()
-            ) : (
-              <span className="text-muted-foreground/80 whitespace-nowrap">Prompt</span>
-            )}
+            {renderTags()}
           </div>
           
           <div className="flex items-center gap-1 flex-shrink-0">
@@ -270,7 +262,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
               className="h-6 w-6 rounded-full text-muted-foreground transition-colors hover:text-foreground"
               title={`Edit ${item.type}`}
             >
-              <Edit2 className="h-3 w-3" />
+              <Edit2 className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
@@ -280,7 +272,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
               className="h-6 w-6 rounded-full text-muted-foreground transition-colors hover:text-destructive"
               title={`Delete ${item.type}`}
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
