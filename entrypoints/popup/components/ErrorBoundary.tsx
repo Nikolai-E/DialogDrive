@@ -1,4 +1,5 @@
 import React, { Component, ReactNode } from 'react';
+import { Button } from '../../../components/ui/button';
 import { logger } from '../../../lib/logger';
 
 interface ErrorBoundaryState {
@@ -35,21 +36,25 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 }
 
 const ErrorFallback: React.FC<{ error?: Error }> = ({ error }) => (
-  <div className="flex flex-col items-center justify-center p-8 text-center">
-    <div className="text-6xl mb-4">:(</div>
-    <h2 className="text-lg font-semibold text-gray-800 mb-2">Something went wrong</h2>
-    <p className="text-sm text-gray-600 mb-4">DialogDrive encountered an unexpected error</p>
+  <div className="flex flex-col items-center justify-center gap-3 rounded-[var(--radius)] border border-border/60 bg-card/95 p-6 text-center shadow-sm">
+    <div className="text-5xl">:(</div>
+    <h2 className="text-[15px] font-semibold text-foreground">Something went wrong</h2>
+    <p className="text-[12.5px] text-muted-foreground">
+      DialogDrive encountered an unexpected error.
+    </p>
     {error && (
-      <details className="text-xs text-gray-500 max-w-xs">
-        <summary className="cursor-pointer">Error details</summary>
-        <pre className="mt-2 whitespace-pre-wrap">{error.message}</pre>
+      <details className="max-w-xs text-[11.5px] text-muted-foreground">
+        <summary className="cursor-pointer font-medium text-foreground/80">Error details</summary>
+        <pre className="mt-1 whitespace-pre-wrap rounded-md bg-muted/40 p-2 text-left text-[11px]">
+          {error.message}
+        </pre>
       </details>
     )}
-    <button
+    <Button
       onClick={() => window.location.reload()}
-      className="mt-4 px-4 py-2 bg-[#1f1f21] text-white rounded hover:bg-[#1f1f21]/94 transition-colors"
+      className="h-8 rounded-full px-4 text-[12.5px] font-semibold hover:bg-primary/90"
     >
       Reload Extension
-    </button>
+    </Button>
   </div>
 );

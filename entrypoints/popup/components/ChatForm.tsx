@@ -8,13 +8,13 @@ import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/aler
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
-import { logSilentError } from '../../../lib/errorHandler';
 import { Label } from '../../../components/ui/label';
 import { Switch } from '../../../components/ui/switch';
 import { useDraftStore, type ChatDraftData, type DraftRecord } from '../../../lib/draftStore';
+import { logSilentError } from '../../../lib/errorHandler';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { useAutosaveDraft } from '../../../lib/useAutosaveDraft';
-import { formatRelativeTime } from '../../../lib/utils';
+import { formatRelativeTime, cn } from '../../../lib/utils';
 import { AddChatBookmark } from '../../../types/chat';
 import { sanitizeTagLabel } from '../../floating-save/tagHelpers';
 import TagSelect from './TagSelect';
@@ -256,9 +256,9 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
     <div className="flex flex-col h-full bg-background text-[12px]">
       <div className="flex items-center p-2 border-b bg-background/80 backdrop-blur-sm">
         <Button
-          variant="default"
+          variant="ghost"
           size="xs"
-          className="h-7 mr-1.5 bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21]"
+          className="h-7 mr-1.5 rounded-full px-2.5 text-[11.5px] font-medium text-foreground/80 hover:bg-[hsl(var(--surface-contrast))] hover:text-foreground"
           onClick={() => handleClose()}
           aria-label="Back"
           withIcon
@@ -365,9 +365,11 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
                   setNewWorkspace('');
                 }}
                 title="Add workspace"
-                className={`h-8 text-xs bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21] ${
-                  onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
-                }`}
+                className={cn(
+                  'h-8 rounded-full px-3 text-[12px] font-semibold hover:bg-primary/90',
+                  onboardingActive &&
+                    'ring-2 ring-primary ring-offset-2 ring-offset-background'
+                )}
               >
                 Add
               </Button>
@@ -405,9 +407,11 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
                 onClick={handleAddTag}
                 disabled={!sanitizeTagLabel(currentTag)}
                 title="Add tag"
-                className={`h-8 bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21] ${
-                  onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
-                }`}
+                className={cn(
+                  'h-8 rounded-full px-3 text-[12px] font-semibold hover:bg-primary/90',
+                  onboardingActive &&
+                    'ring-2 ring-primary ring-offset-2 ring-offset-background'
+                )}
               >
                 Add
               </Button>
@@ -444,7 +448,7 @@ export const ChatForm: React.FC<ChatFormProps> = ({ onboardingActive }) => {
           <Button
             type="submit"
             disabled={!formData.title.trim()}
-            className="h-8 px-3 bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21]"
+            className="h-8 rounded-full px-4 text-[12.5px] font-semibold hover:bg-primary/90"
           >
             <Save className="h-4 w-4 mr-1.5" />
             {editingChat ? 'Update' : 'Save'}

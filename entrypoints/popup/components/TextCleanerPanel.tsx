@@ -346,8 +346,9 @@ export const TextCleanerPanel: React.FC = () => {
               </Button>
               <Button
                 size="xs"
+                variant="default"
                 withIcon
-                className="bg-foreground text-white hover:opacity-90"
+                className="rounded-full px-2.5 text-[11px] font-semibold hover:bg-primary/90"
                 onClick={() => copyToClipboard(result.text)}
                 disabled={!result.text}
                 data-testid="copy-button"

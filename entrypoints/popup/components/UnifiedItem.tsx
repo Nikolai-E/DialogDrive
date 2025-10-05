@@ -167,7 +167,11 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
     const data = item.data as Prompt | ChatBookmark;
     if (!data.tags || data.tags.length === 0) return null;
     const displayTags = data.tags.slice(0, 3);
-    return <span className="text-muted-foreground/70 truncate">{displayTags.join(', ')}</span>;
+    return (
+      <span className="truncate text-[10.5px] font-medium text-foreground/80">
+        {displayTags.join(', ')}
+      </span>
+    );
   };
 
   return (
@@ -216,8 +220,8 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
               onClick={handlePin}
               aria-label={item.isPinned ? `Unpin ${item.type}` : `Pin ${item.type}`}
               className={cn(
-                'h-6 w-6 rounded-full text-muted-foreground transition-colors',
-                item.isPinned && 'bg-primary/10 text-primary'
+                'h-6 w-6 rounded-full text-foreground/75 transition-colors hover:text-foreground',
+                item.isPinned && 'text-primary'
               )}
               title={item.isPinned ? `Unpin ${item.type}` : `Pin ${item.type}`}
             >
@@ -238,7 +242,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
                   }
                 }}
                 aria-label="Open chat in new tab"
-                className="h-6 w-6 rounded-full text-muted-foreground transition-colors hover:text-foreground"
+                className="h-6 w-6 rounded-full text-foreground/75 transition-colors hover:text-foreground"
                 title="Open chat in new tab"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
@@ -255,7 +259,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
                 Pinned
               </span>
             )}
-            <span className="inline-flex items-center rounded-full border border-border/70 bg-[hsl(var(--surface-subtle))] px-2 py-0.5 text-[10.5px] text-muted-foreground/80 whitespace-nowrap">
+            <span className="inline-flex items-center rounded-full border border-border/70 bg-[hsl(var(--surface-subtle))] px-2 py-0.5 text-[11px] font-medium text-foreground/85 whitespace-nowrap">
               {item.workspace || 'General'}
             </span>
             {renderTags()}
@@ -267,7 +271,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
               size="icon"
               onClick={handleEdit}
               aria-label={`Edit ${item.type}`}
-              className="h-6 w-6 rounded-full text-muted-foreground transition-colors hover:text-foreground"
+              className="h-6 w-6 rounded-full text-foreground/75 transition-colors hover:text-foreground"
               title={`Edit ${item.type}`}
             >
               <Edit2 className="h-3.5 w-3.5" />
@@ -277,7 +281,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
               size="icon"
               onClick={handleDelete}
               aria-label={`Delete ${item.type}`}
-              className="h-6 w-6 rounded-full text-muted-foreground transition-colors hover:text-destructive"
+              className="h-6 w-6 rounded-full text-foreground/75 transition-colors hover:text-destructive"
               title={`Delete ${item.type}`}
             >
               <Trash2 className="h-3.5 w-3.5" />

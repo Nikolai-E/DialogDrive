@@ -3,7 +3,6 @@
 
 import {
     Check,
-    ChevronDown,
     Hammer,
     LayoutGrid,
     List,
@@ -37,10 +36,10 @@ const FILTER_MENU_CONFIG: Record<
   FilterMenuKey,
   { minWidth?: number; align?: 'start' | 'end'; maxHeight?: number }
 > = {
-  sort: { minWidth: 180 },
-  workspace: { minWidth: 220, maxHeight: 260 },
-  tag: { minWidth: 200, maxHeight: 260 },
-  tools: { minWidth: 164, align: 'end' },
+  sort: { minWidth: 156 },
+  workspace: { minWidth: 192, maxHeight: 260 },
+  tag: { minWidth: 184, maxHeight: 260 },
+  tools: { minWidth: 148, align: 'end' },
 };
 
 export const Header: React.FC<HeaderProps> = ({
@@ -138,7 +137,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       const rect = btn.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
-      const menuWidth = 176; // w-44
+      const menuWidth = 152; // w-38
       const top = Math.round(rect.bottom + 4); // 4px gap
       let left = Math.round(rect.right - menuWidth);
 
@@ -346,9 +345,9 @@ export const Header: React.FC<HeaderProps> = ({
   );
 
   const filterButtonClass =
-    'inline-flex items-center gap-1.5 h-[31px] px-3.25 rounded-full border border-border/70 bg-background/70 text-[12px] font-medium text-foreground/75 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:bg-secondary/55 hover:text-foreground justify-center';
+    'inline-flex items-center gap-1.5 h-[31px] px-3 rounded-full border border-border bg-[hsl(var(--surface-subtle))] text-[12px] font-medium text-foreground/90 transition-colors shadow-[0_1px_2px_rgba(42,34,28,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:bg-[hsl(var(--surface-contrast))] justify-center';
   const filterButtonActiveClass =
-    'bg-accent text-accent-foreground border-accent shadow-[0_2px_6px_rgba(15,23,42,0.14)]';
+    'bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] border-[hsl(var(--accent))] shadow-[0_6px_16px_rgba(48,36,24,0.2)]';
 
   const isCustomSort = sortBy !== 'recent';
   const isPinnedActive = showPinned;
@@ -362,7 +361,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div
               id="create-menu"
               role="menu"
-              className="pointer-events-auto rounded-[var(--radius)] border border-border bg-card/95 shadow-lg backdrop-blur-sm p-1.5 min-w-[184px]"
+              className="pointer-events-auto rounded-[var(--radius)] border border-border bg-card/95 shadow-lg backdrop-blur-sm p-1.5 min-w-[152px]"
             >
               <button
                 role="menuitem"
@@ -370,7 +369,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setShowDropdown(false);
                   onNewPrompt();
                 }}
-                className="w-full h-8 text-left text-[12px] px-2.5 rounded-[calc(var(--radius)-2px)] hover:bg-secondary/60 hover:text-foreground inline-flex items-center gap-2 text-foreground/90 transition-colors"
+                className="w-full h-8 text-left text-[12px] px-2.5 rounded-[calc(var(--radius)-2px)] hover:bg-[hsl(var(--surface-subtle))] hover:text-foreground inline-flex items-center gap-2 text-foreground/90 transition-colors"
               >
                 <List className="h-3.5 w-3.5" />
                 New prompt
@@ -381,7 +380,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setShowDropdown(false);
                   onNewChat();
                 }}
-                className="w-full h-8 text-left text-[12px] px-2.5 rounded-[calc(var(--radius)-2px)] hover:bg-secondary/60 hover:text-foreground inline-flex items-center gap-2 text-foreground/90 transition-colors"
+                className="w-full h-8 text-left text-[12px] px-2.5 rounded-[calc(var(--radius)-2px)] hover:bg-[hsl(var(--surface-subtle))] hover:text-foreground inline-flex items-center gap-2 text-foreground/90 transition-colors"
               >
                 <MessageSquare className="h-3.5 w-3.5" />
                 Bookmark chat
@@ -393,9 +392,9 @@ export const Header: React.FC<HeaderProps> = ({
       : null;
 
   const radioItemClass =
-    'w-full flex items-center justify-between gap-3 px-3 py-2.25 text-[13px] font-medium text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors rounded-[calc(var(--radius)-2px)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/60 focus-visible:ring-offset-1 focus-visible:ring-offset-background';
+    'w-full flex items-start gap-2 px-3 py-2 text-[12.5px] font-medium text-foreground/90 leading-snug hover:bg-[hsl(var(--surface-subtle))] hover:text-foreground transition-colors rounded-[calc(var(--radius)-2px)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background';
   const simpleItemClass =
-    'w-full text-left px-3 py-2.25 text-[13px] font-medium text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors rounded-[calc(var(--radius)-2px)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/60 focus-visible:ring-offset-1 focus-visible:ring-offset-background';
+    'w-full text-left px-3 py-2 text-[12.5px] font-medium text-foreground/90 leading-snug hover:bg-[hsl(var(--surface-subtle))] hover:text-foreground transition-colors rounded-[calc(var(--radius)-2px)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background';
   const menuCheckClass = 'h-4 w-4 shrink-0 text-primary transition-opacity';
 
   let filterMenuContent: React.ReactNode = null;
@@ -415,7 +414,9 @@ export const Header: React.FC<HeaderProps> = ({
           }}
           className={cn(radioItemClass, selected && 'bg-muted/80 text-foreground')}
         >
-          <span className="truncate">{option.label}</span>
+          <span className="flex-1 text-left whitespace-normal break-words pr-1.5">
+            {option.label}
+          </span>
           <Check className={cn(menuCheckClass, selected ? 'opacity-100' : 'opacity-0')} />
         </button>
       );
@@ -438,7 +439,9 @@ export const Header: React.FC<HeaderProps> = ({
           className={cn(radioItemClass, selected && 'bg-muted/80 text-foreground')}
           title={workspace}
         >
-          <span className="truncate">{workspace}</span>
+          <span className="flex-1 text-left whitespace-normal break-words pr-1.5">
+            {workspace}
+          </span>
           <Check className={cn(menuCheckClass, selected ? 'opacity-100' : 'opacity-0')} />
         </button>
       );
@@ -459,7 +462,9 @@ export const Header: React.FC<HeaderProps> = ({
             selectedWorkspace === 'all' && 'bg-muted/80 text-foreground'
           )}
         >
-          <span className="truncate">All Workspaces</span>
+          <span className="flex-1 text-left whitespace-normal break-words pr-1.5">
+            All Workspaces
+          </span>
           <Check
             className={cn(
               menuCheckClass,
@@ -489,7 +494,9 @@ export const Header: React.FC<HeaderProps> = ({
           className={cn(radioItemClass, selected && 'bg-muted/80 text-foreground')}
           title={tag}
         >
-          <span className="truncate">{tag}</span>
+          <span className="flex-1 text-left whitespace-normal break-words pr-1.5">
+            {tag}
+          </span>
           <Check className={cn(menuCheckClass, selected ? 'opacity-100' : 'opacity-0')} />
         </button>
       );
@@ -507,7 +514,9 @@ export const Header: React.FC<HeaderProps> = ({
           }}
           className={cn(radioItemClass, filterTag === 'all' && 'bg-muted/80 text-foreground')}
         >
-          <span className="truncate">All Tags</span>
+          <span className="flex-1 text-left whitespace-normal break-words pr-1.5">
+            All Tags
+          </span>
           <Check
             className={cn(menuCheckClass, filterTag === 'all' ? 'opacity-100' : 'opacity-0')}
           />
@@ -597,7 +606,7 @@ export const Header: React.FC<HeaderProps> = ({
             placeholder="Search"
             value={searchTerm}
             onChange={(e) => setSearchTermDebounced(e.target.value)}
-            className="h-8 rounded-full border-border/70 bg-[hsl(var(--card))] pl-7 pr-9 text-[12px] text-foreground placeholder:text-muted-foreground/65 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]"
+            className="h-8 rounded-full border-border bg-[hsl(var(--card))] pl-7 pr-9 text-[12px] text-foreground/95 placeholder:text-muted-foreground/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]"
             aria-label="Search prompts and chats"
             aria-live="polite"
           />
@@ -605,7 +614,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               aria-label="Clear search"
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary/65 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-full text-foreground/70 hover:bg-[hsl(var(--surface-subtle))] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               onClick={() => setSearchTerm('')}
             >
               <X className="h-2.5 w-2.5" />
@@ -622,7 +631,7 @@ export const Header: React.FC<HeaderProps> = ({
               setActiveMenu(null);
               setShowDropdown((v) => !v);
             }}
-            className="h-8 rounded-full bg-[#1f1f21] px-[14px] text-[12.5px] text-white shadow-[0_4px_10px_rgba(17,17,17,0.24)] hover:bg-[#1f1f21]/94 hover:shadow-[0_6px_16px_rgba(17,17,17,0.32)]"
+            className="h-8 rounded-full px-[14px] text-[12.5px] font-semibold text-primary-foreground shadow-[0_4px_10px_rgba(15,23,42,0.16)] transition-shadow hover:bg-primary/90 hover:shadow-[0_6px_16px_rgba(15,23,42,0.22)]"
             aria-haspopup="menu"
             aria-expanded={showDropdown}
             aria-controls="create-menu"
@@ -725,13 +734,9 @@ export const Header: React.FC<HeaderProps> = ({
               aria-controls={activeMenu === 'sort' ? 'sort-menu' : undefined}
             >
               <SortAsc className="h-3.5 w-3.5" />
-              <span className="truncate">
+              <span className="flex-1 whitespace-normal leading-tight text-center">
                 {sortOptions.find((opt) => opt.value === sortBy)?.label || 'Sort'}
               </span>
-              <ChevronDown
-                className="h-3 w-3 opacity-70 transition-transform data-[state=open]:rotate-180"
-                data-state={activeMenu === 'sort' ? 'open' : 'closed'}
-              />
             </button>
 
             <button
@@ -747,13 +752,9 @@ export const Header: React.FC<HeaderProps> = ({
               aria-expanded={activeMenu === 'workspace'}
               aria-controls={activeMenu === 'workspace' ? 'workspace-menu' : undefined}
             >
-              <span className="truncate max-w-[110px]">
+              <span className="flex-1 whitespace-normal leading-tight text-center">
                 {selectedWorkspace === 'all' ? 'Workspace' : selectedWorkspace}
               </span>
-              <ChevronDown
-                className="h-3 w-3 opacity-70 transition-transform data-[state=open]:rotate-180"
-                data-state={activeMenu === 'workspace' ? 'open' : 'closed'}
-              />
             </button>
 
             {allTags.length > 0 && (
@@ -770,13 +771,9 @@ export const Header: React.FC<HeaderProps> = ({
                 aria-expanded={activeMenu === 'tag'}
                 aria-controls={activeMenu === 'tag' ? 'tag-menu' : undefined}
               >
-                <span className="truncate max-w-[90px]">
+                <span className="flex-1 whitespace-normal leading-tight text-center">
                   {filterTag === 'all' ? 'Tag' : filterTag}
                 </span>
-                <ChevronDown
-                  className="h-3 w-3 opacity-70 transition-transform data-[state=open]:rotate-180"
-                  data-state={activeMenu === 'tag' ? 'open' : 'closed'}
-                />
               </button>
             )}
 

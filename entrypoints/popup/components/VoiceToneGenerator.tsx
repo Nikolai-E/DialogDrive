@@ -566,8 +566,8 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
               <Button
                 type="button"
                 size="sm"
+                className="text-xs rounded-full px-3 font-semibold hover:bg-primary/90"
                 onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
-                className="text-xs bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21]"
               >
                 Next <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
@@ -575,8 +575,8 @@ export const VoiceToneGenerator: React.FC<VoiceToneGeneratorProps> = ({
               <Button
                 type="button"
                 size="sm"
+                className="text-xs rounded-full px-3 font-semibold hover:bg-primary/90"
                 onClick={handleGenerate}
-                className="text-xs bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21]"
               >
                 Generate Prompt
               </Button>

@@ -34,3 +34,16 @@ Entries are appended automatically by `npm run backup`.
   - AGENT_GUIDE.md
   - BACKUP.md
   - scripts/backup.cjs
+
+---
+
+## Backup @ 2025-10-05T16:33:15.786Z
+
+- **Diff:** `.safety/patch-2025-10-05T16-33-15.diff`
+- **Files:** 4 file(s) → `.safety/files-2025-10-05T16-33-15.tar.gz`
+- **Changed files:**
+  - AGENT_GUIDE.md
+  - entrypoints/popup/components/ChatForm.tsx
+  - entrypoints/popup/components/Library.tsx
+  - entrypoints/popup/components/PromptForm.tsx
+

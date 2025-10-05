@@ -5,26 +5,28 @@
 @layer base {
   :root {
     /* Neutral, Apple-inspired palette with defined surface steps */
-    --background: 36 40% 96%;
-    --card: 36 34% 98%;
-    --popover: 36 38% 99%;
-    --input: 36 30% 94%;
-    --surface-subtle: 34 26% 92%;
-    --surface-contrast: 24 18% 88%;
+    --background: 36 38% 95%;
+    --card: 36 28% 97%;
+    --popover: 36 28% 98%;
+    --input: 36 22% 92%;
+    --surface-subtle: 32 18% 89%;
+    --surface-contrast: 30 16% 86%;
 
     /* Typography */
-    --foreground: 24 24% 16%;
-    --card-foreground: 24 24% 16%;
-    --popover-foreground: 24 24% 16%;
-    --text-secondary: 24 16% 40%;
-    --muted-foreground: 24 14% 42%;
+    --foreground: 24 30% 13%;
+    --card-foreground: 24 30% 13%;
+    --popover-foreground: 24 30% 13%;
+    --text-secondary: 24 24% 24%;
+    --muted-foreground: 24 22% 32%;
     --text-inverted: 0 0% 100%;
 
     /* Accents */
-    --primary: 214 24% 28%;
+    --primary: 214 30% 28%;
     --primary-foreground: 0 0% 98%;
-    --accent: 26 36% 82%;
-    --accent-foreground: 24 24% 18%;
+    --accent: 30 22% 78%;
+    --accent-foreground: 24 26% 20%;
+    --chip: 32 20% 82%;
+    --chip-foreground: 24 28% 18%;
 
     /* Status */
     --success: 142 45% 38%;
@@ -35,17 +37,18 @@
     --destructive-foreground: 0 0% 100%;
 
     /* Secondary & Muted */
-    --secondary: 34 28% 90%;
-    --secondary-foreground: 24 18% 32%;
-    --muted: 30 22% 88%;
+    --secondary: 34 18% 88%;
+    --secondary-foreground: 24 22% 28%;
+    --muted: 30 20% 88%;
 
     /* Neutrals */
-    --border: 28 18% 80%;
-    --divider: 28 16% 84%;
-    --ring: 214 24% 28%;
+    --border: 28 22% 60%;
+    --border-strong: 28 28% 48%;
+    --divider: 30 20% 70%;
+    --ring: 28 30% 28%;
     --disabled: 28 10% 86%;
-    --shadow-soft: 0 22px 40px rgba(23, 23, 23, 0.08);
-    --shadow-focus: 0 0 0 1px rgba(23, 23, 23, 0.1);
+    --shadow-soft: 0 20px 44px rgba(42, 34, 28, 0.16);
+    --shadow-focus: 0 0 0 1.5px rgba(42, 34, 28, 0.24);
 
     --radius: 10px;
   }
@@ -74,7 +77,7 @@
       'rlig' 1,
       'calt' 1;
     font-size: 12px;
-    line-height: 1.45;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -127,8 +130,11 @@
 
   .chip {
     border-radius: 999px;
-    border: 1px solid hsl(var(--divider));
-    background-color: hsl(var(--secondary));
+    border: 1px solid hsl(var(--border));
+    background-color: hsl(var(--chip));
+    color: hsl(var(--chip-foreground));
+    font-weight: 600;
+    letter-spacing: 0.01em;
   }
 
   .chip-active {

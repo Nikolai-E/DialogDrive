@@ -13,10 +13,10 @@ import { Label } from '../../../components/ui/label';
 import { Switch } from '../../../components/ui/switch';
 import { Textarea } from '../../../components/ui/textarea';
 import { useDraftStore, type DraftRecord, type PromptDraftData } from '../../../lib/draftStore';
+import { logSilentError } from '../../../lib/errorHandler';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { useAutosaveDraft } from '../../../lib/useAutosaveDraft';
-import { formatRelativeTime } from '../../../lib/utils';
-import { logSilentError } from '../../../lib/errorHandler';
+import { formatRelativeTime, cn } from '../../../lib/utils';
 import type { Prompt } from '../../../types/prompt';
 import { sanitizeTagLabel } from '../../floating-save/tagHelpers';
 import TagSelect from './TagSelect';
@@ -279,9 +279,9 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
         className="flex items-center p-2 border-b bg-background/80 backdrop-blur-sm"
       >
         <Button
-          variant="default"
+          variant="ghost"
           size="xs"
-          className="h-7 mr-1.5 bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21]"
+          className="h-7 mr-1.5 rounded-full px-2.5 text-[11.5px] font-medium text-foreground/80 hover:bg-[hsl(var(--surface-contrast))] hover:text-foreground"
           onClick={() => handleClose()}
           aria-label="Back"
           withIcon
@@ -445,6 +445,11 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
                 size="sm"
                 variant="default"
                 disabled={!newWorkspace.trim()}
+                className={cn(
+                  'h-8 rounded-full px-3 text-[12px] font-semibold hover:bg-primary/90',
+                  onboardingActive &&
+                    'ring-2 ring-primary ring-offset-2 ring-offset-background'
+                )}
                 onClick={() => {
                   const ws = newWorkspace.trim();
                   if (!ws) return;
@@ -461,7 +466,6 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
                   setNewWorkspace('');
                 }}
                 title="Add workspace"
-                className={`h-8 text-xs bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21] ${onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
               >
                 Add
               </Button>
@@ -504,10 +508,14 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
                 type="button"
                 size="sm"
                 variant="default"
+                className={cn(
+                  'h-8 rounded-full px-3 text-[12px] font-semibold hover:bg-primary/90',
+                  onboardingActive &&
+                    'ring-2 ring-primary ring-offset-2 ring-offset-background'
+                )}
                 onClick={() => addTag()}
                 disabled={!sanitizeTagLabel(tagInput)}
                 title="Add tag"
-                className={`h-8 bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21] ${onboardingActive ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
               >
                 Add
               </Button>
@@ -525,7 +533,7 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
                     size="sm"
                     variant="outline"
                     onClick={() => addTag(tag)}
-                    className="h-6 text-xs hover:bg-[#1f1f21] hover:text-white transition-colors"
+                    className="h-6 rounded-full px-2.5 text-[11px] hover:bg-primary/15 hover:text-foreground transition-colors"
                   >
                     {tag}
                   </Button>
@@ -593,7 +601,7 @@ export const PromptForm: React.FC<PromptFormProps> = ({ onboardingActive }) => {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="min-w-[110px] h-8 bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 border border-[#1f1f21]"
+            className="min-w-[110px] h-8 rounded-full px-4 text-[12.5px] font-semibold hover:bg-primary/90"
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {editingPrompt ? 'Update' : 'Create'}

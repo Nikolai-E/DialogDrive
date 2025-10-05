@@ -102,7 +102,7 @@ export const FilterPopover: React.FC = () => {
           className={cn(
             'h-8 w-full gap-1.5',
             showPinned
-              ? 'bg-[#1f1f21] text-white'
+              ? 'bg-primary text-primary-foreground'
               : 'bg-card text-foreground border-border hover:bg-muted/60'
           )}
           aria-pressed={showPinned}

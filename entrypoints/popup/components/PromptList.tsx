@@ -1,6 +1,7 @@
 import { Info, Loader2, Plus, Search } from 'lucide-react';
 import React from 'react';
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
+import { Button } from '../../../components/ui/button';
 import { VirtualizedPromptList } from '../../../components/VirtualizedList';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import type { Prompt } from '../../../types/prompt';
@@ -57,10 +58,10 @@ export const PromptList: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <p className="text-gray-600 font-medium">Loading prompts...</p>
+      <div className="flex items-center justify-center h-full bg-[hsl(var(--background))]">
+        <div className="flex flex-col items-center gap-3 rounded-[var(--radius)] border border-border/60 bg-card/95 px-5 py-4 shadow-sm">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <p className="text-[12.5px] text-muted-foreground font-medium">Loading prompts…</p>
         </div>
       </div>
     );
@@ -68,8 +69,8 @@ export const PromptList: React.FC = () => {
 
   if (error) {
     return (
-      <div className="p-3 bg-gray-50">
-        <Alert variant="destructive" className="border-red-200 bg-red-50">
+      <div className="p-3 bg-background">
+        <Alert variant="destructive" className="border-destructive/30 bg-destructive/10">
           <Info className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
@@ -79,9 +80,9 @@ export const PromptList: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-white">
+    <div className="flex flex-col h-full overflow-hidden bg-background text-foreground">
       {/* Toolbar */}
-      <div className="bg-gray-50 border-b border-gray-200/80 shrink-0">
+      <div className="shrink-0 border-b border-border/55 bg-[hsl(var(--surface-contrast))]/80 backdrop-blur">
         <SearchControls />
       </div>
       {/* List Area */}
@@ -96,21 +97,22 @@ export const PromptList: React.FC = () => {
             className="h-full"
           />
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-gray-50">
-            <div className="bg-white rounded-full p-4 shadow-sm border border-gray-200 mb-3">
-              <Search className="h-7 w-7 text-gray-400" />
+          <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-[hsl(var(--background))]">
+            <div className="rounded-full border border-border/60 bg-card px-4 py-4 shadow-sm mb-3">
+              <Search className="h-7 w-7 text-muted-foreground" />
             </div>
-            <h3 className="text-base font-semibold text-gray-900 mb-1.5">No Prompts Found</h3>
-            <p className="text-gray-600 mb-5 max-w-sm text-sm">
+            <h3 className="text-[13.5px] font-semibold text-foreground mb-1.5">No Prompts Found</h3>
+            <p className="text-muted-foreground mb-5 max-w-sm text-[11.5px] leading-relaxed">
               Try adjusting your search or create your first prompt to get started.
             </p>
-            <button
+            <Button
               onClick={() => setCurrentView('form')}
-              className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#1f1f21] text-white rounded-md hover:bg-[#1f1f21]/94 transition-colors font-medium shadow-sm text-sm"
+              withIcon
+              className="h-8 rounded-full px-3.5 text-[12px] font-semibold hover:bg-primary/90"
             >
               <Plus className="h-4 w-4" />
               Create Prompt
-            </button>
+            </Button>
           </div>
         )}
       </div>

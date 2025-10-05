@@ -5,6 +5,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { FileText, Info, Loader2, MessageSquare, Search } from 'lucide-react';
 import React from 'react';
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
+import { Button } from '../../../components/ui/button';
 import { useUnifiedStore } from '../../../lib/unifiedStore';
 import { UnifiedItem } from './UnifiedItem';
 
@@ -126,10 +127,13 @@ export const UnifiedList: React.FC = () => {
               {(() => {
                 const empty = getEmptyStateContent();
                 return (
-                  <button
+                  <Button
                     type="button"
+                    variant="default"
+                    size="default"
+                    withIcon
+                    className="h-8 rounded-full px-3.5 text-[12px] font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
                     onClick={() => setCurrentView(empty.actionView)}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[#1f1f21] px-3.5 py-1.5 text-[12px] font-semibold text-white shadow-sm transition-colors hover:bg-[#1f1f21]/94"
                   >
                     {contentFilter === 'chats' ? (
                       <MessageSquare className="h-4 w-4" />
@@ -137,7 +141,7 @@ export const UnifiedList: React.FC = () => {
                       <FileText className="h-4 w-4" />
                     )}
                     {empty.actionLabel}
-                  </button>
+                  </Button>
                 );
               })()}
             </div>

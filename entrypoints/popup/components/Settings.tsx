@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { ExternalLink, Folder, Info, Keyboard, RotateCcw, Slash, Tag, Trash2 } from 'lucide-react';
 import React from 'react';
 import { Button } from '../../../components/ui/button';
+import { cn } from '../../../lib/utils';
 import type { PickerTrigger } from '../../../lib/constants';
 import { usePrefsStore } from '../../../lib/prefsStore';
 import { STORAGE_KEYS } from '../../../lib/storage/constants';
@@ -36,6 +37,16 @@ export const Settings: React.FC = () => {
     totalUsage: prompts.reduce((sum: number, p: Prompt) => sum + p.usageCount, 0),
   };
 
+  const sectionCardClass =
+    'space-y-2 rounded-[var(--radius)] border border-border/60 bg-card/95 p-3 shadow-sm';
+  const segmentedToggleClass = (active: boolean) =>
+    cn(
+      'rounded-full px-3 py-1.5 text-[12.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+      active
+        ? 'bg-primary text-primary-foreground shadow-sm'
+        : 'text-foreground/75 hover:bg-[hsl(var(--surface-contrast))]'
+    );
+
   return (
     <div className="flex flex-col h-full bg-background">
       <div className="px-3 pt-2 pb-3 space-y-4 flex-1 overflow-y-auto">
@@ -44,7 +55,7 @@ export const Settings: React.FC = () => {
           initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.25 }}
-          className="space-y-2"
+          className={sectionCardClass}
         >
           <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2">
             <Slash className="h-4 w-4" /> Prompt picker trigger
@@ -52,23 +63,23 @@ export const Settings: React.FC = () => {
           <div className="text-[12.5px] text-muted-foreground">
             Choose how to pop open your saved prompts while you're typing in ChatGPT.
           </div>
-          <div className="inline-flex rounded-lg border border-border overflow-hidden">
+          <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-[hsl(var(--surface-subtle))] p-0.5">
             <button
-              className={`px-3 py-2 text-[13px] ${pickerTrigger === 'none' ? 'bg-[#1f1f21] text-white' : 'bg-background text-foreground'}`}
+              className={segmentedToggleClass(pickerTrigger === 'none')}
               aria-pressed={pickerTrigger === 'none'}
               onClick={() => updatePickerTrigger('none')}
             >
               None
             </button>
             <button
-              className={`px-3 py-2 text-[13px] border-l border-border ${pickerTrigger === 'doubleSlash' ? 'bg-[#1f1f21] text-white' : 'bg-background text-foreground'}`}
+              className={segmentedToggleClass(pickerTrigger === 'doubleSlash')}
               aria-pressed={pickerTrigger === 'doubleSlash'}
               onClick={() => updatePickerTrigger('doubleSlash')}
             >
               // (double slash)
             </button>
             <button
-              className={`px-3 py-2 text-[13px] border-l border-border ${pickerTrigger === 'backslash' ? 'bg-[#1f1f21] text-white' : 'bg-background text-foreground'}`}
+              className={segmentedToggleClass(pickerTrigger === 'backslash')}
               aria-pressed={pickerTrigger === 'backslash'}
               onClick={() => updatePickerTrigger('backslash')}
             >
@@ -84,25 +95,25 @@ export const Settings: React.FC = () => {
           initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.25 }}
-          className="space-y-2"
+          className={sectionCardClass}
         >
           <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2">
             <Keyboard className="h-4 w-4" /> Keyboard shortcuts
           </h3>
           <ul className="space-y-1.5 text-[13px]">
-            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-1.5">
+            <li className="flex items-center justify-between rounded-[calc(var(--radius)-4px)] border border-border/40 bg-[hsl(var(--surface-subtle))] px-3 py-1.5">
               <span className="text-foreground/90">Focus search</span>
               <span className="text-xs text-muted-foreground">Ctrl/Cmd + S</span>
             </li>
-            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-1.5">
+            <li className="flex items-center justify-between rounded-[calc(var(--radius)-4px)] border border-border/40 bg-[hsl(var(--surface-subtle))] px-3 py-1.5">
               <span className="text-foreground/90">Bookmark chat</span>
               <span className="text-xs text-muted-foreground">Ctrl/Cmd + B</span>
             </li>
-            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-1.5">
+            <li className="flex items-center justify-between rounded-[calc(var(--radius)-4px)] border border-border/40 bg-[hsl(var(--surface-subtle))] px-3 py-1.5">
               <span className="text-foreground/90">New prompt</span>
               <span className="text-xs text-muted-foreground">Ctrl/Cmd + P</span>
             </li>
-            <li className="flex items-center justify-between bg-muted/30 rounded-md px-3 py-1.5">
+            <li className="flex items-center justify-between rounded-[calc(var(--radius)-4px)] border border-border/40 bg-[hsl(var(--surface-subtle))] px-3 py-1.5">
               <span className="text-foreground/90">Back to list</span>
               <span className="text-xs text-muted-foreground">Escape</span>
             </li>
@@ -117,7 +128,7 @@ export const Settings: React.FC = () => {
           initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.25, delay: 0.05 }}
-          className="space-y-2"
+          className={sectionCardClass}
         >
           <h3 className="text-[14.5px] font-semibold text-foreground">Quick stats</h3>
           <div className="grid grid-cols-3 gap-2.5">
@@ -141,7 +152,7 @@ export const Settings: React.FC = () => {
           initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.25, delay: 0.1 }}
-          className="space-y-2"
+          className={sectionCardClass}
         >
           <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2">
             <Folder className="h-4 w-4" /> Workspaces
@@ -161,7 +172,7 @@ export const Settings: React.FC = () => {
                   .map((ws) => (
                     <li
                       key={ws}
-                      className="flex items-center justify-between text-[13px] bg-muted/30 rounded-md px-3 py-1.5"
+                      className="flex items-center justify-between text-[13px] rounded-[calc(var(--radius)-4px)] border border-border/40 bg-[hsl(var(--surface-subtle))] px-3 py-1.5"
                     >
                       <span>{ws}</span>
                       <Button
@@ -184,7 +195,7 @@ export const Settings: React.FC = () => {
           initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.25, delay: 0.15 }}
-          className="space-y-2"
+          className={sectionCardClass}
         >
           <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2">
             <Tag className="h-4 w-4" /> Tags
@@ -202,7 +213,7 @@ export const Settings: React.FC = () => {
                 {allTags.map((tag) => (
                   <li
                     key={tag}
-                    className="flex items-center justify-between text-[13px] bg-muted/30 rounded-md px-3 py-1.5"
+                    className="flex items-center justify-between text-[13px] rounded-[calc(var(--radius)-4px)] border border-border/40 bg-[hsl(var(--surface-subtle))] px-3 py-1.5"
                   >
                     <span>#{tag}</span>
                     <Button
@@ -225,7 +236,7 @@ export const Settings: React.FC = () => {
           initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.25, delay: 0.2 }}
-          className="space-y-2"
+          className={sectionCardClass}
         >
           <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2">
             <Info className="h-4 w-4" /> Privacy & data
@@ -257,12 +268,12 @@ export const Settings: React.FC = () => {
           initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.25, delay: 0.22 }}
-          className="space-y-2"
+          className={sectionCardClass}
         >
           <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2">
             <RotateCcw className="h-4 w-4" /> Reset settings
           </h3>
-          <div className="rounded-xl border border-border bg-muted/10 p-3 space-y-2.5">
+          <div className="rounded-[calc(var(--radius)-2px)] border border-border/60 bg-[hsl(var(--surface-subtle))] p-3 space-y-2.5">
             <p className="text-[13px] leading-relaxed text-foreground/85">
               Restore DialogDrive preferences and filters to their defaults. Your saved prompts and
               chat bookmarks are not affected.
@@ -298,12 +309,12 @@ export const Settings: React.FC = () => {
           initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.25, delay: 0.25 }}
-          className="space-y-2"
+          className={sectionCardClass}
         >
           <h3 className="text-[14.5px] font-semibold text-foreground flex items-center gap-2">
             <Trash2 className="h-4 w-4" /> Clear local data
           </h3>
-          <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 space-y-2.5">
+          <div className="rounded-[calc(var(--radius)-2px)] border border-destructive/40 bg-destructive/5 p-3 space-y-2.5">
             <p className="text-[13px] text-destructive/90 leading-relaxed">
               Erase all prompts, chats, workspaces, tags, preferences, and usage counters saved in
               this browser.

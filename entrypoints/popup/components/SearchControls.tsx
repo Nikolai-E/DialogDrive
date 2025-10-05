@@ -310,7 +310,7 @@ export const SearchControls: React.FC = () => {
           {/* Create Button - Prominent */}
           <Button
             onClick={() => setCurrentView('form')}
-            className="h-7 px-2 text-[11px] font-medium bg-[#1f1f21] text-white hover:bg-[#1f1f21]/94 rounded-md shadow-sm whitespace-nowrap"
+            className="h-7 px-2 text-[11px] font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-md shadow-sm whitespace-nowrap"
           >
             <Plus className="h-3.5 w-3.5 mr-0.5" />
             New
