@@ -260,6 +260,11 @@ export function resolveCleanOptions(partial: Partial<CleanOptions> | undefined):
 }
 
 /**
+ * Maximum input size in characters to prevent performance issues.
+ */
+const MAX_INPUT_SIZE = 100000;
+
+/**
  * Main entry point.
  */
 export function cleanText(
@@ -271,7 +276,25 @@ export function cleanText(
   const options = resolveCleanOptions(userOptions);
   const report = createEmptyReport();
 
-  const source = input ?? '';
+  try {
+    const source = input ?? '';
+    
+    // Prevent crashes on extremely large inputs
+    if (source.length > MAX_INPUT_SIZE) {
+      const truncated = source.slice(0, MAX_INPUT_SIZE);
+      const elapsed = performanceNow() - start;
+      report.elapsedMs = elapsed;
+      return {
+        text: truncated + '\n\n[... Input truncated at ' + MAX_INPUT_SIZE.toLocaleString() + ' characters ...]',
+        report,
+      };
+    }
+
+    // Prevent null/undefined crashes
+    if (!source || source.length === 0) {
+      report.elapsedMs = performanceNow() - start;
+      return { text: '', report };
+    }
   const preprocessed = preprocess(source, options, report);
 
   const parsed = parse(preprocessed, options, runtime, report);
@@ -286,19 +309,39 @@ export function cleanText(
     ? applyRedactions(structured, options, report)
     : structured;
 
-  const punctuated = normalizePunctuation(redacted, options, report);
-  const whitespaceNormalised = normalizeWhitespace(punctuated, options, report);
+    const punctuated = normalizePunctuation(redacted, options, report);
+    const whitespaceNormalised = normalizeWhitespace(punctuated, options, report);
 
-  const elapsed = performanceNow() - start;
-  report.elapsedMs = elapsed;
+    const elapsed = performanceNow() - start;
+    report.elapsedMs = elapsed;
 
-  return {
-    text: whitespaceNormalised,
-    report,
-  };
-}
+    // Timeout protection - if processing took too long, something might be wrong
+    if (elapsed > 30000) {
+      console.warn(`Text cleaning took ${elapsed}ms - possible performance issue`);
+    }
 
-// =========================
+    return {
+      text: whitespaceNormalised,
+      report,
+    };
+  } catch (error) {
+    // Emergency fallback - return sanitized input if anything crashes
+    const elapsed = performanceNow() - start;
+    report.elapsedMs = elapsed;
+    console.error('Text cleaning error:', error);
+    
+    // Return minimal safe output
+    const safeText = (input ?? '')
+      .slice(0, MAX_INPUT_SIZE)
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '') // Remove control chars
+      .trim();
+    
+    return {
+      text: safeText + '\n\n[Error during text cleaning - showing sanitized input]',
+      report,
+    };
+  }
+}// =========================
 // Pipeline stages
 // =========================
 
@@ -405,8 +448,13 @@ function transformStructure(
     switch (block.type) {
       case 'heading': {
         if (options.structure.dropHeadings) {
+          // Keep the heading text content, just remove the heading markers
+          const renderedText = transformInline(block.text, options, report);
+          if (renderedText.trim()) {
+            pushBlockLines([renderedText], lines);
+          }
           bump(report, 'structure', 'structure:heading-drop', 1);
-          continue;
+          break;
         }
         const renderedHeading = renderHeading(block, options, report);
         pushBlockLines(renderedHeading, lines);
@@ -442,8 +490,13 @@ function transformStructure(
       }
       case 'table': {
         if (options.structure.dropTables) {
+          // Keep table text content, just remove table formatting
+          const renderedTable = renderTable(block, options, report);
+          if (renderedTable.length > 0) {
+            pushBlockLines(renderedTable, lines);
+          }
           bump(report, 'structure', 'structure:table-drop', 1);
-          continue;
+          break;
         }
         const renderedTable = renderTable(block, options, report);
         pushBlockLines(renderedTable, lines);
@@ -451,8 +504,13 @@ function transformStructure(
       }
       case 'footnote': {
         if (options.structure.dropFootnotes) {
+          // Keep footnote text, just remove footnote markers
+          const renderedText = transformInline(block.text, options, report);
+          if (renderedText.trim()) {
+            pushBlockLines([renderedText], lines);
+          }
           bump(report, 'structure', 'structure:footnote-drop', 1);
-          continue;
+          break;
         }
         const renderedFootnote = renderFootnote(block, options, report);
         pushBlockLines(renderedFootnote, lines);
@@ -667,11 +725,20 @@ function renderCode(
   options: CleanOptions,
   report: CleanReport
 ): string[] {
+  const lines = block.content.split(/\r?\n/);
+  
   if (options.blockCode === 'drop') {
+    // Keep code content as plain text, preserving meaningful lines
     bump(report, 'structure', 'structure:block-code', 1);
+    const meaningfulLines = lines.filter(line => line.trim());
+    // If code block is small, keep it inline; otherwise add spacing
+    if (meaningfulLines.length > 0) {
+      return meaningfulLines;
+    }
     return [];
   }
-  const lines = block.content.split(/\r?\n/);
+  
+  // Indent mode - add 4 spaces to each line
   const indented = lines.map((line) => (line ? `    ${line}` : ''));
   bump(report, 'structure', 'structure:block-code', indented.length);
   return indented;
@@ -746,8 +813,12 @@ function renderGenericBlock(block: Block, options: CleanOptions, report: CleanRe
 
 function pushBlockLines(blockLines: string[], output: string[]): void {
   if (blockLines.length === 0) return;
+  // Add blank line between blocks for readability, unless the last line is already blank
   if (output.length > 0 && blockLines[0].trim()) {
-    output.push('');
+    const lastLine = output[output.length - 1];
+    if (lastLine && lastLine.trim()) {
+      output.push('');
+    }
   }
   output.push(...blockLines);
 }
@@ -809,12 +880,24 @@ function transformInline(input: string, options: CleanOptions, report: CleanRepo
 }
 
 function transformLinks(input: string, mode: LinkMode): { text: string; count: number } {
+  if (!input || input.length === 0) return { text: '', count: 0 };
+  
+  // Safety: limit iterations to prevent infinite loops
+  const maxIterations = 10000;
+  let iterations = 0;
+  
+  // Match markdown links: [text](url) or [text](url "title")
   const regex = /\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g;
   let count = 0;
   const replaced = input.replace(regex, (_match, label, url) => {
+    if (++iterations > maxIterations) {
+      console.warn('Link transform exceeded max iterations');
+      return _match; // Return original to prevent hang
+    }
     count += 1;
-    const cleanLabel = label.trim();
-    const cleanUrl = url.trim();
+    const cleanLabel = (label || '').trim();
+    const cleanUrl = (url || '').trim();
+    
     if (mode === 'keepMarkdown') {
       return `[${cleanLabel}](${cleanUrl})`;
     }
@@ -823,7 +906,8 @@ function transformLinks(input: string, mode: LinkMode): { text: string; count: n
       if (cleanLabel === cleanUrl) return cleanUrl;
       return `${cleanLabel} (${cleanUrl})`;
     }
-    return cleanLabel || cleanUrl;
+    // textOnly mode - just return the label
+    return cleanLabel || cleanUrl || '';
   });
   return { text: replaced, count };
 }
@@ -842,29 +926,49 @@ function transformInlineCode(input: string, mode: InlineCodeMode): { text: strin
 }
 
 function stripEmphasis(input: string): { text: string; count: number } {
+  if (!input || input.length === 0) return { text: '', count: 0 };
+  if (input.length > 50000) {
+    // For very large inputs, use simpler non-regex approach to avoid catastrophic backtracking
+    return { text: input, count: 0 };
+  }
+  
   const regex = /([*_~]{1,3})([^*_~\n][^\n]*?)(\1)/g;
   let count = 0;
-  const replaced = input.replace(regex, (_match, _open, content) => {
-    count += 1;
-    return content;
-  });
-  return { text: replaced, count };
+  
+  try {
+    const replaced = input.replace(regex, (_match, _open, content) => {
+      count += 1;
+      return content;
+    });
+    return { text: replaced, count };
+  } catch (error) {
+    console.warn('stripEmphasis failed, returning original:', error);
+    return { text: input, count: 0 };
+  }
 }
 
 function stripEmojis(input: string): { text: string; count: number } {
-  const emojiPattern = /\p{Extended_Pictographic}/gu;
-  let count = 0;
-  let stripped = input.replace(emojiPattern, () => {
-    count += 1;
-    return '';
-  });
+  if (!input || input.length === 0) return { text: '', count: 0 };
+  
+  try {
+    const emojiPattern = /\p{Extended_Pictographic}/gu;
+    let count = 0;
+    let stripped = input.replace(emojiPattern, () => {
+      count += 1;
+      return '';
+    });
 
-  if (count === 0) {
+    if (count === 0) {
+      return { text: input, count: 0 };
+    }
+
+    stripped = stripped.replace(/[\u200d]|[\uFE0F]/g, '');
+    return { text: stripped, count };
+  } catch (error) {
+    // Fallback if Unicode regex fails in some environments
+    console.warn('stripEmojis failed:', error);
     return { text: input, count: 0 };
   }
-
-  stripped = stripped.replace(/[\u200d]|[\uFE0F]/g, '');
-  return { text: stripped, count };
 }
 
 function applyRedactions(input: string, options: CleanOptions, report: CleanReport): string {
@@ -892,11 +996,37 @@ function applyRedactions(input: string, options: CleanOptions, report: CleanRepo
 // =========================
 
 function parseMarkdownLike(text: string): Block[] {
+  return parseMarkdownLikeWithDepth(text, 0);
+}
+
+function parseMarkdownLikeWithDepth(text: string, depth: number): Block[] {
+  if (!text || text.length === 0) return [];
+  
+  // Prevent stack overflow from recursive parsing
+  const MAX_PARSE_DEPTH = 15;
+  if (depth > MAX_PARSE_DEPTH) {
+    console.warn('Max parse depth exceeded');
+    return [{ type: 'paragraph', text: text.slice(0, 1000) + '...' }];
+  }
+  
   const lines = text.split(/\r?\n/);
   const blocks: Block[] = [];
   let index = 0;
+  const maxIterations = lines.length * 2 + 200; // More generous safety buffer
+  let iterations = 0;
 
   while (index < lines.length) {
+    // Safety: prevent infinite loops
+    if (++iterations > maxIterations) {
+      console.warn(`parseMarkdownLike exceeded max iterations at line ${index}/${lines.length}, breaking`);
+      // Add remaining content as a paragraph to avoid losing data
+      const remaining = lines.slice(index).join('\n').trim();
+      if (remaining) {
+        blocks.push({ type: 'paragraph', text: remaining });
+      }
+      break;
+    }
+    
     const line = lines[index];
     const trimmed = line.trim();
 
@@ -934,7 +1064,7 @@ function parseMarkdownLike(text: string): Block[] {
       continue;
     }
 
-    const blockquote = matchBlockquote(lines, index);
+    const blockquote = matchBlockquote(lines, index, depth);
     if (blockquote) {
       blocks.push(blockquote.block);
       index = blockquote.nextIndex;
@@ -985,17 +1115,25 @@ function consumeFence(
 ): { content: string; nextIndex: number } {
   const collected: string[] = [];
   let index = start;
+  const maxLines = 1000; // Reasonable limit for code blocks
 
-  while (index < lines.length) {
+  while (index < lines.length && collected.length < maxLines) {
     const current = lines[index];
-    if (current.startsWith(delimiter)) {
+    // Check if this line closes the fence (must be same or longer delimiter)
+    if (current.trim().startsWith(delimiter)) {
       return { content: collected.join('\n').trimEnd(), nextIndex: index + 1 };
     }
     collected.push(current);
     index += 1;
   }
 
-  return { content: collected.join('\n').trimEnd(), nextIndex: lines.length };
+  if (collected.length >= maxLines) {
+    console.warn('Code fence exceeded max lines, treating as unclosed');
+  }
+  
+  // Unclosed fence - treat collected content as code, continue parsing after
+  console.warn('Unclosed code fence detected');
+  return { content: collected.join('\n').trimEnd(), nextIndex: index };
 }
 
 function matchList(
@@ -1042,8 +1180,16 @@ function matchFootnote(line: string): Extract<Block, { type: 'footnote' }> | nul
 
 function matchBlockquote(
   lines: string[],
-  start: number
+  start: number,
+  depth = 0
 ): { block: Extract<Block, { type: 'blockquote' }>; nextIndex: number } | null {
+  // Prevent stack overflow from deeply nested blockquotes
+  const MAX_BLOCKQUOTE_DEPTH = 10;
+  if (depth > MAX_BLOCKQUOTE_DEPTH) {
+    console.warn('Max blockquote depth exceeded');
+    return null;
+  }
+  
   const collected: string[] = [];
   let index = start;
 
@@ -1056,7 +1202,7 @@ function matchBlockquote(
   }
 
   if (collected.length === 0) return null;
-  const nestedBlocks = parseMarkdownLike(collected.join('\n'));
+  const nestedBlocks = parseMarkdownLikeWithDepth(collected.join('\n'), depth + 1);
   return { block: { type: 'blockquote', blocks: nestedBlocks }, nextIndex: index };
 }
 
@@ -1313,15 +1459,20 @@ function normalizeNbsp(text: string): { text: string; count: number } {
 
 function replaceEmDashWithComma(text: string): { text: string; count: number } {
   let count = 0;
-  let result = text.replace(/ *— */g, () => {
+  // Replace em-dash with comma, preserving surrounding spaces
+  let result = text.replace(/ *— */g, (match) => {
     count += 1;
+    // Always add space after comma for readability
     return ', ';
   });
 
-  result = result.replace(/\s+,/g, ',');
-  result = result.replace(/,\s+/g, ', ');
-  result = result.replace(/, ([.!?;:,)\]])/g, ',$1');
-  result = result.replace(/, $/, ',');
+  // Clean up any spacing issues
+  result = result.replace(/\s+,/g, ',');         // Remove space before comma
+  result = result.replace(/,([^ ])/g, ', $1');   // Ensure space after comma
+  result = result.replace(/,\s{2,}/g, ', ');     // Collapse multiple spaces after comma
+  // Avoid double punctuation
+  result = result.replace(/, ([.!?;:,)\]])/g, '$1');
+  result = result.replace(/, $/, '');
   return { text: result, count };
 }
 

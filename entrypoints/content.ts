@@ -767,7 +767,10 @@ function setupPromptPicker() {
 
       if (formEl && target && formEl.contains(target)) {
         // Let the placeholder form manage non-escape key interactions.
-        ev.stopPropagation();
+        // But don't block Enter - it needs to bubble for form submission
+        if (ev.key !== 'Enter') {
+          ev.stopPropagation();
+        }
         return;
       }
 
@@ -785,6 +788,11 @@ function setupPromptPicker() {
         if (ev.key === 'ArrowUp') selectedIndex = Math.max(0, selectedIndex - 1);
         logger.debug('DialogDrive: Updated selectedIndex', { newSelectedIndex: selectedIndex });
         renderList();
+        // Scroll selected item into view
+        const selectedItem = list.querySelector(`[role="option"][aria-selected="true"]`) as HTMLElement;
+        if (selectedItem) {
+          selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
         return;
       }
 
@@ -1032,19 +1040,36 @@ function setupPromptPicker() {
     };
 
     const handleFormKeydown = (ev: KeyboardEvent) => {
-      if (ev.key !== 'Tab') return;
-      const focusable = getFocusableElements(currentFormEl);
-      ev.preventDefault();
-      ev.stopPropagation();
-      if (!focusable.length) return;
-      const idx = focusable.indexOf(document.activeElement as HTMLElement);
-      let next = idx;
-      if (ev.shiftKey) {
-        next = idx <= 0 ? focusable.length - 1 : idx - 1;
-      } else {
-        next = idx === -1 || idx >= focusable.length - 1 ? 0 : idx + 1;
+      // Handle Enter key for form submission
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (typeof form.onsubmit === 'function') {
+          const fakeEvent = {
+            preventDefault: () => {},
+            stopPropagation: () => {},
+          } as unknown as SubmitEvent;
+          form.onsubmit(fakeEvent);
+        }
+        return;
       }
-      focusable[next]?.focus();
+      
+      // Handle Tab key for focus navigation
+      if (ev.key === 'Tab') {
+        const focusable = getFocusableElements(currentFormEl);
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (!focusable.length) return;
+        const idx = focusable.indexOf(document.activeElement as HTMLElement);
+        let next = idx;
+        if (ev.shiftKey) {
+          next = idx <= 0 ? focusable.length - 1 : idx - 1;
+        } else {
+          next = idx === -1 || idx >= focusable.length - 1 ? 0 : idx + 1;
+        }
+        focusable[next]?.focus();
+        return;
+      }
     };
     currentFormEl.addEventListener('keydown', handleFormKeydown, true);
 

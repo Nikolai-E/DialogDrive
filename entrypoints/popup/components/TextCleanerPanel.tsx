@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ClipboardCopy, Eraser, HelpCircle } from 'lucide-react';
+import { AlertTriangle, ClipboardCopy, Eraser, HelpCircle } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Label } from '../../../components/ui/label';
@@ -7,18 +7,21 @@ import { Switch } from '../../../components/ui/switch';
 import { Textarea } from '../../../components/ui/textarea';
 import { usePrefsStore } from '../../../lib/prefsStore';
 import {
-  cleanText,
-  type BlockCodeMode,
-  type CleanOptions,
-  type InlineCodeMode,
-  type LinkMode,
-  type ListMode,
+    cleanText,
+    type BlockCodeMode,
+    type CleanOptions,
+    type InlineCodeMode,
+    type LinkMode,
+    type ListMode,
 } from '../../../lib/textCleaner';
 import { useCopyToClipboard } from '../hooks/useCopyToClipboard';
+
+const MAX_INPUT_SIZE = 100000;
 
 export const TextCleanerPanel: React.FC = () => {
   const [raw, setRaw] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showSizeWarning, setShowSizeWarning] = useState(false);
   const cleanerOptions = usePrefsStore((state) => state.cleanerOptions);
   const setCleanerOptions = usePrefsStore((state) => state.setCleanerOptions);
   const cleanerTipsVisible = usePrefsStore((state) => state.cleanerTipsVisible);
@@ -38,6 +41,15 @@ export const TextCleanerPanel: React.FC = () => {
   );
 
   const result = useMemo(() => cleanText(raw, opts), [raw, opts]);
+
+  const handleTextChange = (value: string) => {
+    if (value.length > MAX_INPUT_SIZE) {
+      setShowSizeWarning(true);
+    } else {
+      setShowSizeWarning(false);
+    }
+    setRaw(value);
+  };
 
   const handleLinkModeChange = (mode: LinkMode) => {
     if (mode === opts.linkMode) return;
@@ -320,17 +332,31 @@ export const TextCleanerPanel: React.FC = () => {
       {/* Vertical layout: Input on first row (smaller), Cleaned on second row (expands) */}
       <div className="flex-1 grid grid-rows-[auto,1fr] gap-3 p-2 min-h-0">
         <div className="flex flex-col min-h-[140px] rounded-lg border-2 border-border/60 bg-background shadow-sm">
-          <div className="px-3 py-2 border-b border-border/40 bg-muted/30">
+          <div className="px-3 py-2 border-b border-border/40 bg-muted/30 flex items-center justify-between">
             <Label htmlFor="raw" className="text-[11px] font-semibold">
               Input
             </Label>
+            <div className="flex items-center gap-2">
+              {/* Character count indicator */}
+              <span className={`text-[10px] ${showSizeWarning ? 'text-amber-600 dark:text-amber-500 font-semibold' : 'text-muted-foreground'}`}>
+                {raw.length.toLocaleString()} chars
+                {raw.length > 0 && ` / ${MAX_INPUT_SIZE.toLocaleString()}`}
+              </span>
+              {showSizeWarning && (
+                <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-500">
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>Too large!</span>
+                </div>
+              )}
+            </div>
           </div>
           <Textarea
             id="raw"
             value={raw}
-            onChange={(e) => setRaw(e.target.value)}
+            onChange={(e) => handleTextChange(e.target.value)}
             placeholder="Paste text here"
-            className="flex-1 min-h-[120px] resize-y text-[12px] bg-transparent border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-3 py-2"
+            className="flex-1 min-h-[120px] resize-y text-[12px] bg-transparent border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-3 py-2 overflow-auto"
+            style={{ wordWrap: 'break-word', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
             data-testid="text-cleaner-input"
           />
         </div>
@@ -358,9 +384,10 @@ export const TextCleanerPanel: React.FC = () => {
             </div>
           </div>
           {/* Diff-highlighted view layered under a transparent textarea for easy copying and selection */}
-          <div className="relative flex-1 min-h-[240px] rounded-lg border-2 border-border/60 bg-background shadow-sm">
+          <div className="relative flex-1 min-h-[240px] rounded-lg border-2 border-border/60 bg-background shadow-sm overflow-hidden">
             <div
               className="absolute inset-0 overflow-auto rounded-lg p-3 text-[12px] whitespace-pre-wrap font-mono leading-5"
+              style={{ wordWrap: 'break-word', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
               aria-hidden
             >
               <DiffView original={raw} cleaned={result.text} />
@@ -371,6 +398,7 @@ export const TextCleanerPanel: React.FC = () => {
               value={result.text}
               readOnly
               className="absolute inset-0 rounded-lg opacity-0 pointer-events-none border-none"
+              style={{ wordWrap: 'break-word', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
             />
           </div>
         </div>
