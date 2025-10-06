@@ -190,7 +190,7 @@ export const UnifiedItem: React.FC<UnifiedItemProps> = React.memo(({ item }) => 
       <div
         className={cn(
           'group rounded-[var(--radius)] border border-border/70 bg-[hsl(var(--card))] px-3.5 py-1.5 transition-all duration-150 shadow-[0_1px_1px_rgba(15,23,42,0.05)]',
-          'hover:border-border/60 hover:bg-[hsl(var(--card))] hover:shadow-[0_5px_14px_rgba(15,23,42,0.14)]'
+          'hover:border-primary/30 hover:bg-primary/[0.03] hover:shadow-[0_2px_10px_rgba(124,58,237,0.12),0_0_15px_rgba(124,58,237,0.06)]'
         )}
       >
         {/* Row 1: Public Tag + Title + Pin + Open */}

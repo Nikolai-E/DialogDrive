@@ -5,28 +5,28 @@
 @layer base {
   :root {
     /* Neutral, Apple-inspired palette with defined surface steps */
-    --background: 36 38% 95%;
-    --card: 36 28% 97%;
-    --popover: 36 28% 98%;
-    --input: 36 22% 92%;
-    --surface-subtle: 32 18% 89%;
-    --surface-contrast: 30 16% 86%;
+    --background: 0 0% 98%; /* Clean neutral white-grey */
+    --card: 0 0% 100%; /* Pure white cards */
+    --popover: 0 0% 100%;
+    --input: 0 0% 96%;
+    --surface-subtle: 0 0% 95%;
+    --surface-contrast: 0 0% 97%; /* Very subtle grey header */
 
     /* Typography */
-    --foreground: 24 30% 13%;
-    --card-foreground: 24 30% 13%;
-    --popover-foreground: 24 30% 13%;
-    --text-secondary: 24 24% 24%;
-    --muted-foreground: 24 22% 32%;
+    --foreground: 0 0% 8%; /* Nearly black */
+    --card-foreground: 0 0% 8%;
+    --popover-foreground: 0 0% 8%;
+    --text-secondary: 0 0% 20%;
+    --muted-foreground: 0 0% 35%; /* More visible muted text */
     --text-inverted: 0 0% 100%;
 
     /* Accents */
-    --primary: 214 30% 28%;
-    --primary-foreground: 0 0% 98%;
-    --accent: 30 22% 78%;
-    --accent-foreground: 24 26% 20%;
-    --chip: 32 20% 82%;
-    --chip-foreground: 24 28% 18%;
+    --primary: 0 0% 24%; /* Darker graphite grey */
+    --primary-foreground: 0 0% 100%;
+    --accent: 265 70% 45%; /* Darker premium purple */
+    --accent-foreground: 0 0% 100%;
+    --chip: 0 0% 88%;
+    --chip-foreground: 0 0% 20%;
 
     /* Status */
     --success: 142 45% 38%;
@@ -37,16 +37,16 @@
     --destructive-foreground: 0 0% 100%;
 
     /* Secondary & Muted */
-    --secondary: 34 18% 88%;
-    --secondary-foreground: 24 22% 28%;
-    --muted: 30 20% 88%;
+    --secondary: 0 0% 93%;
+    --secondary-foreground: 0 0% 15%;
+    --muted: 0 0% 94%;
 
     /* Neutrals */
-    --border: 28 22% 60%;
-    --border-strong: 28 28% 48%;
-    --divider: 30 20% 70%;
-    --ring: 28 30% 28%;
-    --disabled: 28 10% 86%;
+    --border: 0 0% 60%; /* Very strong borders */
+    --border-strong: 0 0% 50%;
+    --divider: 0 0% 60%; /* Very visible dividers */
+    --ring: 217 70% 52%;
+    --disabled: 0 0% 92%;
     --shadow-soft: 0 20px 44px rgba(42, 34, 28, 0.16);
     --shadow-focus: 0 0 0 1.5px rgba(42, 34, 28, 0.24);
 
@@ -77,6 +77,7 @@
       'rlig' 1,
       'calt' 1;
     font-size: 12px;
+    font-weight: 500; /* Slightly bolder */
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -94,10 +95,13 @@
   }
   .scrollbar-thin::-webkit-scrollbar-track {
     background: transparent;
+    margin-right: 2px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: hsl(var(--muted));
     border-radius: 4px;
+    border-right: 2px solid transparent;
+    background-clip: padding-box;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: hsl(var(--border));

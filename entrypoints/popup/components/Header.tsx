@@ -2,17 +2,17 @@
 // Popup header that manages search, filtering, and quick-create menus.
 
 import {
-    Check,
-    Hammer,
-    LayoutGrid,
-    List,
-    MessageSquare,
-    Pin,
-    Plus,
-    Search,
-    Settings as SettingsIcon,
-    SortAsc,
-    X,
+  Check,
+  Hammer,
+  LayoutGrid,
+  List,
+  MessageSquare,
+  Pin,
+  Plus,
+  Search,
+  Settings as SettingsIcon,
+  SortAsc,
+  X,
 } from 'lucide-react';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -325,10 +325,10 @@ export const Header: React.FC<HeaderProps> = ({
       onClick={onClick}
       ref={buttonRef}
       className={cn(
-        'inline-flex items-center gap-1.75 h-8 px-3 rounded-full border border-transparent text-[12.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'inline-flex items-center gap-1.75 h-8 px-3 rounded-full border text-[12.5px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         active
-          ? 'bg-primary/12 text-foreground border-primary/25 shadow-[0_2px_4px_rgba(15,23,42,0.12)]'
-          : 'text-foreground/75 hover:text-foreground hover:bg-secondary/55',
+          ? 'bg-primary/8 text-primary border-primary/30 shadow-[0_2px_8px_rgba(124,58,237,0.15),0_0_12px_rgba(124,58,237,0.08)]'
+          : 'text-foreground/75 hover:text-foreground hover:bg-secondary/40 border-transparent',
         className
       )}
       aria-selected={active}
@@ -345,9 +345,9 @@ export const Header: React.FC<HeaderProps> = ({
   );
 
   const filterButtonClass =
-    'inline-flex items-center gap-1.5 h-[31px] px-3 rounded-full border border-border bg-[hsl(var(--surface-subtle))] text-[12px] font-medium text-foreground/90 transition-colors shadow-[0_1px_2px_rgba(42,34,28,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:bg-[hsl(var(--surface-contrast))] justify-center';
+    'inline-flex items-center gap-1.5 h-[31px] px-3 rounded-full border border-transparent bg-transparent text-[12px] font-medium text-foreground/75 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:text-foreground hover:bg-secondary/40 justify-center';
   const filterButtonActiveClass =
-    'bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] border-[hsl(var(--accent))] shadow-[0_6px_16px_rgba(48,36,24,0.2)]';
+    'bg-primary/8 text-primary border-primary/30 shadow-[0_2px_8px_rgba(124,58,237,0.15),0_0_12px_rgba(124,58,237,0.08)]';
 
   const isCustomSort = sortBy !== 'recent';
   const isPinnedActive = showPinned;
@@ -577,8 +577,8 @@ export const Header: React.FC<HeaderProps> = ({
       : null;
 
   return (
-    <header className="shrink-0 border-b border-border/55 bg-[hsl(var(--surface-contrast))]/88 backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--surface-contrast))]/75 shadow-[0_3px_10px_rgba(15,23,42,0.08)]">
-      <div className="px-2 pt-2 pb-1.5 flex items-center gap-2">
+    <header className="shrink-0 bg-[hsl(var(--surface-contrast))]/75 backdrop-blur-md supports-[backdrop-filter]:bg-[hsl(var(--surface-contrast))]/65 shadow-[0_3px_10px_rgba(15,23,42,0.08)] border-b border-border/35">
+      <div className="pl-1 pr-2 pt-2 pb-1.5 flex items-center gap-2">
         <button
           type="button"
           className="flex items-center gap-1.5 rounded-full px-2 py-1 text-foreground transition-colors hover:bg-secondary/40"
@@ -631,7 +631,7 @@ export const Header: React.FC<HeaderProps> = ({
               setActiveMenu(null);
               setShowDropdown((v) => !v);
             }}
-            className="h-8 rounded-full px-[14px] text-[12.5px] font-semibold text-primary-foreground shadow-[0_4px_10px_rgba(15,23,42,0.16)] transition-shadow hover:bg-primary/90 hover:shadow-[0_6px_16px_rgba(15,23,42,0.22)]"
+            className="h-8 rounded-full px-[14px] text-[12.5px] font-semibold text-primary-foreground shadow-[0_4px_10px_rgba(15,23,42,0.16),0_0_16px_rgba(124,58,237,0.12)] transition-all hover:bg-primary/90 hover:shadow-[0_6px_16px_rgba(15,23,42,0.22),0_0_24px_rgba(124,58,237,0.2)]"
             aria-haspopup="menu"
             aria-expanded={showDropdown}
             aria-controls="create-menu"
@@ -655,7 +655,8 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
       {/* Hide tabs and filters when in form/chat-form views */}
       {currentView !== 'form' && currentView !== 'chat-form' && (
-        <div className="pl-1.75 pr-1.75 pb-2.5 space-y-1.6">
+        <>
+          <div className="pl-1.75 pr-1.75 pb-2.5 space-y-1.6">
           <div
             role="tablist"
             aria-label="Views"
@@ -718,7 +719,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="w-full justify-center"
             />
           </div>
-          <div className="my-2 border-t border-border/40" />
+          <div className="mx-2.5 my-1.5 border-t border-border/25" />
           <div className="flex flex-wrap items-center gap-1.75 mx-2.5">
             <button
               type="button"
@@ -800,7 +801,8 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="truncate">Pinned</span>
             </button>
           </div>
-        </div>
+          </div>
+        </>
       )}
       {menu}
       {filterMenu}

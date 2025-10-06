@@ -85,7 +85,7 @@ const App: React.FC = () => {
         />
         {/* Onboarding inline arrow overlay removed per request */}
         {/* Single scroll container; prevent nested scrolling */}
-        <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent px-2.5 py-1.5">
+        <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent px-2.5 py-1.5 pr-1">
           {prefsRehydrated && !onboardingDismissed && currentView === 'list' && (
             <OnboardingBanner
               onDismiss={async () => {
