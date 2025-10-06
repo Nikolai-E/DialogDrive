@@ -20,12 +20,6 @@ const PREMADE: LibraryPrompt[] = [
     workspace: 'Research',
   },
   {
-    title: "Explain like I'm 5",
-    text: 'Explain the following concept to me as if I were a 5-year-old: [paste concept here]',
-    tags: ['simple', 'explanation'],
-    workspace: 'Education',
-  },
-  {
     title: 'Code review request',
     text: 'Please review this code for best practices, potential bugs, and suggestions for improvement:\n\n[paste code here]',
     tags: ['code', 'review'],

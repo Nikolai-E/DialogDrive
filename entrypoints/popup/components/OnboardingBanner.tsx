@@ -12,7 +12,7 @@ export const OnboardingBanner: React.FC<Props> = ({ onDismiss }) => {
     <div
       role="region"
       aria-label="Getting started tips"
-      className="mx-2 mt-2 mb-0 rounded-md border border-primary/30 bg-primary/10 text-foreground"
+      className="mx-2 mt-2 mb-0 rounded-md border border-primary/25 bg-primary/10 text-foreground shadow-[0_0_12px_rgba(0,102,204,0.08)]"
     >
       <div className="px-3 py-2 flex items-start gap-2">
         <Info className="h-4 w-4 text-primary mt-0.5" aria-hidden="true" />

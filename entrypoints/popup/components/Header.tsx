@@ -2,17 +2,17 @@
 // Popup header that manages search, filtering, and quick-create menus.
 
 import {
-  Check,
-  Hammer,
-  LayoutGrid,
-  List,
-  MessageSquare,
-  Pin,
-  Plus,
-  Search,
-  Settings as SettingsIcon,
-  SortAsc,
-  X,
+    Check,
+    Hammer,
+    LayoutGrid,
+    List,
+    MessageSquare,
+    Pin,
+    Plus,
+    Search,
+    Settings as SettingsIcon,
+    SortAsc,
+    X,
 } from 'lucide-react';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -325,10 +325,10 @@ export const Header: React.FC<HeaderProps> = ({
       onClick={onClick}
       ref={buttonRef}
       className={cn(
-        'inline-flex items-center gap-1.75 h-8 px-3 rounded-full border text-[12.5px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'inline-flex items-center gap-1.75 h-8 px-3 rounded-full border text-[12.5px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         active
-          ? 'bg-primary/8 text-primary border-primary/30 shadow-[0_2px_8px_rgba(124,58,237,0.15),0_0_12px_rgba(124,58,237,0.08)]'
-          : 'text-foreground/75 hover:text-foreground hover:bg-secondary/40 border-transparent',
+          ? 'bg-primary/12 text-primary border-primary/25 shadow-[0_0_10px_rgba(0,102,204,0.1),0_0_14px_rgba(0,102,204,0.05)] hover:bg-primary/26 hover:shadow-[0_0_22px_rgba(0,102,204,0.2)]'
+          : 'text-foreground/75 hover:text-primary hover:bg-primary/22 hover:shadow-[0_0_16px_rgba(0,102,204,0.16)] border-transparent',
         className
       )}
       aria-selected={active}
@@ -347,7 +347,7 @@ export const Header: React.FC<HeaderProps> = ({
   const filterButtonClass =
     'inline-flex items-center gap-1.5 h-[31px] px-3 rounded-full border border-transparent bg-transparent text-[12px] font-medium text-foreground/75 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:text-foreground hover:bg-secondary/40 justify-center';
   const filterButtonActiveClass =
-    'bg-primary/8 text-primary border-primary/30 shadow-[0_2px_8px_rgba(124,58,237,0.15),0_0_12px_rgba(124,58,237,0.08)]';
+    'bg-primary/12 text-primary border-primary/25 shadow-[0_0_10px_rgba(0,102,204,0.12),0_0_16px_rgba(0,102,204,0.06)]';
 
   const isCustomSort = sortBy !== 'recent';
   const isPinnedActive = showPinned;
@@ -631,7 +631,7 @@ export const Header: React.FC<HeaderProps> = ({
               setActiveMenu(null);
               setShowDropdown((v) => !v);
             }}
-            className="h-8 rounded-full px-[14px] text-[12.5px] font-semibold text-primary-foreground shadow-[0_4px_10px_rgba(15,23,42,0.16),0_0_16px_rgba(124,58,237,0.12)] transition-all hover:bg-primary/90 hover:shadow-[0_6px_16px_rgba(15,23,42,0.22),0_0_24px_rgba(124,58,237,0.2)]"
+            className="h-8 rounded-full px-[14px] text-[12.5px] font-semibold text-primary-foreground shadow-[0_4px_10px_rgba(15,23,42,0.16),0_0_16px_rgba(0,102,204,0.12)] transition-all hover:bg-primary/90 hover:shadow-[0_6px_16px_rgba(15,23,42,0.22),0_0_24px_rgba(0,102,204,0.2)]"
             aria-haspopup="menu"
             aria-expanded={showDropdown}
             aria-controls="create-menu"

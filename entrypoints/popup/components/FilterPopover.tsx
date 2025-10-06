@@ -48,6 +48,15 @@ export const FilterPopover: React.FC = () => {
     { value: 'created', label: 'Created' },
   ];
 
+  const filterTriggerBase =
+    'group inline-flex items-center h-8 px-2 gap-1 rounded-full border border-border/60 bg-[hsl(var(--card))] text-[12px] font-medium text-foreground/78 transition-all duration-200 shadow-[0_1px_1px_rgba(15,23,42,0.05)] hover:text-primary hover:bg-primary/20 hover:border-primary/55 hover:shadow-[0_0_30px_rgba(0,102,204,0.3),0_6px_18px_rgba(15,23,42,0.2)]';
+  const filterTriggerActive =
+    'bg-primary/24 text-primary border-primary/60 shadow-[0_0_34px_rgba(0,102,204,0.34),0_8px_22px_rgba(15,23,42,0.24)]';
+
+  const isSortScoped = sortBy !== 'recent';
+  const isWorkspaceScoped = selectedWorkspace !== 'all';
+  const isTagScoped = filterTag !== 'all';
+
   return (
     <div className="bg-popover border border-border rounded-md shadow-lg p-2 w-72">
       <div className="grid grid-cols-2 gap-2">
@@ -57,17 +66,37 @@ export const FilterPopover: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => setShowSortDropdown(!showSortDropdown)}
-            className="h-8 w-full justify-between px-2 gap-1 border-border bg-card text-foreground hover:bg-muted/60"
+            className={cn(
+              filterTriggerBase,
+              'justify-between',
+              (showSortDropdown || isSortScoped) && filterTriggerActive
+            )}
+            data-active={showSortDropdown || isSortScoped ? 'true' : undefined}
             aria-haspopup="menu"
             aria-expanded={showSortDropdown}
           >
             <div className="flex items-center gap-1.5 truncate">
-              <SortAsc className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="truncate text-xs">
+              <SortAsc
+                className={cn(
+                  'h-3.5 w-3.5 transition-colors group-hover:text-primary',
+                  showSortDropdown || isSortScoped ? 'text-primary' : 'text-muted-foreground'
+                )}
+              />
+              <span
+                className={cn(
+                  'truncate text-xs transition-colors group-hover:text-primary',
+                  showSortDropdown || isSortScoped ? 'text-primary' : 'text-foreground'
+                )}
+              >
                 {sortOptions.find((opt) => opt.value === sortBy)?.label}
               </span>
             </div>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <ChevronDown
+              className={cn(
+                'h-3.5 w-3.5 transition-colors group-hover:text-primary',
+                showSortDropdown || isSortScoped ? 'text-primary' : 'text-muted-foreground'
+              )}
+            />
           </Button>
           {showSortDropdown && (
             <div
@@ -84,8 +113,10 @@ export const FilterPopover: React.FC = () => {
                     setShowSortDropdown(false);
                   }}
                   className={cn(
-                    'w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60',
-                    sortBy === option.value ? 'bg-primary/10 text-primary' : 'text-foreground'
+                    'w-full h-8 text-left text-xs px-2 rounded transition-colors duration-150',
+                    sortBy === option.value
+                      ? 'bg-primary/14 text-primary font-semibold shadow-[0_0_10px_rgba(0,102,204,0.12),0_0_16px_rgba(0,102,204,0.06)] hover:bg-primary/38 hover:shadow-[0_0_24px_rgba(0,102,204,0.22)]'
+                      : 'text-foreground hover:bg-primary/30 hover:text-primary hover:shadow-[0_0_16px_rgba(0,102,204,0.14)]'
                   )}
                 >
                   {option.label}
@@ -96,19 +127,31 @@ export const FilterPopover: React.FC = () => {
         </div>
         {/* Pinned toggle */}
         <Button
-          variant={showPinned ? 'default' : 'outline'}
+          variant="outline"
           size="sm"
           onClick={() => setShowPinned(!showPinned)}
           className={cn(
-            'h-8 w-full gap-1.5',
-            showPinned
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-card text-foreground border-border hover:bg-muted/60'
+            filterTriggerBase,
+            'justify-center gap-1.5 px-3',
+            showPinned && filterTriggerActive
           )}
+          data-active={showPinned ? 'true' : undefined}
           aria-pressed={showPinned}
         >
-          <Pin className="h-3.5 w-3.5" />
-          <span className="text-xs">Pinned</span>
+          <Pin
+            className={cn(
+              'h-3.5 w-3.5 transition-colors group-hover:text-primary',
+              showPinned ? 'text-primary' : 'text-muted-foreground'
+            )}
+          />
+          <span
+            className={cn(
+              'text-xs transition-colors group-hover:text-primary',
+              showPinned ? 'text-primary' : 'text-foreground'
+            )}
+          >
+            Pinned
+          </span>
         </Button>
         {/* Workspace Dropdown */}
         <div className="relative" ref={workspaceRef}>
@@ -116,17 +159,37 @@ export const FilterPopover: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => setShowWorkspaceDropdown(!showWorkspaceDropdown)}
-            className="h-8 w-full justify-between px-2 gap-1 border-border bg-card text-foreground hover:bg-muted/60"
+            className={cn(
+              filterTriggerBase,
+              'justify-between',
+              (showWorkspaceDropdown || isWorkspaceScoped) && filterTriggerActive
+            )}
+            data-active={showWorkspaceDropdown || isWorkspaceScoped ? 'true' : undefined}
             aria-haspopup="menu"
             aria-expanded={showWorkspaceDropdown}
           >
             <div className="flex items-center gap-1.5 truncate">
-              <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="truncate text-xs">
+              <Building2
+                className={cn(
+                  'h-3.5 w-3.5 transition-colors group-hover:text-primary',
+                  showWorkspaceDropdown || isWorkspaceScoped ? 'text-primary' : 'text-muted-foreground'
+                )}
+              />
+              <span
+                className={cn(
+                  'truncate text-xs transition-colors group-hover:text-primary',
+                  showWorkspaceDropdown || isWorkspaceScoped ? 'text-primary' : 'text-foreground'
+                )}
+              >
                 {selectedWorkspace === 'all' ? 'Workspace' : selectedWorkspace}
               </span>
             </div>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <ChevronDown
+              className={cn(
+                'h-3.5 w-3.5 transition-colors group-hover:text-primary',
+                showWorkspaceDropdown || isWorkspaceScoped ? 'text-primary' : 'text-muted-foreground'
+              )}
+            />
           </Button>
           {showWorkspaceDropdown && (
             <div
@@ -141,8 +204,10 @@ export const FilterPopover: React.FC = () => {
                   setShowWorkspaceDropdown(false);
                 }}
                 className={cn(
-                  'w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60',
-                  selectedWorkspace === 'all' ? 'bg-primary/10 text-primary' : 'text-foreground'
+                  'w-full h-8 text-left text-xs px-2 rounded transition-colors duration-150',
+                  selectedWorkspace === 'all'
+                    ? 'bg-primary/14 text-primary font-semibold shadow-[0_0_10px_rgba(0,102,204,0.12),0_0_16px_rgba(0,102,204,0.06)] hover:bg-primary/38 hover:shadow-[0_0_24px_rgba(0,102,204,0.22)]'
+                    : 'text-foreground hover:bg-primary/30 hover:text-primary hover:shadow-[0_0_16px_rgba(0,102,204,0.14)]'
                 )}
               >
                 All Workspaces
@@ -157,10 +222,10 @@ export const FilterPopover: React.FC = () => {
                     setShowWorkspaceDropdown(false);
                   }}
                   className={cn(
-                    'w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60 truncate',
+                    'w-full h-8 text-left text-xs px-2 rounded transition-colors duration-150 truncate',
                     selectedWorkspace === workspace
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-foreground'
+                      ? 'bg-primary/14 text-primary font-semibold shadow-[0_0_10px_rgba(0,102,204,0.12),0_0_16px_rgba(0,102,204,0.06)] hover:bg-primary/38 hover:shadow-[0_0_24px_rgba(0,102,204,0.22)]'
+                      : 'text-foreground hover:bg-primary/30 hover:text-primary hover:shadow-[0_0_16px_rgba(0,102,204,0.14)]'
                   )}
                 >
                   {workspace}
@@ -175,15 +240,37 @@ export const FilterPopover: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => setShowTagsDropdown(!showTagsDropdown)}
-            className="h-8 w-full justify-between px-2 gap-1 border-border bg-card text-foreground hover:bg-muted/60"
+            className={cn(
+              filterTriggerBase,
+              'justify-between',
+              (showTagsDropdown || isTagScoped) && filterTriggerActive
+            )}
+            data-active={showTagsDropdown || isTagScoped ? 'true' : undefined}
             aria-haspopup="menu"
             aria-expanded={showTagsDropdown}
           >
             <div className="flex items-center gap-1.5 truncate">
-              <Tag className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="truncate text-xs">{filterTag === 'all' ? 'Tag' : filterTag}</span>
+              <Tag
+                className={cn(
+                  'h-3.5 w-3.5 transition-colors group-hover:text-primary',
+                  showTagsDropdown || isTagScoped ? 'text-primary' : 'text-muted-foreground'
+                )}
+              />
+              <span
+                className={cn(
+                  'truncate text-xs transition-colors group-hover:text-primary',
+                  showTagsDropdown || isTagScoped ? 'text-primary' : 'text-foreground'
+                )}
+              >
+                {filterTag === 'all' ? 'Tag' : filterTag}
+              </span>
             </div>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <ChevronDown
+              className={cn(
+                'h-3.5 w-3.5 transition-colors group-hover:text-primary',
+                showTagsDropdown || isTagScoped ? 'text-primary' : 'text-muted-foreground'
+              )}
+            />
           </Button>
           {showTagsDropdown && (
             <div
@@ -198,8 +285,10 @@ export const FilterPopover: React.FC = () => {
                   setShowTagsDropdown(false);
                 }}
                 className={cn(
-                  'w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60',
-                  filterTag === 'all' ? 'bg-primary/10 text-primary' : 'text-foreground'
+                  'w-full h-8 text-left text-xs px-2 rounded transition-colors duration-150',
+                  filterTag === 'all'
+                    ? 'bg-primary/14 text-primary font-semibold shadow-[0_0_10px_rgba(0,102,204,0.12),0_0_16px_rgba(0,102,204,0.06)] hover:bg-primary/38 hover:shadow-[0_0_24px_rgba(0,102,204,0.22)]'
+                    : 'text-foreground hover:bg-primary/30 hover:text-primary hover:shadow-[0_0_16px_rgba(0,102,204,0.14)]'
                 )}
               >
                 All Tags
@@ -214,8 +303,10 @@ export const FilterPopover: React.FC = () => {
                     setShowTagsDropdown(false);
                   }}
                   className={cn(
-                    'w-full h-8 text-left text-xs px-2 rounded hover:bg-muted/60 truncate',
-                    filterTag === tag ? 'bg-primary/10 text-primary' : 'text-foreground'
+                    'w-full h-8 text-left text-xs px-2 rounded transition-colors duration-150 truncate',
+                    filterTag === tag
+                      ? 'bg-primary/14 text-primary font-semibold shadow-[0_0_10px_rgba(0,102,204,0.12),0_0_16px_rgba(0,102,204,0.06)] hover:bg-primary/38 hover:shadow-[0_0_24px_rgba(0,102,204,0.22)]'
+                      : 'text-foreground hover:bg-primary/30 hover:text-primary hover:shadow-[0_0_16px_rgba(0,102,204,0.14)]'
                   )}
                 >
                   {tag}
