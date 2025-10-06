@@ -4,7 +4,15 @@ import { logger } from '../lib/logger';
 import { createTagChip, sanitizeTagLabel } from './floating-save/tagHelpers';
 
 export default defineContentScript({
-  matches: ['*://chatgpt.com/*', '*://chat.openai.com/*'],
+  matches: [
+    '*://chatgpt.com/*',
+    '*://chat.openai.com/*',
+    '*://gemini.google.com/*',
+    '*://claude.ai/*',
+    '*://chat.mistral.ai/*',
+    '*://chat.deepseek.com/*',
+    '*://aistudio.google.com/*'
+  ],
   main() {
     logger.info('DialogDrive floating save button initialized');
 

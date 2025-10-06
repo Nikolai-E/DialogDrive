@@ -11,8 +11,8 @@ export default defineConfig({
   },
   manifest: {
     name: 'DialogDrive',
-    description: 'Your AI Project Workspaces Extension',
-    version: '1.0.6',
+    description: 'Save, organize, and reuse prompts anywhere. Bookmark chats, build a personal portable AI workspace, and launch ideas with one click.',
+    version: '1.1.0',
     permissions: [
       'storage',
       'activeTab',
@@ -21,7 +21,15 @@ export default defineConfig({
       'notifications',
       'sidePanel',
     ],
-    host_permissions: ['https://chatgpt.com/*', 'https://chat.openai.com/*'],
+    host_permissions: [
+      'https://chatgpt.com/*',
+      'https://chat.openai.com/*',
+      'https://gemini.google.com/*',
+      'https://claude.ai/*',
+      'https://chat.mistral.ai/*',
+      'https://chat.deepseek.com/*',
+      'https://aistudio.google.com/*',
+    ],
     commands: {
       'paste-latest-prompt': {
         suggested_key: {

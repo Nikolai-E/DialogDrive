@@ -16,8 +16,16 @@ type PromptItem = {
 };
 
 export default defineContentScript({
-  // Only run on the ChatGPT domains we support today.
-  matches: ['*://chatgpt.com/*', '*://chat.openai.com/*'],
+  // Run on all supported AI chat platforms
+  matches: [
+    '*://chatgpt.com/*',
+    '*://chat.openai.com/*',
+    '*://gemini.google.com/*',
+    '*://claude.ai/*',
+    '*://chat.mistral.ai/*',
+    '*://chat.deepseek.com/*',
+    '*://aistudio.google.com/*'
+  ],
   world: 'ISOLATED',
   runAt: 'document_idle',
   main() {
@@ -86,12 +94,13 @@ function setupPromptPicker() {
   if ((window as any).__ddPickerInit) return;
   (window as any).__ddPickerInit = true;
   logger.debug('DialogDrive: setupPromptPicker initialized');
-  if (!platformManager.getCurrentAdapter()?.name.includes('ChatGPT')) {
-    logger.debug('DialogDrive: Not on ChatGPT, skipping picker setup');
+  const adapter = platformManager.getCurrentAdapter();
+  if (!adapter) {
+    logger.debug('DialogDrive: No platform adapter detected, skipping picker setup');
     return;
   }
 
-  logger.debug('DialogDrive: On ChatGPT, proceeding with picker setup');
+  logger.debug('DialogDrive: Platform detected, proceeding with picker setup', { platform: adapter.name });
   let input: HTMLElement | null = findChatGPTInput();
 
   // Debug logging
@@ -1138,6 +1147,7 @@ function setupPromptPicker() {
 
   function findChatGPTInput(): HTMLElement | null {
     const selectors = [
+      // ChatGPT selectors
       '#prompt-textarea',
       'textarea#prompt-textarea',
       'textarea[placeholder*="Message" i]',
@@ -1147,12 +1157,36 @@ function setupPromptPicker() {
       'div[contenteditable="true"][data-lexical-editor]',
       '[contenteditable="true"][aria-label*="message" i]',
       'textarea[data-testid="textbox"]',
-      'div[contenteditable="true"]', // More general fallback
-      'textarea', // Most general fallback
-      // Add some more specific ChatGPT patterns
       'div[data-testid="prosemirror-editor"]',
       '[data-slate-editor="true"]',
       'div[contenteditable][role="textbox"]',
+      
+      // Gemini selectors
+      'rich-textarea[aria-label*="prompt" i]',
+      'rich-textarea[placeholder]',
+      'div[contenteditable="true"][aria-label*="prompt" i]',
+      'div.ql-editor[contenteditable="true"]',
+      
+      // Claude selectors
+      'div[contenteditable="true"][data-placeholder]',
+      'div[contenteditable="true"].ProseMirror',
+      'div.ProseMirror[contenteditable="true"]',
+      'fieldset div[contenteditable="true"]',
+      
+      // Mistral selectors
+      'textarea[placeholder*="Ask" i]',
+      
+      // DeepSeek selectors
+      'textarea[placeholder*="deepseek" i]',
+      
+      // Google AI Studio selectors
+      'textarea[aria-label*="prompt" i]',
+      'div.mat-input-element[contenteditable="true"]',
+      'textarea.mat-input-element',
+      
+      // Generic fallbacks
+      'div[contenteditable="true"]',
+      'textarea',
     ];
 
     // Fast-path: try last successful selector first

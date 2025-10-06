@@ -3,11 +3,20 @@
 
 import { PlatformAdapter } from './adapter';
 import { ChatGPTAdapter } from './chatgpt-adapter';
+import { ClaudeAdapter } from './claude-adapter';
+import { DeepSeekAdapter } from './deepseek-adapter';
+import { GeminiAdapter } from './gemini-adapter';
+import { GoogleAIStudioAdapter } from './google-ai-studio-adapter';
+import { MistralAdapter } from './mistral-adapter';
 
 class PlatformManager {
   private adapters: PlatformAdapter[] = [
     new ChatGPTAdapter(),
-    // Add more adapters here as needed
+    new GeminiAdapter(),
+    new ClaudeAdapter(),
+    new MistralAdapter(),
+    new DeepSeekAdapter(),
+    new GoogleAIStudioAdapter(),
   ];
 
   getCurrentAdapter(): PlatformAdapter | null {
