@@ -1,74 +1,156 @@
-// Smooth scroll for anchor links
 document.addEventListener('DOMContentLoaded', () => {
-    // Handle anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            const href = this.getAttribute('href');
-            if (href !== '#' && href.length > 1) {
-                e.preventDefault();
-                const target = document.querySelector(href);
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+    const header = document.querySelector('.site-header');
+    const headerBar = header ? header.querySelector('.header-bar') : null;
+    const headerNavLinks = Array.from(document.querySelectorAll('.site-nav a'));
+    const floatingClouds = document.querySelectorAll('.floating-text');
+    const hero = document.querySelector('.hero');
+
+    const normalizePathname = (pathname) => pathname.replace(/index\.html$/i, '') || '/';
+
+    let headerScrollThreshold = 24;
+
+    const computeHeaderThreshold = () => {
+        if (!header) {
+            headerScrollThreshold = 24;
+            return;
+        }
+
+        const headerHeight = header.offsetHeight || 0;
+        const barHeight = headerBar ? headerBar.offsetHeight : 0;
+        headerScrollThreshold = Math.max(24, (barHeight || headerHeight) * 0.85);
+    };
+
+    const updateHeaderState = () => {
+        if (!header) return;
+        const isFloating = window.scrollY > headerScrollThreshold;
+        header.classList.toggle('is-scrolled', isFloating);
+        header.classList.toggle('is-anchored', !isFloating);
+    };
+
+    computeHeaderThreshold();
+    window.addEventListener('scroll', updateHeaderState, { passive: true });
+    window.addEventListener('resize', () => {
+        computeHeaderThreshold();
+        updateHeaderState();
+    });
+    updateHeaderState();
+
+    if (header && headerNavLinks.length) {
+        const pageKey = header.dataset.page;
+        if (pageKey) {
+            headerNavLinks.forEach((link) => link.classList.remove('is-active'));
+
+            const activeLink = headerNavLinks.find((link) => {
+                const href = link.getAttribute('href');
+                if (!href) return false;
+                if (pageKey === 'home') {
+                    return href === '#top' || href === 'index.html#top';
                 }
+
+                const [pathPart] = href.split('#');
+                return pathPart === `${pageKey}.html`;
+            });
+
+            if (activeLink) {
+                activeLink.classList.add('is-active');
+            }
+        }
+    }
+
+    const smoothScrollToHash = (hash) => {
+        if (!hash || hash === '#' || hash.length <= 1) {
+            return false;
+        }
+
+        const target = document.querySelector(hash);
+        if (!target) {
+            return false;
+        }
+
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        if (typeof history.replaceState === 'function') {
+            history.replaceState(null, '', hash);
+        } else {
+            window.location.hash = hash;
+        }
+
+        return true;
+    };
+
+    const finePointer = window.matchMedia('(pointer: fine)');
+
+    if (hero && floatingClouds.length && finePointer.matches) {
+        const handlePointerMove = (event) => {
+            if (event.pointerType && event.pointerType !== 'mouse' && event.pointerType !== 'pen') {
+                return;
+            }
+
+            const bounds = hero.getBoundingClientRect();
+            const offsetX = ((event.clientX - bounds.left) / bounds.width) - 0.5;
+            const offsetY = ((event.clientY - bounds.top) / bounds.height) - 0.5;
+
+            floatingClouds.forEach((cloud, index) => {
+                const intensity = (index + 1) * 6;
+                const translateX = offsetX * intensity;
+                const translateY = offsetY * intensity * -1;
+                cloud.style.transform = `translate(${translateX}px, ${translateY}px)`;
+            });
+        };
+
+        hero.addEventListener('pointermove', handlePointerMove);
+
+        hero.addEventListener('pointerleave', () => {
+            floatingClouds.forEach((cloud) => {
+                cloud.style.transform = '';
+            });
+        });
+
+        const handlePointerPreferenceChange = (event) => {
+            if (!event.matches) {
+                hero.removeEventListener('pointermove', handlePointerMove);
+                floatingClouds.forEach((cloud) => {
+                    cloud.style.transform = '';
+                });
+            }
+        };
+
+        if (typeof finePointer.addEventListener === 'function') {
+            finePointer.addEventListener('change', handlePointerPreferenceChange);
+        } else if (typeof finePointer.addListener === 'function') {
+            finePointer.addListener(handlePointerPreferenceChange);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', (event) => {
+            const href = anchor.getAttribute('href');
+            if (smoothScrollToHash(href)) {
+                event.preventDefault();
             }
         });
     });
 
-    // Add active state to nav links based on scroll position
-    const sections = document.querySelectorAll('section[id]');
-    const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
+    if (headerNavLinks.length) {
+        const currentPath = normalizePathname(window.location.pathname);
 
-    function updateActiveNav() {
-        const scrollY = window.pageYOffset;
+        headerNavLinks.forEach((link) => {
+            const href = link.getAttribute('href');
+            if (!href) return;
 
-        sections.forEach(section => {
-            const sectionHeight = section.offsetHeight;
-            const sectionTop = section.offsetTop - 100;
-            const sectionId = section.getAttribute('id');
-
-            if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
-                navLinks.forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === `#${sectionId}`) {
-                        link.classList.add('active');
-                    }
-                });
+            try {
+                const url = new URL(href, window.location.href);
+                const samePath = normalizePathname(url.pathname) === currentPath;
+                if (samePath && url.hash) {
+                    link.addEventListener('click', (event) => {
+                        if (smoothScrollToHash(url.hash)) {
+                            event.preventDefault();
+                        }
+                    });
+                }
+            } catch (error) {
+                // Ignore invalid URLs
             }
         });
     }
-
-    window.addEventListener('scroll', updateActiveNav);
-
-    // Track CTA clicks (simple console logging - no analytics)
-    document.querySelectorAll('a[href*="chromewebstore.google.com"]').forEach(link => {
-        link.addEventListener('click', () => {
-            console.log('Chrome Web Store link clicked');
-        });
-    });
-
-    // Add animation on scroll (fade in elements)
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
-            }
-        });
-    }, observerOptions);
-
-    // Observe feature cards and steps
-    document.querySelectorAll('.feature-card, .step, .faq-item').forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(20px)';
-        el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-        observer.observe(el);
-    });
 });

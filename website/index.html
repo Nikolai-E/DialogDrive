@@ -3,139 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DialogDrive - Professional Prompt Management for ChatGPT</title>
-    <meta name="description" content="Enterprise-grade prompt library for ChatGPT. Organize, search, and deploy prompts with advanced tagging, workspaces, and performance tracking. 100% local storage.">
-    <link rel="stylesheet" href="styles/main.css?v=2">
+    <title>DialogDrive — Prompt Management for ChatGPT</title>
+    <meta name="description" content="Capture, organize, and reuse your best ChatGPT prompts. DialogDrive is a local-first Chrome extension that keeps your conversations private and accessible.">
+    <link rel="stylesheet" href="styles/main.css?v=3">
     <link rel="icon" type="image/png" href="assets/icon-128.png">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-content">
-                <div class="nav-brand">
-                    <img src="assets/icon-128.png" alt="DialogDrive Logo" class="nav-logo">
-                    <span class="nav-title">DialogDrive</span>
-                </div>
-                <div class="nav-links">
-                    <a href="#features">Features</a>
-                    <a href="#privacy">Privacy</a>
-                    <a href="support.html">Support</a>
-                    <a href="privacy.html">Privacy Policy</a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="container hero-shell">
-            <div class="hero-copy">
-                <p class="hero-kicker">Type less. Do more.</p>
-                <h1 class="hero-wordmark">
-                    <span>Dialog</span>
-                    <span>Drive</span>
-                </h1>
-                <p class="hero-paragraph">
-                    A warm, focused workspace for the prompts your team relies on. Capture live conversations, refine the words that
-                    matter, and keep them close—without a single packet leaving your machine.
-                </p>
-                <a href="https://chromewebstore.google.com/detail/dialogdrive/belhaomgpobfemnleoglnpnkfkkdechd"
-                   class="btn btn-primary hero-btn"
-                   target="_blank"
-                   rel="noopener noreferrer">
-                    Add to Chrome — Free
-                </a>
-            </div>
-            <div class="hero-shot">
-                <div class="hero-frame">
-                    <img src="assets/screenshot-hero.png" alt="DialogDrive Interface" class="hero-image">
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="features" class="flow-section">
-        <div class="container flow-grid">
-            <div class="flow-block">
-                <h2 class="flow-headline">Quiet control for everyday operators.</h2>
-                <p class="flow-paragraph">
-                    DialogDrive is where prompts live, evolve, and get used. Organize by the way your team thinks—workspace, ritual,
-                    or mission—and surface the right language the moment you need it.
-                </p>
-            </div>
-            <div class="flow-block">
-                <p class="flow-accent">Keyboard shortcuts keep every capture effortless. The library updates instantly, no sync delays, no dashboards to wait on.</p>
-                <p class="flow-paragraph">Search speaks human. Filter by tone or topic, glide through recents, and drop a ready-made response into any conversation.</p>
-            </div>
-        </div>
-    </section>
-
-    <section class="flow-section slate">
-        <div class="container flow-grid">
-            <div class="flow-block">
-                <h2 class="flow-headline">Local-first by design.</h2>
-                <p class="flow-paragraph">Everything stays on your device. Storage, history, fine-tuned drafts—it all sits beside your browser session.</p>
-            </div>
-            <div class="flow-block">
-                <p class="flow-paragraph">Need to clear the slate? Delete with intent or export for review. No vendors, no outside eyes, nothing unexpected.</p>
-                <a href="privacy.html" class="text-link">Review the privacy policy</a>
-            </div>
-        </div>
-    </section>
-
-    <section class="flow-section soft">
-        <div class="container flow-grid">
-            <div class="flow-block">
-                <h2 class="flow-headline">Work the way the extension works.</h2>
-                <p class="flow-paragraph">Open the side panel when you're deep in a thread. Pop the composer when inspiration hits. Pin the prompts that carry your
-                    voice and share them across the team.</p>
-            </div>
-            <div class="flow-block">
-                <p class="flow-accent">The interface bends gently—cards float, text breathes, and the canvas mirrors the extension you already know.</p>
-                <a href="support.html" class="text-link">See how teams deploy DialogDrive</a>
-            </div>
-        </div>
-    </section>
-
-    <section id="privacy" class="cta-band">
-        <div class="container cta-inner">
-            <div class="cta-copy">
-                <h2>Ready when your next prompt needs polish.</h2>
-                <p>Install DialogDrive and keep your best work one click away—warm, immediate, and entirely yours.</p>
-            </div>
+    <header class="site-header is-anchored" data-page="home">
+        <div class="wrap header-bar">
+            <a href="index.html" class="brand-mark">
+                <img src="assets/icon-128.png" alt="DialogDrive" class="brand-logo">
+                <span class="brand-name">DialogDrive</span>
+            </a>
+            <nav class="site-nav">
+                <a href="index.html#top" class="is-active">Overview</a>
+                <a href="index.html#demo">Demo</a>
+                <a href="support.html">Support</a>
+                <a href="privacy.html">Privacy</a>
+            </nav>
             <a href="https://chromewebstore.google.com/detail/dialogdrive/belhaomgpobfemnleoglnpnkfkkdechd"
-               class="btn btn-primary btn-large"
+               class="cta-button header-cta"
                target="_blank"
                rel="noopener noreferrer">
-                Add to Chrome — Free
+                Add to Chrome
             </a>
         </div>
-    </section>
+    </header>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>DialogDrive</h4>
-                    <p>Professional Prompt Management for ChatGPT</p>
+    <main>
+        <section class="hero" id="top">
+            <div class="wrap hero-inner">
+                <div class="hero-copy">
+                    <p class="hero-kicker">Local-first prompt management</p>
+                    <h1 class="hero-headline">Your best prompts, always within reach.</h1>
+                    <p class="hero-lede">DialogDrive captures your ChatGPT conversations, refines them, and stores them locally so you can reuse winning prompts instantly—all from a private workspace that never leaves your device.</p>
+                    <a href="https://chromewebstore.google.com/detail/dialogdrive/belhaomgpobfemnleoglnpnkfkkdechd"
+                       class="cta-button"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        Add to Chrome
+                    </a>
                 </div>
-                <div class="footer-section">
-                    <h4>Resources</h4>
-                    <ul>
-                        <li><a href="support.html">Support & FAQ</a></li>
-                        <li><a href="privacy.html">Privacy Policy</a></li>
-                        <li><a href="https://chromewebstore.google.com/detail/dialogdrive/belhaomgpobfemnleoglnpnkfkkdechd" target="_blank" rel="noopener noreferrer">Chrome Web Store</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Contact</h4>
-                    <p><a href="mailto:dialogdrive@outlook.com">dialogdrive@outlook.com</a></p>
+                <div class="hero-media">
+                    <div class="popup-card">
+                        <img src="assets/screenshot-popup.png" alt="DialogDrive popup interface" loading="lazy">
+                    </div>
                 </div>
             </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 DialogDrive. All rights reserved.</p>
+        </section>
+
+        <section class="demo" id="demo">
+            <div class="wrap demo-inner">
+                <div class="demo-header">
+                    <h2 class="demo-title">See it in action</h2>
+                    <p class="demo-copy">Capture conversations, refine your prompts, and deploy them instantly—all without leaving ChatGPT.</p>
+                </div>
+                <div class="video-frame">
+                    <video class="demo-video" autoplay muted loop playsinline controls controlsList="nodownload noplaybackrate" poster="assets/screenshot-popup.png">
+                        <source src="assets/dd-demo-clipchamp.mp4" type="video/mp4">
+                        Your browser cannot play the video. Download it instead.
+                    </video>
+                </div>
+            </div>
+        </section>
+
+        <section class="details" id="details">
+            <div class="wrap details-inner">
+                <div class="detail highlight">Capture any conversation without interrupting your workflow.</div>
+                <div class="detail">Polish tone, format, and structure before sending.</div>
+                <div class="detail">Organize with tags and favorites for instant retrieval.</div>
+                <div class="detail">Completely local—no cloud sync, no accounts required.</div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="wrap footer-inner">
+            <span>&copy; 2025 DialogDrive. All rights reserved.</span>
+            <div class="footer-links">
+                <a href="support.html">Support</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="mailto:dialogdrive@outlook.com">Email</a>
             </div>
         </div>
     </footer>
