@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ClipboardCopy, Eraser, HelpCircle } from 'lucide-react';
+import { AlertTriangle, ClipboardCopy, Eraser, HelpCircle } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Label } from '../../../components/ui/label';
@@ -7,18 +7,21 @@ import { Switch } from '../../../components/ui/switch';
 import { Textarea } from '../../../components/ui/textarea';
 import { usePrefsStore } from '../../../lib/prefsStore';
 import {
-  cleanText,
-  type BlockCodeMode,
-  type CleanOptions,
-  type InlineCodeMode,
-  type LinkMode,
-  type ListMode,
+    cleanText,
+    type BlockCodeMode,
+    type CleanOptions,
+    type InlineCodeMode,
+    type LinkMode,
+    type ListMode,
 } from '../../../lib/textCleaner';
 import { useCopyToClipboard } from '../hooks/useCopyToClipboard';
+
+const MAX_INPUT_SIZE = 100000;
 
 export const TextCleanerPanel: React.FC = () => {
   const [raw, setRaw] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showSizeWarning, setShowSizeWarning] = useState(false);
   const cleanerOptions = usePrefsStore((state) => state.cleanerOptions);
   const setCleanerOptions = usePrefsStore((state) => state.setCleanerOptions);
   const cleanerTipsVisible = usePrefsStore((state) => state.cleanerTipsVisible);
@@ -34,10 +37,19 @@ export const TextCleanerPanel: React.FC = () => {
       structure: { ...cleanerOptions.structure },
       whitespace: { ...cleanerOptions.whitespace },
     }),
-    [cleanerOptions],
+    [cleanerOptions]
   );
 
   const result = useMemo(() => cleanText(raw, opts), [raw, opts]);
+
+  const handleTextChange = (value: string) => {
+    if (value.length > MAX_INPUT_SIZE) {
+      setShowSizeWarning(true);
+    } else {
+      setShowSizeWarning(false);
+    }
+    setRaw(value);
+  };
 
   const handleLinkModeChange = (mode: LinkMode) => {
     if (mode === opts.linkMode) return;
@@ -71,7 +83,8 @@ export const TextCleanerPanel: React.FC = () => {
     setCleanerOptions({ whitespace: { ...opts.whitespace, ...patch } });
   };
 
-  const removeMarkdownEnabled = !opts.structure.keepBasicMarkdown && opts.listMode === 'unwrapToSentences';
+  const removeMarkdownEnabled =
+    !opts.structure.keepBasicMarkdown && opts.listMode === 'unwrapToSentences';
   const aiCleanupEnabled =
     opts.punctuation.mapEmDash !== 'keep' ||
     opts.punctuation.mapEnDash !== 'keep' ||
@@ -117,7 +130,9 @@ export const TextCleanerPanel: React.FC = () => {
       >
         <DescriptionBlock
           descriptionVisible={prefsHydrated && cleanerTipsVisible}
-          onToggleDescription={() => setCleanerTipsVisible(!usePrefsStore.getState().cleanerTipsVisible)}
+          onToggleDescription={() =>
+            setCleanerTipsVisible(!usePrefsStore.getState().cleanerTipsVisible)
+          }
         />
 
         <div className="mt-3 space-y-1.5">
@@ -142,13 +157,19 @@ export const TextCleanerPanel: React.FC = () => {
         </div>
 
         <div className="mt-2.5 flex items-center justify-end">
-          <Button size="xs" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => setShowAdvanced((prev) => !prev)}>
+          <Button
+            size="xs"
+            variant="ghost"
+            className="h-6 px-2 text-[10px]"
+            onClick={() => setShowAdvanced((prev) => !prev)}
+            data-testid="toggle-advanced-controls"
+          >
             {showAdvanced ? 'Hide advanced' : 'Show advanced'}
           </Button>
         </div>
 
         {showAdvanced && (
-          <div className="mt-2 space-y-2 rounded-md border border-muted bg-muted/10 p-2">
+          <div className="mt-2 space-y-2 rounded-md border border-muted bg-muted/10 p-2" data-testid="advanced-controls">
             <SectionHeading label="Links & Lists" />
             <div className="space-y-1.5">
               <OptionGroup
@@ -247,7 +268,11 @@ export const TextCleanerPanel: React.FC = () => {
                   { value: 'hyphen', label: '→ -' },
                   { value: 'keep', label: 'Keep' },
                 ]}
-                onChange={(value) => updatePunctuation({ mapEmDash: value as CleanOptions['punctuation']['mapEmDash'] })}
+                onChange={(value) =>
+                  updatePunctuation({
+                    mapEmDash: value as CleanOptions['punctuation']['mapEmDash'],
+                  })
+                }
               />
               <OptionGroup
                 label="Ellipsis"
@@ -257,19 +282,25 @@ export const TextCleanerPanel: React.FC = () => {
                   { value: 'keep', label: 'Keep …' },
                   { value: 'remove', label: 'Remove' },
                 ]}
-                onChange={(value) => updatePunctuation({ ellipsis: value as CleanOptions['punctuation']['ellipsis'] })}
+                onChange={(value) =>
+                  updatePunctuation({ ellipsis: value as CleanOptions['punctuation']['ellipsis'] })
+                }
               />
               <CompactOption
                 title="Straighten quotes"
                 tooltip="Convert curly quotes to straight ASCII quotes."
                 checked={opts.punctuation.curlyQuotes === 'straight'}
-                onChange={(checked) => updatePunctuation({ curlyQuotes: checked ? 'straight' : 'keep' })}
+                onChange={(checked) =>
+                  updatePunctuation({ curlyQuotes: checked ? 'straight' : 'keep' })
+                }
               />
               <CompactOption
                 title="Normalize en dashes"
                 tooltip="Convert – and similar dashes to a standard hyphen."
                 checked={opts.punctuation.mapEnDash === 'hyphen'}
-                onChange={(checked) => updatePunctuation({ mapEnDash: checked ? 'hyphen' : 'keep' })}
+                onChange={(checked) =>
+                  updatePunctuation({ mapEnDash: checked ? 'hyphen' : 'keep' })
+                }
               />
             </div>
 
@@ -301,37 +332,74 @@ export const TextCleanerPanel: React.FC = () => {
       {/* Vertical layout: Input on first row (smaller), Cleaned on second row (expands) */}
       <div className="flex-1 grid grid-rows-[auto,1fr] gap-3 p-2 min-h-0">
         <div className="flex flex-col min-h-[140px] rounded-lg border-2 border-border/60 bg-background shadow-sm">
-          <div className="px-3 py-2 border-b border-border/40 bg-muted/30">
-            <Label htmlFor="raw" className="text-[11px] font-semibold">Input</Label>
+          <div className="px-3 py-2 border-b border-border/40 bg-muted/30 flex items-center justify-between">
+            <Label htmlFor="raw" className="text-[11px] font-semibold">
+              Input
+            </Label>
+            <div className="flex items-center gap-2">
+              {/* Character count indicator */}
+              <span className={`text-[10px] ${showSizeWarning ? 'text-amber-600 dark:text-amber-500 font-semibold' : 'text-muted-foreground'}`}>
+                {raw.length.toLocaleString()} chars
+                {raw.length > 0 && ` / ${MAX_INPUT_SIZE.toLocaleString()}`}
+              </span>
+              {showSizeWarning && (
+                <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-500">
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>Too large!</span>
+                </div>
+              )}
+            </div>
           </div>
           <Textarea
             id="raw"
             value={raw}
-            onChange={(e) => setRaw(e.target.value)}
+            onChange={(e) => handleTextChange(e.target.value)}
             placeholder="Paste text here"
-            className="flex-1 min-h-[120px] resize-y text-[12px] bg-transparent border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-3 py-2"
+            className="flex-1 min-h-[120px] resize-y text-[12px] bg-transparent border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-3 py-2 overflow-auto"
+            style={{ wordWrap: 'break-word', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+            data-testid="text-cleaner-input"
           />
         </div>
         <div className="flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-2">
-            <Label htmlFor="clean" className="text-[11px] font-semibold">Cleaned</Label>
+            <Label htmlFor="clean" className="text-[11px] font-semibold">
+              Cleaned
+            </Label>
             <div className="flex items-center gap-1.5 text-[11px]">
               <span className="text-muted-foreground">{result.report.changes} adjustments</span>
               <Button size="xs" variant="outline" withIcon onClick={() => setRaw('')}>
                 <Eraser className="h-3.5 w-3.5" /> Clear
               </Button>
-              <Button size="xs" withIcon className="bg-foreground text-white hover:opacity-90" onClick={() => copyToClipboard(result.text)} disabled={!result.text}>
+              <Button
+                size="xs"
+                variant="default"
+                withIcon
+                className="rounded-full px-2.5 text-[11px] font-semibold hover:bg-primary/90"
+                onClick={() => copyToClipboard(result.text)}
+                disabled={!result.text}
+                data-testid="copy-button"
+              >
                 <ClipboardCopy className="h-3.5 w-3.5" /> {isCopied ? 'Copied' : 'Copy'}
               </Button>
             </div>
           </div>
           {/* Diff-highlighted view layered under a transparent textarea for easy copying and selection */}
-          <div className="relative flex-1 min-h-[240px] rounded-lg border-2 border-border/60 bg-background shadow-sm">
-            <div className="absolute inset-0 overflow-auto rounded-lg p-3 text-[12px] whitespace-pre-wrap font-mono leading-5" aria-hidden>
+          <div className="relative flex-1 min-h-[240px] rounded-lg border-2 border-border/60 bg-background shadow-sm overflow-hidden">
+            <div
+              className="absolute inset-0 overflow-auto rounded-lg p-3 text-[12px] whitespace-pre-wrap font-mono leading-5"
+              style={{ wordWrap: 'break-word', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+              aria-hidden
+            >
               <DiffView original={raw} cleaned={result.text} />
             </div>
             {/* Transparent overlay for easy select+copy; disable pointer events so scroll hits the diff below */}
-            <Textarea id="clean" value={result.text} readOnly className="absolute inset-0 rounded-lg opacity-0 pointer-events-none border-none" />
+            <Textarea
+              id="clean"
+              value={result.text}
+              readOnly
+              className="absolute inset-0 rounded-lg opacity-0 pointer-events-none border-none"
+              style={{ wordWrap: 'break-word', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+            />
           </div>
         </div>
       </div>
@@ -349,7 +417,10 @@ const PrimaryOption: React.FC<{
 }> = ({ title, description, checked, onChange }) => (
   <div className="flex items-start justify-between gap-3 rounded-md border border-border/50 bg-muted/20 px-3 py-2">
     <div className="flex-1 min-w-0">
-      <label className="text-[12px] font-semibold text-foreground leading-tight cursor-pointer" onClick={() => onChange(!checked)}>
+      <label
+        className="text-[12px] font-semibold text-foreground leading-tight cursor-pointer"
+        onClick={() => onChange(!checked)}
+      >
         {title}
       </label>
       <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{description}</p>
@@ -374,7 +445,10 @@ const CompactOption: React.FC<{
   return (
     <div className="flex items-center justify-between gap-3 py-1">
       <div className="flex items-center gap-1.5 flex-1 min-w-0">
-        <label className="text-[11px] font-medium text-foreground leading-tight cursor-pointer truncate" onClick={() => onChange(!checked)}>
+        <label
+          className="text-[11px] font-medium text-foreground leading-tight cursor-pointer truncate"
+          onClick={() => onChange(!checked)}
+        >
           {title}
         </label>
         <div className="relative flex-shrink-0">
@@ -400,9 +474,9 @@ const CompactOption: React.FC<{
         </div>
       </div>
       <div className="flex-shrink-0">
-        <Switch 
-          checked={checked} 
-          onCheckedChange={onChange} 
+        <Switch
+          checked={checked}
+          onCheckedChange={onChange}
           aria-label={`Toggle ${title}`}
           className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-input border border-border"
         />
@@ -423,7 +497,7 @@ const OptionGroup: React.FC<{
   options: Array<{ value: string; label: string }>;
   onChange: (value: string) => void;
 }> = ({ label, value, options, onChange }) => (
-  <div className="flex items-center justify-between gap-2">
+  <div className="flex items-center justify-between gap-2" data-testid={`option-group-${label.toLowerCase().replace(/\s+/g, '-')}`}>
     <span className="text-[11px] font-medium text-foreground leading-tight">{label}</span>
     <div className="inline-flex rounded-md border border-input overflow-hidden">
       {options.map((option) => (
@@ -433,6 +507,7 @@ const OptionGroup: React.FC<{
           variant={option.value === value ? 'secondary' : 'outline'}
           className="h-6 px-3 text-[11px]"
           onClick={() => onChange(option.value)}
+          data-testid={`option-${label.toLowerCase().replace(/\s+/g, '-')}-${option.value}`}
         >
           {option.label}
         </Button>
@@ -450,25 +525,37 @@ const DescriptionBlock: React.FC<{
       <div className="rounded-md border border-dashed border-muted bg-muted/20 p-2.5 leading-snug">
         <div className="flex items-center justify-between gap-2 text-foreground mb-1.5">
           <p className="font-semibold text-[12px]">Why clean text?</p>
-          <button className="text-[10px] underline underline-offset-2 hover:text-foreground/80" onClick={onToggleDescription}>
+          <button
+            className="text-[10px] underline underline-offset-2 hover:text-foreground/80"
+            onClick={onToggleDescription}
+          >
             Hide
           </button>
         </div>
         <div className="space-y-2">
           <p className="text-[11px] leading-relaxed">
-            <strong className="text-foreground">Paste-ready:</strong> Quickly tidy up messy or inconsistent text, from chat logs, markdown, or tool output, so it’s ready to reuse anywhere.
+            <strong className="text-foreground">Paste-ready:</strong> Quickly tidy up messy or
+            inconsistent text, from chat logs, markdown, or tool output, so it’s ready to reuse
+            anywhere.
           </p>
           <p className="text-[11px] leading-relaxed">
-            <strong className="text-foreground">Consistent style:</strong> Normalize punctuation and formatting for a smoother, more polished reading experience.
+            <strong className="text-foreground">Consistent style:</strong> Normalize punctuation and
+            formatting for a smoother, more polished reading experience.
           </p>
           <p className="text-[11px] leading-relaxed">
-            <strong className="text-foreground">Faster workflow:</strong> Turn raw text into something you can immediately drop into an email, document, or message, no manual cleanup needed.
+            <strong className="text-foreground">Faster workflow:</strong> Turn raw text into
+            something you can immediately drop into an email, document, or message, no manual
+            cleanup needed.
           </p>
         </div>
       </div>
     )}
     {!descriptionVisible && (
-      <button className="text-[11px] font-medium text-foreground underline underline-offset-2 hover:text-foreground/80" onClick={onToggleDescription}>
+      <button
+        className="text-[11px] font-medium text-foreground underline underline-offset-2 hover:text-foreground/80"
+        onClick={onToggleDescription}
+        data-testid="show-description-button"
+      >
         Why clean text?
       </button>
     )}
@@ -478,9 +565,21 @@ const DescriptionBlock: React.FC<{
 // Lightweight word-level diff view highlighting changes in the cleaned text
 const DiffView: React.FC<{ original: string; cleaned: string }> = ({ original, cleaned }) => {
   const cleanedTokens = React.useMemo(() => splitTokens(cleaned), [cleaned]);
-  const cleanedWords = React.useMemo(() => cleanedTokens.filter(t => !t.ws).map(t => t.text), [cleanedTokens]);
-  const originalWords = React.useMemo(() => splitTokens(original).filter(t => !t.ws).map(t => t.text), [original]);
-  const matchedMask = React.useMemo(() => lcsMask(originalWords, cleanedWords), [originalWords, cleanedWords]);
+  const cleanedWords = React.useMemo(
+    () => cleanedTokens.filter((t) => !t.ws).map((t) => t.text),
+    [cleanedTokens]
+  );
+  const originalWords = React.useMemo(
+    () =>
+      splitTokens(original)
+        .filter((t) => !t.ws)
+        .map((t) => t.text),
+    [original]
+  );
+  const matchedMask = React.useMemo(
+    () => lcsMask(originalWords, cleanedWords),
+    [originalWords, cleanedWords]
+  );
 
   let wordIdx = 0;
   return (
@@ -517,18 +616,24 @@ function splitTokens(s: string): Token[] {
 
 // LCS mask for cleaned words vs original words
 function lcsMask(a: string[], b: string[]): boolean[] {
-  const n = a.length, m = b.length;
+  const n = a.length,
+    m = b.length;
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0));
   for (let i = n - 1; i >= 0; i--) {
     for (let j = m - 1; j >= 0; j--) {
-      if (a[i] === b[j]) dp[i][j] = dp[i + 1][j + 1] + 1; else dp[i][j] = Math.max(dp[i + 1][j], dp[i][j + 1]);
+      if (a[i] === b[j]) dp[i][j] = dp[i + 1][j + 1] + 1;
+      else dp[i][j] = Math.max(dp[i + 1][j], dp[i][j + 1]);
     }
   }
   const mask = new Array<boolean>(m).fill(false);
-  let i = 0, j = 0;
+  let i = 0,
+    j = 0;
   while (i < n && j < m) {
-    if (a[i] === b[j]) { mask[j] = true; i++; j++; }
-    else if (dp[i + 1][j] >= dp[i][j + 1]) i++;
+    if (a[i] === b[j]) {
+      mask[j] = true;
+      i++;
+      j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) i++;
     else j++;
   }
   return mask;

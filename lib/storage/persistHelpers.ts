@@ -15,7 +15,7 @@ export interface PersistEnvelope<T> {
 
 export function serializePersistState<T extends { _persistMeta: PersistMeta }>(
   schemaVersion: number,
-  persisted: PersistedState<T>,
+  persisted: PersistedState<T>
 ): string {
   const updatedAt = Date.now();
   const stateWithMeta: T = {
@@ -48,7 +48,7 @@ export function serializePersistState<T extends { _persistMeta: PersistMeta }>(
 export function deserializePersistState<T extends { _persistMeta?: PersistMeta }>(
   schemaVersion: number,
   value: string,
-  defaults: () => T,
+  defaults: () => T
 ): PersistedState<T> {
   try {
     const parsed = JSON.parse(value) as PersistEnvelope<T> | T;

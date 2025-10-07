@@ -7,6 +7,7 @@ import type { AppStats, SortOption, ViewType } from '../types/app';
 import type { AddChatBookmark, ChatBookmark, WorkspaceItem } from '../types/chat';
 import type { Prompt } from '../types/prompt';
 import { chatStorage } from './chatStorage';
+import { logSilentError } from './errorHandler';
 import { logger } from './logger';
 import { secureStorage } from './secureStorageV2';
 import { promptStorage } from './storage';
@@ -108,10 +109,10 @@ const promptToWorkspaceItem = (prompt: Prompt): WorkspaceItem => ({
   lastUsed: prompt.lastUsed,
   usageCount: prompt.usageCount,
   isPinned: prompt.isPinned,
-  data: prompt
+  data: prompt,
 });
 
-// Convert chat to WorkspaceItem  
+// Convert chat to WorkspaceItem
 // Matches the same view model so the mixer can treat chats like prompts.
 const chatToWorkspaceItem = (chat: ChatBookmark): WorkspaceItem => ({
   id: chat.id,
@@ -123,7 +124,7 @@ const chatToWorkspaceItem = (chat: ChatBookmark): WorkspaceItem => ({
   lastUsed: chat.lastAccessed,
   usageCount: chat.accessCount,
   isPinned: chat.isPinned,
-  data: chat
+  data: chat,
 });
 
 // Helper to filter and sort unified items
@@ -140,42 +141,44 @@ const getFilteredAndSortedItems = (
   selectedWorkspace: string
 ): WorkspaceItem[] => {
   let items: WorkspaceItem[] = [];
-  
+
   // Add prompts if allowed by content filter
   if (contentFilter === 'all' || contentFilter === 'prompts') {
     items.push(...prompts.map(promptToWorkspaceItem));
   }
-  
+
   // Add chats if allowed by content filter
   if (contentFilter === 'all' || contentFilter === 'chats') {
     items.push(...chats.map(chatToWorkspaceItem));
   }
-  
+
   // Apply filters
   if (showPinned) {
-    items = items.filter(item => item.isPinned);
+    items = items.filter((item) => item.isPinned);
   }
-  
+
   // Tag filtering: if multi selectedTags provided, OR-match; otherwise fallback to single filterTag
-  const effectiveTags = selectedTags && selectedTags.length > 0
-    ? selectedTags
-    : (filterTag !== 'all' ? [filterTag] : []);
+  const effectiveTags =
+    selectedTags && selectedTags.length > 0 ? selectedTags : filterTag !== 'all' ? [filterTag] : [];
   if (effectiveTags.length > 0) {
     // AND semantics: require all selected tags to be present on the item
-    items = items.filter(item => effectiveTags.every(t => item.tags?.includes(t)));
+    items = items.filter((item) => effectiveTags.every((t) => item.tags?.includes(t)));
   }
-  
+
   if (selectedWorkspace !== 'all') {
-    items = items.filter(item => item.workspace === selectedWorkspace);
+    items = items.filter((item) => item.workspace === selectedWorkspace);
   }
-  
+
   if (searchTerm) {
     const lowercasedTerm = searchTerm.toLowerCase();
-    items = items.filter(item =>
-      item.title.toLowerCase().includes(lowercasedTerm) ||
-      (item.type === 'prompt' && (item.data as Prompt).text.toLowerCase().includes(lowercasedTerm)) ||
-      (item.type === 'chat' && (item.data as ChatBookmark).description?.toLowerCase().includes(lowercasedTerm)) ||
-      item.tags?.some((t: string) => t.toLowerCase().includes(lowercasedTerm))
+    items = items.filter(
+      (item) =>
+        item.title.toLowerCase().includes(lowercasedTerm) ||
+        (item.type === 'prompt' &&
+          (item.data as Prompt).text.toLowerCase().includes(lowercasedTerm)) ||
+        (item.type === 'chat' &&
+          (item.data as ChatBookmark).description?.toLowerCase().includes(lowercasedTerm)) ||
+        item.tags?.some((t: string) => t.toLowerCase().includes(lowercasedTerm))
     );
   }
 
@@ -193,10 +196,11 @@ const getFilteredAndSortedItems = (
       case 'pinned':
         return Number(b.isPinned) - Number(a.isPinned);
       case 'recent':
-      default:
+      default: {
         const dateA = a.lastUsed ? new Date(a.lastUsed).getTime() : 0;
         const dateB = b.lastUsed ? new Date(b.lastUsed).getTime() : 0;
         return dateB - dateA;
+      }
     }
   });
 
@@ -215,21 +219,21 @@ const getFilteredAndSortedPrompts = (
   let result = prompts;
 
   if (showPinned) {
-    result = result.filter(p => p.isPinned);
+    result = result.filter((p) => p.isPinned);
   }
-  const effectiveTags = selectedTags && selectedTags.length > 0
-    ? selectedTags
-    : (filterTag !== 'all' ? [filterTag] : []);
+  const effectiveTags =
+    selectedTags && selectedTags.length > 0 ? selectedTags : filterTag !== 'all' ? [filterTag] : [];
   if (effectiveTags.length > 0) {
     // AND semantics: require all selected tags to be present on the prompt
-    result = result.filter(p => effectiveTags.every(t => p.tags?.includes(t)));
+    result = result.filter((p) => effectiveTags.every((t) => p.tags?.includes(t)));
   }
   if (searchTerm) {
     const lowercasedTerm = searchTerm.toLowerCase();
-    result = result.filter(p =>
-      p.title.toLowerCase().includes(lowercasedTerm) ||
-      p.text.toLowerCase().includes(lowercasedTerm) ||
-      p.tags?.some((t: string) => t.toLowerCase().includes(lowercasedTerm))
+    result = result.filter(
+      (p) =>
+        p.title.toLowerCase().includes(lowercasedTerm) ||
+        p.text.toLowerCase().includes(lowercasedTerm) ||
+        p.tags?.some((t: string) => t.toLowerCase().includes(lowercasedTerm))
     );
   }
 
@@ -245,10 +249,11 @@ const getFilteredAndSortedPrompts = (
       case 'pinned':
         return Number(b.isPinned) - Number(a.isPinned);
       case 'recent':
-      default:
+      default: {
         const dateA = a.lastUsed ? new Date(a.lastUsed).getTime() : 0;
         const dateB = b.lastUsed ? new Date(b.lastUsed).getTime() : 0;
         return dateB - dateA;
+      }
     }
   });
 
@@ -260,33 +265,34 @@ const calculateStats = (prompts: Prompt[], chats: ChatBookmark[]): AppStats => {
   return {
     totalPrompts: prompts.length,
     totalChats: chats.length,
-    pinnedPrompts: prompts.filter(p => p.isPinned).length,
-    totalUsage: prompts.reduce((sum, p) => sum + p.usageCount, 0) + 
-                chats.reduce((sum, c) => sum + (c.accessCount || 0), 0),
-    activeWorkspaces: Array.from(new Set([
-      ...prompts.map(p => p.workspace),
-      ...chats.map(c => c.workspace)
-    ])).length,
+    pinnedPrompts: prompts.filter((p) => p.isPinned).length,
+    totalUsage:
+      prompts.reduce((sum, p) => sum + p.usageCount, 0) +
+      chats.reduce((sum, c) => sum + (c.accessCount || 0), 0),
+    activeWorkspaces: Array.from(
+      new Set([...prompts.map((p) => p.workspace), ...chats.map((c) => c.workspace)])
+    ).length,
   };
 };
 
 const updateAndFilterState = (state: UnifiedState) => {
   // Sync derived lists, tags, workspaces, and stats anytime base data changes.
   // Combine workspaces from both prompts and chats, and preserve any user-added ones already in state
-  const promptWorkspaces = state.prompts.map(p => p.workspace).filter(Boolean);
-  const chatWorkspaces = state.chats.map(c => c.workspace).filter(Boolean);
+  const promptWorkspaces = state.prompts.map((p) => p.workspace).filter(Boolean);
+  const chatWorkspaces = state.chats.map((c) => c.workspace).filter(Boolean);
   const existing = Array.isArray(state.workspaces) ? state.workspaces : [];
-  const workspaces = Array.from(new Set(['General', ...existing, ...promptWorkspaces, ...chatWorkspaces]))
-    .sort((a, b) => a.localeCompare(b));
-  
+  const workspaces = Array.from(
+    new Set(['General', ...existing, ...promptWorkspaces, ...chatWorkspaces])
+  ).sort((a, b) => a.localeCompare(b));
+
   // Combine tags from both prompts and chats
-  const promptTags = state.prompts.flatMap(p => p.tags || []);
-  const chatTags = state.chats.flatMap(c => c.tags || []);
+  const promptTags = state.prompts.flatMap((p) => p.tags || []);
+  const chatTags = state.chats.flatMap((c) => c.tags || []);
   const allTags = Array.from(new Set([...promptTags, ...chatTags]));
-  
+
   // Calculate statistics
   const stats = calculateStats(state.prompts, state.chats);
-  
+
   // Get filtered items (unified)
   const filteredItems = getFilteredAndSortedItems(
     state.prompts,
@@ -294,22 +300,22 @@ const updateAndFilterState = (state: UnifiedState) => {
     state.searchTerm,
     state.sortBy,
     state.filterTag,
-  state.selectedTags,
+    state.selectedTags,
     state.showPinned,
     state.contentFilter,
     state.selectedWorkspace
   );
-  
+
   // Get filtered prompts (backwards compatibility)
   const filteredPrompts = getFilteredAndSortedPrompts(
     state.prompts,
     state.searchTerm,
     state.sortBy,
-  state.filterTag,
-  state.selectedTags,
+    state.filterTag,
+    state.selectedTags,
     state.showPinned
   );
-  
+
   return { ...state, workspaces, allTags, stats, filteredItems, filteredPrompts };
 };
 
@@ -337,16 +343,16 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   showPinned: false,
   contentFilter: 'all',
   selectedWorkspace: 'all',
-  
+
   currentView: 'list',
   editingPrompt: null,
   editingChat: null,
-  
+
   workspaces: ['General'],
   allTags: [],
   filteredItems: [],
   filteredPrompts: [],
-  
+
   stats: {
     totalPrompts: 0,
     totalChats: 0,
@@ -360,7 +366,14 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   // Pulls the opening batch for prompts, chats, and last-cleared meta.
   loadAll: async () => {
     try {
-      set({ isLoading: true, error: null, promptsCursor: null, chatsCursor: null, hasMorePrompts: true, hasMoreChats: true });
+      set({
+        isLoading: true,
+        error: null,
+        promptsCursor: null,
+        chatsCursor: null,
+        hasMorePrompts: true,
+        hasMoreChats: true,
+      });
       logger.log('Loading first page of prompts and chats...');
 
       const { pageSize } = get();
@@ -370,14 +383,20 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
           return (promptStorage as any).getPage({ limit: pageSize, cursor: null });
         }
         const all = await promptStorage.getAll();
-        return { items: all.slice(0, pageSize), nextCursor: all.length > pageSize ? all[pageSize - 1]?.id ?? null : null };
+        return {
+          items: all.slice(0, pageSize),
+          nextCursor: all.length > pageSize ? (all[pageSize - 1]?.id ?? null) : null,
+        };
       };
       const loadChatsPaged = async () => {
         if (typeof (chatStorage as any).getPage === 'function') {
           return (chatStorage as any).getPage({ limit: pageSize, cursor: null });
         }
         const all = await chatStorage.getAll();
-        return { items: all.slice(0, pageSize), nextCursor: all.length > pageSize ? all[pageSize - 1]?.id ?? null : null };
+        return {
+          items: all.slice(0, pageSize),
+          nextCursor: all.length > pageSize ? (all[pageSize - 1]?.id ?? null) : null,
+        };
       };
 
       const [pRes, cRes, clearedAt] = await Promise.all([
@@ -386,17 +405,19 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
         secureStorage.getLastClearedAt(),
       ]);
 
-      set(state => updateAndFilterState({
-        ...state,
-        prompts: pRes.items,
-        chats: cRes.items,
-        promptsCursor: pRes.nextCursor ?? null,
-        chatsCursor: cRes.nextCursor ?? null,
-        hasMorePrompts: !!pRes.nextCursor,
-        hasMoreChats: !!cRes.nextCursor,
-        isLoading: false,
-        lastClearedAt: clearedAt ?? state.lastClearedAt,
-      }));
+      set((state) =>
+        updateAndFilterState({
+          ...state,
+          prompts: pRes.items,
+          chats: cRes.items,
+          promptsCursor: pRes.nextCursor ?? null,
+          chatsCursor: cRes.nextCursor ?? null,
+          hasMorePrompts: !!pRes.nextCursor,
+          hasMoreChats: !!cRes.nextCursor,
+          isLoading: false,
+          lastClearedAt: clearedAt ?? state.lastClearedAt,
+        })
+      );
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Failed to load data';
       logger.error('Failed to load data:', err);
@@ -412,17 +433,30 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
       set({ isLoading: true, error: null });
       const { pageSize, promptsCursor } = get();
       if (typeof (promptStorage as any).getPage === 'function') {
-        const res = await (promptStorage as any).getPage({ limit: pageSize, cursor: reset ? null : promptsCursor });
-        set(state => updateAndFilterState({
-          ...state,
-          prompts: reset ? res.items : [...state.prompts, ...res.items],
-          promptsCursor: res.nextCursor ?? null,
-          hasMorePrompts: !!res.nextCursor,
-          isLoading: false,
-        }));
+        const res = await (promptStorage as any).getPage({
+          limit: pageSize,
+          cursor: reset ? null : promptsCursor,
+        });
+        set((state) =>
+          updateAndFilterState({
+            ...state,
+            prompts: reset ? res.items : [...state.prompts, ...res.items],
+            promptsCursor: res.nextCursor ?? null,
+            hasMorePrompts: !!res.nextCursor,
+            isLoading: false,
+          })
+        );
       } else {
         const all = await promptStorage.getAll();
-        set(state => updateAndFilterState({ ...state, prompts: all.slice(0, pageSize), promptsCursor: all.length > pageSize ? all[pageSize - 1]?.id ?? null : null, hasMorePrompts: all.length > pageSize, isLoading: false }));
+        set((state) =>
+          updateAndFilterState({
+            ...state,
+            prompts: all.slice(0, pageSize),
+            promptsCursor: all.length > pageSize ? (all[pageSize - 1]?.id ?? null) : null,
+            hasMorePrompts: all.length > pageSize,
+            isLoading: false,
+          })
+        );
       }
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Failed to load prompts';
@@ -437,14 +471,19 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
     try {
       set({ isLoadingMorePrompts: true });
       if (typeof (promptStorage as any).getPage === 'function') {
-        const res = await (promptStorage as any).getPage({ limit: pageSize, cursor: promptsCursor });
-        set(state => updateAndFilterState({
-          ...state,
-          prompts: [...state.prompts, ...res.items],
-          promptsCursor: res.nextCursor ?? null,
-          hasMorePrompts: !!res.nextCursor,
-          isLoadingMorePrompts: false,
-        }));
+        const res = await (promptStorage as any).getPage({
+          limit: pageSize,
+          cursor: promptsCursor,
+        });
+        set((state) =>
+          updateAndFilterState({
+            ...state,
+            prompts: [...state.prompts, ...res.items],
+            promptsCursor: res.nextCursor ?? null,
+            hasMorePrompts: !!res.nextCursor,
+            isLoadingMorePrompts: false,
+          })
+        );
       } else {
         set({ isLoadingMorePrompts: false });
       }
@@ -457,7 +496,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   addPrompt: async (prompt) => {
     try {
       const newPrompt = await promptStorage.add(prompt);
-      set(state => updateAndFilterState({ ...state, prompts: [newPrompt, ...state.prompts] }));
+      set((state) => updateAndFilterState({ ...state, prompts: [newPrompt, ...state.prompts] }));
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Failed to add prompt';
       set({ error });
@@ -467,8 +506,10 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   updatePrompt: async (prompt) => {
     try {
       const updatedPrompt = await promptStorage.update(prompt);
-      set(state => {
-        const updatedPrompts = state.prompts.map((p) => (p.id === updatedPrompt.id ? updatedPrompt : p));
+      set((state) => {
+        const updatedPrompts = state.prompts.map((p) =>
+          p.id === updatedPrompt.id ? updatedPrompt : p
+        );
         return updateAndFilterState({ ...state, prompts: updatedPrompts });
       });
     } catch (err) {
@@ -480,7 +521,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   deletePrompt: async (id) => {
     try {
       await promptStorage.remove(id);
-      set(state => {
+      set((state) => {
         const updatedPrompts = state.prompts.filter((p) => p.id !== id);
         return updateAndFilterState({ ...state, prompts: updatedPrompts });
       });
@@ -493,7 +534,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   togglePinPrompt: async (id) => {
     try {
       const state = get();
-      const prompt = state.prompts.find(p => p.id === id);
+      const prompt = state.prompts.find((p) => p.id === id);
       if (!prompt) throw new Error('Prompt not found');
       const updatedPrompt = { ...prompt, isPinned: !prompt.isPinned };
       await get().updatePrompt(updatedPrompt);
@@ -505,12 +546,12 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   incrementUsage: async (id) => {
     try {
       const state = get();
-      const prompt = state.prompts.find(p => p.id === id);
+      const prompt = state.prompts.find((p) => p.id === id);
       if (!prompt) throw new Error('Prompt not found');
       const updatedPrompt = {
         ...prompt,
         usageCount: (prompt.usageCount || 0) + 1,
-        lastUsed: new Date().toISOString()
+        lastUsed: new Date().toISOString(),
       };
       await get().updatePrompt(updatedPrompt);
     } catch (err) {
@@ -524,16 +565,28 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
       if (reset) set({ chats: [], chatsCursor: null, hasMoreChats: true });
       const { pageSize, chatsCursor } = get();
       if (typeof (chatStorage as any).getPage === 'function') {
-        const res = await (chatStorage as any).getPage({ limit: pageSize, cursor: reset ? null : chatsCursor });
-        set(state => updateAndFilterState({
-          ...state,
-          chats: reset ? res.items : [...state.chats, ...res.items],
-          chatsCursor: res.nextCursor ?? null,
-          hasMoreChats: !!res.nextCursor,
-        }));
+        const res = await (chatStorage as any).getPage({
+          limit: pageSize,
+          cursor: reset ? null : chatsCursor,
+        });
+        set((state) =>
+          updateAndFilterState({
+            ...state,
+            chats: reset ? res.items : [...state.chats, ...res.items],
+            chatsCursor: res.nextCursor ?? null,
+            hasMoreChats: !!res.nextCursor,
+          })
+        );
       } else {
         const all = await chatStorage.getAll();
-        set(state => updateAndFilterState({ ...state, chats: all.slice(0, pageSize), chatsCursor: all.length > pageSize ? all[pageSize - 1]?.id ?? null : null, hasMoreChats: all.length > pageSize }));
+        set((state) =>
+          updateAndFilterState({
+            ...state,
+            chats: all.slice(0, pageSize),
+            chatsCursor: all.length > pageSize ? (all[pageSize - 1]?.id ?? null) : null,
+            hasMoreChats: all.length > pageSize,
+          })
+        );
       }
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Failed to load chats';
@@ -549,13 +602,15 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
       set({ isLoadingMoreChats: true });
       if (typeof (chatStorage as any).getPage === 'function') {
         const res = await (chatStorage as any).getPage({ limit: pageSize, cursor: chatsCursor });
-        set(state => updateAndFilterState({
-          ...state,
-          chats: [...state.chats, ...res.items],
-          chatsCursor: res.nextCursor ?? null,
-          hasMoreChats: !!res.nextCursor,
-          isLoadingMoreChats: false,
-        }));
+        set((state) =>
+          updateAndFilterState({
+            ...state,
+            chats: [...state.chats, ...res.items],
+            chatsCursor: res.nextCursor ?? null,
+            hasMoreChats: !!res.nextCursor,
+            isLoadingMoreChats: false,
+          })
+        );
       } else {
         set({ isLoadingMoreChats: false });
       }
@@ -568,7 +623,9 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   addChat: async (chat) => {
     try {
       const newChat = await chatStorage.add(chat);
-      set((state) => updateAndFilterState({ ...state, chats: [newChat, ...state.chats], error: null }));
+      set((state) =>
+        updateAndFilterState({ ...state, chats: [newChat, ...state.chats], error: null })
+      );
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Failed to add chat';
       set({ error });
@@ -579,7 +636,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   updateChat: async (chat) => {
     try {
       const updatedChat = await chatStorage.update(chat);
-      set(state => {
+      set((state) => {
         const updatedChats = state.chats.map((c) => (c.id === updatedChat.id ? updatedChat : c));
         return updateAndFilterState({ ...state, chats: updatedChats });
       });
@@ -592,7 +649,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   deleteChat: async (id) => {
     try {
       await chatStorage.delete(id);
-      set(state => {
+      set((state) => {
         const updatedChats = state.chats.filter((c) => c.id !== id);
         return updateAndFilterState({ ...state, chats: updatedChats });
       });
@@ -605,7 +662,7 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   togglePinChat: async (id) => {
     try {
       const state = get();
-      const chat = state.chats.find(c => c.id === id);
+      const chat = state.chats.find((c) => c.id === id);
       if (!chat) throw new Error('Chat not found');
       const updatedChat = { ...chat, isPinned: !chat.isPinned };
       await get().updateChat(updatedChat);
@@ -617,13 +674,13 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   incrementChatAccess: async (id) => {
     try {
       await chatStorage.incrementAccess(id);
-      set(state => {
-        const updatedChats = state.chats.map(chat =>
+      set((state) => {
+        const updatedChats = state.chats.map((chat) =>
           chat.id === id
             ? {
                 ...chat,
                 accessCount: (chat.accessCount || 0) + 1,
-                lastAccessed: new Date().toISOString()
+                lastAccessed: new Date().toISOString(),
               }
             : chat
         );
@@ -635,29 +692,34 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   },
 
   // Filter actions
-  setSearchTerm: (term) => set(state => updateAndFilterState({ ...state, searchTerm: term })),
-  setSortBy: (sortBy) => set(state => updateAndFilterState({ ...state, sortBy })),
-  setFilterTag: (tag) => set(state => updateAndFilterState({ ...state, filterTag: tag })),
-  setSelectedTags: (tags) => set(state => updateAndFilterState({ ...state, selectedTags: tags })),
-  setShowPinned: (show) => set(state => updateAndFilterState({ ...state, showPinned: show })),
-  setContentFilter: (filter) => set(state => updateAndFilterState({ ...state, contentFilter: filter })),
-  setSelectedWorkspace: (workspace) => set(state => updateAndFilterState({ ...state, selectedWorkspace: workspace })),
-  
-  resetFilters: () => set(state => updateAndFilterState({ 
-    ...state, 
-    searchTerm: '', 
-    filterTag: 'all', 
-  selectedTags: [],
-    showPinned: false,
-    contentFilter: 'all',
-    selectedWorkspace: 'all'
-  })),
-  
+  setSearchTerm: (term) => set((state) => updateAndFilterState({ ...state, searchTerm: term })),
+  setSortBy: (sortBy) => set((state) => updateAndFilterState({ ...state, sortBy })),
+  setFilterTag: (tag) => set((state) => updateAndFilterState({ ...state, filterTag: tag })),
+  setSelectedTags: (tags) => set((state) => updateAndFilterState({ ...state, selectedTags: tags })),
+  setShowPinned: (show) => set((state) => updateAndFilterState({ ...state, showPinned: show })),
+  setContentFilter: (filter) =>
+    set((state) => updateAndFilterState({ ...state, contentFilter: filter })),
+  setSelectedWorkspace: (workspace) =>
+    set((state) => updateAndFilterState({ ...state, selectedWorkspace: workspace })),
+
+  resetFilters: () =>
+    set((state) =>
+      updateAndFilterState({
+        ...state,
+        searchTerm: '',
+        filterTag: 'all',
+        selectedTags: [],
+        showPinned: false,
+        contentFilter: 'all',
+        selectedWorkspace: 'all',
+      })
+    ),
+
   // View actions
   setCurrentView: (view) => set({ currentView: view }),
   setEditingPrompt: (prompt) => set({ editingPrompt: prompt }),
   setEditingChat: (chat) => set({ editingChat: chat }),
-  
+
   // Unified actions
   openItem: (item) => {
     // Opens the prompt editor or launches the chat tab based on item kind.
@@ -674,7 +736,14 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
   addWorkspace: (name: string) => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    set(state => state.workspaces.includes(trimmed) ? state : { ...state, workspaces: [...state.workspaces, trimmed].sort((a,b)=>a.localeCompare(b)) });
+    set((state) =>
+      state.workspaces.includes(trimmed)
+        ? state
+        : {
+            ...state,
+            workspaces: [...state.workspaces, trimmed].sort((a, b) => a.localeCompare(b)),
+          }
+    );
   },
   deleteWorkspace: async (name: string) => {
     // Moves everything back to General before dropping the workspace label.
@@ -682,7 +751,9 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
     try {
       const state = get();
       // Update prompts
-      const updatedPrompts = state.prompts.map(p => p.workspace === name ? { ...p, workspace: 'General' } : p);
+      const updatedPrompts = state.prompts.map((p) =>
+        p.workspace === name ? { ...p, workspace: 'General' } : p
+      );
       // Persist prompts (bulk if available)
       try {
         if (typeof (promptStorage as any).bulkUpdate === 'function') {
@@ -703,14 +774,25 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
       for (const c of state.chats) {
         if (c.workspace === name) {
           const updated = { ...c, workspace: 'General' };
-            try { await chatStorage.update(updated); } catch {}
+          try {
+            await chatStorage.update(updated);
+          } catch (error) {
+            logSilentError('unifiedStore.deleteWorkspace.chatUpdate', error);
+          }
           updatedChats.push(updated);
         } else {
           updatedChats.push(c);
         }
       }
       // Also drop the workspace label from the selectable list immediately
-      set(s => updateAndFilterState({ ...s, prompts: updatedPrompts, chats: updatedChats, workspaces: s.workspaces.filter(w => w !== name) }));
+      set((s) =>
+        updateAndFilterState({
+          ...s,
+          prompts: updatedPrompts,
+          chats: updatedChats,
+          workspaces: s.workspaces.filter((w) => w !== name),
+        })
+      );
     } catch (err) {
       logger.error('Failed to delete workspace', err);
     }
@@ -720,29 +802,39 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
     if (!tag) return;
     try {
       const state = get();
-      const updatedPrompts = state.prompts.map(p => p.tags?.includes(tag) ? { ...p, tags: p.tags.filter(t => t !== tag) } : p);
+      const updatedPrompts = state.prompts.map((p) =>
+        p.tags?.includes(tag) ? { ...p, tags: p.tags.filter((t) => t !== tag) } : p
+      );
       // Persist prompts
       try {
         if (typeof (promptStorage as any).bulkUpdate === 'function') {
           await (promptStorage as any).bulkUpdate(updatedPrompts);
         } else {
-          for (const p of updatedPrompts) { await promptStorage.update(p); }
+          for (const p of updatedPrompts) {
+            await promptStorage.update(p);
+          }
         }
       } catch (e) {
         logger.warn('Failed bulk prompt update during tag delete, attempting per-item', e);
-        for (const p of updatedPrompts) { await promptStorage.update(p); }
+        for (const p of updatedPrompts) {
+          await promptStorage.update(p);
+        }
       }
       const updatedChats: any[] = [];
       for (const c of state.chats) {
         if (c.tags?.includes(tag)) {
-          const updated = { ...c, tags: c.tags.filter(t => t !== tag) };
-          try { await chatStorage.update(updated); } catch {}
+          const updated = { ...c, tags: c.tags.filter((t) => t !== tag) };
+          try {
+            await chatStorage.update(updated);
+          } catch (error) {
+            logSilentError('unifiedStore.deleteTag.chatUpdate', error);
+          }
           updatedChats.push(updated);
         } else {
           updatedChats.push(c);
         }
       }
-      set(s => updateAndFilterState({ ...s, prompts: updatedPrompts, chats: updatedChats }));
+      set((s) => updateAndFilterState({ ...s, prompts: updatedPrompts, chats: updatedChats }));
     } catch (err) {
       logger.error('Failed to delete tag', err);
     }
@@ -753,39 +845,41 @@ export const useUnifiedStore = create<UnifiedState>((set, get) => ({
       const timestamp = new Date().toISOString();
       await secureStorage.clearAll();
       await secureStorage.setLastClearedAt(timestamp);
-      set(state => updateAndFilterState({
-        ...state,
-        prompts: [],
-        chats: [],
-        // Reset selectable lists after a full wipe
-        workspaces: ['General'],
-        stats: {
-          totalPrompts: 0,
-          totalChats: 0,
-          pinnedPrompts: 0,
-          totalUsage: 0,
-          activeWorkspaces: 1,
-        },
-        isLoading: false,
-        error: null,
-        promptsCursor: null,
-        chatsCursor: null,
-        hasMorePrompts: false,
-        hasMoreChats: false,
-        isLoadingMorePrompts: false,
-        isLoadingMoreChats: false,
-        searchTerm: '',
-        sortBy: 'recent',
-        filterTag: 'all',
-        selectedTags: [],
-        showPinned: false,
-        contentFilter: 'all',
-        selectedWorkspace: 'all',
-        currentView: 'list',
-        editingPrompt: null,
-        editingChat: null,
-        lastClearedAt: timestamp,
-      }));
+      set((state) =>
+        updateAndFilterState({
+          ...state,
+          prompts: [],
+          chats: [],
+          // Reset selectable lists after a full wipe
+          workspaces: ['General'],
+          stats: {
+            totalPrompts: 0,
+            totalChats: 0,
+            pinnedPrompts: 0,
+            totalUsage: 0,
+            activeWorkspaces: 1,
+          },
+          isLoading: false,
+          error: null,
+          promptsCursor: null,
+          chatsCursor: null,
+          hasMorePrompts: false,
+          hasMoreChats: false,
+          isLoadingMorePrompts: false,
+          isLoadingMoreChats: false,
+          searchTerm: '',
+          sortBy: 'recent',
+          filterTag: 'all',
+          selectedTags: [],
+          showPinned: false,
+          contentFilter: 'all',
+          selectedWorkspace: 'all',
+          currentView: 'list',
+          editingPrompt: null,
+          editingChat: null,
+          lastClearedAt: timestamp,
+        })
+      );
       toast.success('DialogDrive data deleted from this browser.');
     } catch (err) {
       logger.error('Failed to clear DialogDrive data', err);

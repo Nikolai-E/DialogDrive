@@ -24,11 +24,14 @@ async function openPopup(context: any, extensionUrl: string) {
 }
 
 test.describe('Draft restore and prefs persistence', () => {
-  test('prompt draft restores after navigating away and back', async ({ context, extensionUrl }) => {
+  test('prompt draft restores after navigating away and back', async ({
+    context,
+    extensionUrl,
+  }) => {
     const page = await openPopup(context, extensionUrl);
 
     // Open New Prompt
-  await page.locator('button[aria-controls="create-menu"]').click();
+    await page.locator('button[aria-controls="create-menu"]').click();
     await page.getByRole('menuitem', { name: /new prompt/i }).click();
 
     await expect(page.getByRole('heading', { name: /create new prompt/i })).toBeVisible();
@@ -40,7 +43,7 @@ test.describe('Draft restore and prefs persistence', () => {
     await page.getByRole('button', { name: /back/i }).click();
 
     // Re-open prompt create, expect alert or fields hydrated
-  await page.locator('button[aria-controls="create-menu"]').click();
+    await page.locator('button[aria-controls="create-menu"]').click();
     await page.getByRole('menuitem', { name: /new prompt/i }).click();
 
     // Either the banner or the fields must reflect saved data
@@ -58,25 +61,35 @@ test.describe('Draft restore and prefs persistence', () => {
     await page.getByRole('tab', { name: /tools/i }).click();
     await page.getByRole('menuitem', { name: /text tools/i }).click();
 
+    // Wait for panel to load
+    await page.waitForSelector('[data-testid="show-description-button"]', { state: 'visible', timeout: 2000 }).catch(() => {});
+    
     // If tips are showing, hide them; if hidden, show then hide
-  const showButton = page.getByRole('button', { name: /show what these text tools do/i });
+    const showButton = page.getByTestId('show-description-button');
     const hideButton = page.getByRole('button', { name: /hide/i });
 
-    if (await showButton.isVisible()) {
+    const isShowButtonVisible = await showButton.isVisible().catch(() => false);
+    if (isShowButtonVisible) {
       await showButton.click();
+      await expect(hideButton).toBeVisible();
       await hideButton.click();
     } else {
-      await hideButton.click();
+      const isHideButtonVisible = await hideButton.isVisible().catch(() => false);
+      if (isHideButtonVisible) {
+        await hideButton.click();
+      }
     }
-    // Allow async storage write to settle
+    
+    // Allow async storage write to settle before reload
+    // Using timeout here is intentional - we need to ensure storage.set() completes
     await page.waitForTimeout(400);
 
-  // Reload popup and ensure hidden remains hidden
-  await page.reload();
+    // Reload popup and ensure hidden remains hidden
+    await page.reload();
 
     await page.getByRole('tab', { name: /tools/i }).click();
     await page.getByRole('menuitem', { name: /text tools/i }).click();
     // After hydration the description block should not be present; the Show button should be visible
-    await expect(page.getByRole('button', { name: /show what these text tools do/i })).toBeVisible();
+    await expect(page.getByTestId('show-description-button')).toBeVisible({ timeout: 5000 });
   });
 });

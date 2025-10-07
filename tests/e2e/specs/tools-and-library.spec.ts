@@ -33,7 +33,10 @@ test.describe('Tools dropdown and Library', () => {
     await expect(page.getByRole('heading', { name: /prompt library/i })).toBeVisible();
 
     // Add the specific new example: Bug report template
-    const card = page.getByRole('heading', { name: /bug report template/i }).locator('..').locator('..');
+    const card = page
+      .getByRole('heading', { name: /bug report template/i })
+      .locator('..')
+      .locator('..');
     const addBtn = card.getByRole('button', { name: /^select/i });
     await addBtn.click();
     await expect(addBtn).toHaveText(/selected/i);

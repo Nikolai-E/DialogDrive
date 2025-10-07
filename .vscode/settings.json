@@ -1,45 +1,45 @@
 {
   // Terminal command auto-approval settings
   "chat.tools.autoApprove": false,
-  
+
   // --- Modern VS Code (2025+) terminal allow/deny lists ---
   "chat.tools.terminal.allowList": {
     // File operations within DialogDrive folder
     "/^Remove-Item\\s+.*DialogDrive.*\\.(ts|tsx|js|jsx|html|md).*$/": true,
     "/^rm\\s+.*DialogDrive.*\\.(ts|tsx|js|jsx|html|md).*$/": true,
     "/^del\\s+.*DialogDrive.*$/": true,
-    
+
     // NPM commands
     "/^npm\\s+(install|uninstall|run|test|build).*$/": true,
     "/^npm\\s+rm.*$/": true,
     "/^npx.*$/": true,
-    
+
     // Git operations (safe since you have backup)
     "/^git\\s+(add|commit|status|diff|log|branch|checkout|pull|push).*$/": true,
-    
+
     // File creation and editing
     "/^touch\\s+.*$/": true,
     "/^mkdir\\s+.*$/": true,
     "/^echo.*$/": true,
     "/^cat\\s+.*$/": true,
     "/^code\\s+.*$/": true,
-    
+
     // TypeScript and build commands
     "/^tsc.*$/": true,
     "/^wxt.*$/": true,
-    
+
     // Directory navigation
     "/^cd\\s+.*$/": true,
     "/^ls.*$/": true,
     "/^dir.*$/": true,
     "/^pwd$/": true,
-    
+
     // Find and replace operations
     "/^find\\s+\\.\\s+-type\\s+f.*$/": true,
     "/^sed\\s+-i.*$/": true,
     "/^grep.*$/": true
   },
-  
+
   "chat.tools.terminal.denyList": {
     // Still deny system-level dangerous commands
     "sudo": true,
@@ -65,7 +65,7 @@
     "/^npm\\s+.*$/": true,
     "/^git\\s+.*$/": true
   },
-  
+
   "github.copilot.chat.agent.terminal.denyList": {
     "sudo": true,
     "kill": true,
@@ -82,7 +82,7 @@
   "typescript.updateImportsOnFileMove.enabled": "always",
   "typescript.suggest.autoImports": true,
   "typescript.preferences.importModuleSpecifier": "relative",
-  
+
   // Editor settings for consistency
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
@@ -98,12 +98,12 @@
   "[typescriptreact]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  
+
   // File associations
   "files.associations": {
     "*.css": "tailwindcss"
   },
-  
+
   // Exclude files from search and watch
   "files.exclude": {
     "**/.git": true,
@@ -113,32 +113,32 @@
     "**/dist": true,
     "**/build": true
   },
-  
+
   "search.exclude": {
     "**/node_modules": true,
     "**/dist": true,
     "**/.wxt": true,
     "**/package-lock.json": true
   },
-  
+
   // Tailwind CSS IntelliSense
   "tailwindCSS.experimental.classRegex": [
     ["cn\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
     ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
   ],
-  
+
   // Auto-save settings
   "files.autoSave": "afterDelay",
   "files.autoSaveDelay": 1000,
-  
+
   // Git settings
   "git.autofetch": true,
   "git.confirmSync": false,
   "git.enableSmartCommit": true,
-  
+
   // Extension recommendations
   "extensions.ignoreRecommendations": false,
-  
+
   // Copilot settings for better suggestions
   "github.copilot.enable": {
     "*": true,
@@ -146,5 +146,16 @@
     "plaintext": true,
     "markdown": true
   },
-  "chatgpt.openOnStartup": true
+  "chatgpt.openOnStartup": true,
+
+  // Live Server settings for website development
+  "liveServer.settings.root": "/website",
+  "liveServer.settings.port": 5500,
+  "liveServer.settings.CustomBrowser": "chrome",
+  "liveServer.settings.donotShowInfoMsg": true,
+  "liveServer.settings.ignoreFiles": [
+    "**/node_modules/**",
+    "**/.wxt/**",
+    "**/dist/**"
+  ]
 }

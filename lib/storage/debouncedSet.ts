@@ -53,7 +53,7 @@ export function debouncedSet(
   value: string,
   writeFn: (value: string) => Promise<void>,
   wait: number = STORAGE_DEBOUNCE.wait,
-  maxWait: number = STORAGE_DEBOUNCE.maxWait,
+  maxWait: number = STORAGE_DEBOUNCE.maxWait
 ): Promise<void> {
   const existing = pendingWrites.get(name);
   if (existing) {

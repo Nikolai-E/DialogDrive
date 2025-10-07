@@ -20,7 +20,9 @@ const blockCodeSchema = z.enum(['drop', 'indent']);
 
 const punctuationSchema = z
   .object({
-    mapEmDash: z.enum(['comma', 'hyphen', 'keep']).default(defaultCleanOptions.punctuation.mapEmDash),
+    mapEmDash: z
+      .enum(['comma', 'hyphen', 'keep'])
+      .default(defaultCleanOptions.punctuation.mapEmDash),
     mapEnDash: z.enum(['hyphen', 'keep']).default(defaultCleanOptions.punctuation.mapEnDash),
     curlyQuotes: z.enum(['straight', 'keep']).default(defaultCleanOptions.punctuation.curlyQuotes),
     ellipsis: z.enum(['dots', 'keep', 'remove']).default(defaultCleanOptions.punctuation.ellipsis),
@@ -122,7 +124,7 @@ function migrateLegacyCleanerOptions(value: unknown): CleanerPrefs | null {
 
   const wantsMarkdown = candidate.removeMarkdown === false;
   const preset = wantsMarkdown ? 'markdown-slim' : 'plain';
-  let resolved = cloneCleanOptions(resolveCleanOptions({ preset }));
+  const resolved = cloneCleanOptions(resolveCleanOptions({ preset }));
 
   if (wantsMarkdown) {
     resolved.structure.dropHeadings = false;
@@ -185,8 +187,13 @@ async function importLegacyPrefs(): Promise<PersistedPrefsSlice | null> {
     cleanerOptions: cleaner,
     developer: { ...base.developer },
     syncFallback: false,
-    cleanerTipsVisible: typeof (legacy as any).cleanerTipsVisible === 'boolean' ? Boolean((legacy as any).cleanerTipsVisible) : true,
-    _persistMeta: stampMeta(typeof (legacy as any).updatedAt === 'number' ? (legacy as any).updatedAt : Date.now()),
+    cleanerTipsVisible:
+      typeof (legacy as any).cleanerTipsVisible === 'boolean'
+        ? Boolean((legacy as any).cleanerTipsVisible)
+        : true,
+    _persistMeta: stampMeta(
+      typeof (legacy as any).updatedAt === 'number' ? (legacy as any).updatedAt : Date.now()
+    ),
   };
 
   return merged;
@@ -228,8 +235,14 @@ const defaultPersistSlice = (): PersistedPrefsSlice => ({
 
 function normalizeMeta(meta: unknown, fallbackUpdatedAt?: number): PersistMeta {
   if (meta && typeof meta === 'object') {
-    const schemaVersion = typeof (meta as any).schemaVersion === 'number' ? (meta as any).schemaVersion : STORAGE_SCHEMA_VERSION.prefs;
-    const updatedAt = typeof (meta as any).updatedAt === 'number' ? (meta as any).updatedAt : fallbackUpdatedAt ?? Date.now();
+    const schemaVersion =
+      typeof (meta as any).schemaVersion === 'number'
+        ? (meta as any).schemaVersion
+        : STORAGE_SCHEMA_VERSION.prefs;
+    const updatedAt =
+      typeof (meta as any).updatedAt === 'number'
+        ? (meta as any).updatedAt
+        : (fallbackUpdatedAt ?? Date.now());
     return {
       schemaVersion,
       updatedAt,
@@ -259,12 +272,19 @@ function parsePersistedPrefs(state: unknown, fallbackUpdatedAt?: number): Persis
 
 function mergeCleanerOptions(current: CleanerPrefs, update: Partial<CleanerPrefs>): CleanerPrefs {
   const presetUpdate = update.preset;
-  const base = presetUpdate && presetUpdate !== 'custom' ? resolveCleanOptions({ preset: presetUpdate }) : current;
+  const base =
+    presetUpdate && presetUpdate !== 'custom'
+      ? resolveCleanOptions({ preset: presetUpdate })
+      : current;
   const next = cloneCleanOptions(base);
 
   let touched = false;
 
-  if (typeof update.locale === 'string' && update.locale.length > 0 && update.locale !== next.locale) {
+  if (
+    typeof update.locale === 'string' &&
+    update.locale.length > 0 &&
+    update.locale !== next.locale
+  ) {
     next.locale = update.locale;
     touched = true;
   }
@@ -316,19 +336,31 @@ function mergeCleanerOptions(current: CleanerPrefs, update: Partial<CleanerPrefs
 
   if (update.structure) {
     const { structure } = update;
-    if (typeof structure.dropHeadings === 'boolean' && structure.dropHeadings !== next.structure.dropHeadings) {
+    if (
+      typeof structure.dropHeadings === 'boolean' &&
+      structure.dropHeadings !== next.structure.dropHeadings
+    ) {
       next.structure.dropHeadings = structure.dropHeadings;
       touched = true;
     }
-    if (typeof structure.dropTables === 'boolean' && structure.dropTables !== next.structure.dropTables) {
+    if (
+      typeof structure.dropTables === 'boolean' &&
+      structure.dropTables !== next.structure.dropTables
+    ) {
       next.structure.dropTables = structure.dropTables;
       touched = true;
     }
-    if (typeof structure.dropFootnotes === 'boolean' && structure.dropFootnotes !== next.structure.dropFootnotes) {
+    if (
+      typeof structure.dropFootnotes === 'boolean' &&
+      structure.dropFootnotes !== next.structure.dropFootnotes
+    ) {
       next.structure.dropFootnotes = structure.dropFootnotes;
       touched = true;
     }
-    if (typeof structure.dropBlockquotes === 'boolean' && structure.dropBlockquotes !== next.structure.dropBlockquotes) {
+    if (
+      typeof structure.dropBlockquotes === 'boolean' &&
+      structure.dropBlockquotes !== next.structure.dropBlockquotes
+    ) {
       next.structure.dropBlockquotes = structure.dropBlockquotes;
       touched = true;
     }
@@ -339,11 +371,17 @@ function mergeCleanerOptions(current: CleanerPrefs, update: Partial<CleanerPrefs
       next.structure.dropHorizontalRules = structure.dropHorizontalRules;
       touched = true;
     }
-    if (typeof structure.stripEmojis === 'boolean' && structure.stripEmojis !== next.structure.stripEmojis) {
+    if (
+      typeof structure.stripEmojis === 'boolean' &&
+      structure.stripEmojis !== next.structure.stripEmojis
+    ) {
       next.structure.stripEmojis = structure.stripEmojis;
       touched = true;
     }
-    if (typeof structure.keepBasicMarkdown === 'boolean' && structure.keepBasicMarkdown !== next.structure.keepBasicMarkdown) {
+    if (
+      typeof structure.keepBasicMarkdown === 'boolean' &&
+      structure.keepBasicMarkdown !== next.structure.keepBasicMarkdown
+    ) {
       next.structure.keepBasicMarkdown = structure.keepBasicMarkdown;
       touched = true;
     }
@@ -351,11 +389,17 @@ function mergeCleanerOptions(current: CleanerPrefs, update: Partial<CleanerPrefs
 
   if (update.whitespace) {
     const { whitespace } = update;
-    if (typeof whitespace.collapseSpaces === 'boolean' && whitespace.collapseSpaces !== next.whitespace.collapseSpaces) {
+    if (
+      typeof whitespace.collapseSpaces === 'boolean' &&
+      whitespace.collapseSpaces !== next.whitespace.collapseSpaces
+    ) {
       next.whitespace.collapseSpaces = whitespace.collapseSpaces;
       touched = true;
     }
-    if (typeof whitespace.collapseBlankLines === 'boolean' && whitespace.collapseBlankLines !== next.whitespace.collapseBlankLines) {
+    if (
+      typeof whitespace.collapseBlankLines === 'boolean' &&
+      whitespace.collapseBlankLines !== next.whitespace.collapseBlankLines
+    ) {
       next.whitespace.collapseBlankLines = whitespace.collapseBlankLines;
       touched = true;
     }
@@ -363,11 +407,17 @@ function mergeCleanerOptions(current: CleanerPrefs, update: Partial<CleanerPrefs
       next.whitespace.trim = whitespace.trim;
       touched = true;
     }
-    if (typeof whitespace.normalizeNbsp === 'boolean' && whitespace.normalizeNbsp !== next.whitespace.normalizeNbsp) {
+    if (
+      typeof whitespace.normalizeNbsp === 'boolean' &&
+      whitespace.normalizeNbsp !== next.whitespace.normalizeNbsp
+    ) {
       next.whitespace.normalizeNbsp = whitespace.normalizeNbsp;
       touched = true;
     }
-    if (typeof whitespace.ensureFinalNewline === 'boolean' && whitespace.ensureFinalNewline !== next.whitespace.ensureFinalNewline) {
+    if (
+      typeof whitespace.ensureFinalNewline === 'boolean' &&
+      whitespace.ensureFinalNewline !== next.whitespace.ensureFinalNewline
+    ) {
       next.whitespace.ensureFinalNewline = whitespace.ensureFinalNewline;
       touched = true;
     }
@@ -453,14 +503,15 @@ const usePrefsStoreInternal = create<PreferencesState>()(
                 ...state.developer,
                 syncFallback: true,
                 lastSyncFallbackAt: Date.now(),
-                lastSyncFallbackReason: error instanceof Error ? error.message : String(error ?? 'unknown'),
+                lastSyncFallbackReason:
+                  error instanceof Error ? error.message : String(error ?? 'unknown'),
               },
               syncFallback: true,
               _persistMeta: stampMeta(),
             }));
           }),
-          STORAGE_SCHEMA_VERSION.prefs,
-        ),
+          STORAGE_SCHEMA_VERSION.prefs
+        )
       ),
       partialize: (state) => ({
         pickerTrigger: state.pickerTrigger,
@@ -514,8 +565,8 @@ const usePrefsStoreInternal = create<PreferencesState>()(
           usePrefsStoreInternal.setState({ _rehydrated: true });
         }
       },
-    },
-  ),
+    }
+  )
 );
 
 const selectPersistSlice = (state: PreferencesState): PersistedPrefsSlice => ({
@@ -554,7 +605,10 @@ subscribeToStorageKey<PersistedPrefsSlice>(STORAGE_KEYS.prefs, (envelope) => {
       ...incoming.developer,
     },
     syncFallback: incoming.syncFallback,
-    cleanerTipsVisible: typeof incoming.cleanerTipsVisible === 'boolean' ? incoming.cleanerTipsVisible : current.cleanerTipsVisible,
+    cleanerTipsVisible:
+      typeof incoming.cleanerTipsVisible === 'boolean'
+        ? incoming.cleanerTipsVisible
+        : current.cleanerTipsVisible,
     _persistMeta: {
       schemaVersion: incomingMeta.schemaVersion,
       updatedAt: envelope.updatedAt,

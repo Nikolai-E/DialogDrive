@@ -30,7 +30,9 @@ export class ChatStorage {
         if (Array.isArray(legacy) && legacy.length) {
           await secureStorage.setChats(legacy);
           // Best-effort cleanup of legacy key
-          try { await browser.storage.local.remove(this.LEGACY_STORAGE_KEY); } catch {}
+          try {
+            await browser.storage.local.remove(this.LEGACY_STORAGE_KEY);
+          } catch {}
           logger.info('Migrated chat bookmarks from legacy storage to SecureStorageV2');
           return legacy;
         }
@@ -80,20 +82,21 @@ export class ChatStorage {
       throw new Error('Invalid chat bookmark payload.');
     }
     const safe = parsed.data;
-    
+
     const newChat: ChatBookmark = {
       ...safe,
       isPinned: safe.isPinned ?? false,
-      id: typeof crypto !== 'undefined' && crypto.randomUUID
-        ? `chat_${crypto.randomUUID()}`
-        : `chat_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
+      id:
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? `chat_${crypto.randomUUID()}`
+          : `chat_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
       created: new Date().toISOString(),
       accessCount: 0,
     };
 
     chats.push(newChat);
     await this.saveToStorage(chats);
-    
+
     logger.log('Chat bookmark added:', newChat.id);
     return newChat;
   }
@@ -101,15 +104,15 @@ export class ChatStorage {
   async update(chat: ChatBookmark): Promise<ChatBookmark> {
     // Replace an existing chat entry after edits.
     const chats = await this.getFromStorage();
-    const index = chats.findIndex(c => c.id === chat.id);
-    
+    const index = chats.findIndex((c) => c.id === chat.id);
+
     if (index === -1) {
       throw new Error('Chat bookmark not found');
     }
 
     chats[index] = chat;
     await this.saveToStorage(chats);
-    
+
     logger.log('Chat bookmark updated:', chat.id);
     return chat;
   }
@@ -117,8 +120,8 @@ export class ChatStorage {
   async delete(id: string): Promise<void> {
     // Remove a chat bookmark entirely.
     const chats = await this.getFromStorage();
-    const filteredChats = chats.filter(c => c.id !== id);
-    
+    const filteredChats = chats.filter((c) => c.id !== id);
+
     if (filteredChats.length === chats.length) {
       throw new Error('Chat bookmark not found');
     }
@@ -130,8 +133,8 @@ export class ChatStorage {
   async incrementAccess(id: string): Promise<void> {
     // Track quick usage analytics for the unified list.
     const chats = await this.getFromStorage();
-    const chat = chats.find(c => c.id === id);
-    
+    const chat = chats.find((c) => c.id === id);
+
     if (chat) {
       chat.accessCount = (chat.accessCount || 0) + 1;
       chat.lastAccessed = new Date().toISOString();
@@ -142,12 +145,12 @@ export class ChatStorage {
 
   // Enhanced URL parsing for both conversation and share URLs
   // Helps downstream callers understand what kind of link a user saved.
-  static parseUrl(url: string): { 
-    platform: 'chatgpt' | 'gemini' | 'claude' | null, 
-    conversationId: string | null,
-    shareId: string | null,
-    urlType: 'conversation' | 'share' | 'unknown',
-    isOwnerOnly: boolean
+  static parseUrl(url: string): {
+    platform: 'chatgpt' | 'gemini' | 'claude' | null;
+    conversationId: string | null;
+    shareId: string | null;
+    urlType: 'conversation' | 'share' | 'unknown';
+    isOwnerOnly: boolean;
   } {
     try {
       const cleanUrl = url.trim();
@@ -162,10 +165,10 @@ export class ChatStorage {
             conversationId: conversationMatch[1],
             shareId: null,
             urlType: 'conversation',
-            isOwnerOnly: true
+            isOwnerOnly: true,
           };
         }
-        
+
         // Share URL: https://chatgpt.com/share/{share-id}
         const shareMatch = cleanUrl.match(/chatgpt\.com\/share\/([a-f0-9-]+)/);
         if (shareMatch) {
@@ -174,7 +177,7 @@ export class ChatStorage {
             conversationId: null,
             shareId: shareMatch[1],
             urlType: 'share',
-            isOwnerOnly: false
+            isOwnerOnly: false,
           };
         }
       }
@@ -189,10 +192,10 @@ export class ChatStorage {
             conversationId: conversationMatch[1],
             shareId: null,
             urlType: 'conversation',
-            isOwnerOnly: true
+            isOwnerOnly: true,
           };
         }
-        
+
         // Share URL: https://g.co/gemini/share/{share-id}
         const shareMatch = cleanUrl.match(/g\.co\/gemini\/share\/([a-f0-9-]+)/);
         if (shareMatch) {
@@ -201,7 +204,7 @@ export class ChatStorage {
             conversationId: null,
             shareId: shareMatch[1],
             urlType: 'share',
-            isOwnerOnly: false
+            isOwnerOnly: false,
           };
         }
       }
@@ -215,7 +218,7 @@ export class ChatStorage {
             conversationId: conversationMatch[1],
             shareId: null,
             urlType: 'conversation',
-            isOwnerOnly: true
+            isOwnerOnly: true,
           };
         }
       }
@@ -225,7 +228,7 @@ export class ChatStorage {
         conversationId: null,
         shareId: null,
         urlType: 'unknown',
-        isOwnerOnly: false
+        isOwnerOnly: false,
       };
     } catch {
       return {
@@ -233,30 +236,37 @@ export class ChatStorage {
         conversationId: null,
         shareId: null,
         urlType: 'unknown',
-        isOwnerOnly: false
+        isOwnerOnly: false,
       };
     }
   }
 
-  static generateTitle(url: string, platform: 'chatgpt' | 'gemini' | 'claude' | 'deepseek'): string {
+  static generateTitle(
+    url: string,
+    platform: 'chatgpt' | 'gemini' | 'claude' | 'deepseek'
+  ): string {
     const platformNames = {
       chatgpt: 'ChatGPT',
       gemini: 'Gemini',
       claude: 'Claude',
-      deepseek: 'DeepSeek'
+      deepseek: 'DeepSeek',
     };
-    
+
     const date = new Date().toLocaleDateString();
     return `${platformNames[platform]} Chat - ${date}`;
   }
 
   // Auto-capture current chat functionality for content scripts
-  static async captureCurrentChat(): Promise<{ title: string; url: string; scrapedContent?: any } | null> {
+  static async captureCurrentChat(): Promise<{
+    title: string;
+    url: string;
+    scrapedContent?: any;
+  } | null> {
     try {
       // This will be called from content script context
       const currentUrl = window.location.href;
       const parsed = this.parseUrl(currentUrl);
-      
+
       if (!parsed.platform) {
         return null;
       }
@@ -268,35 +278,39 @@ export class ChatStorage {
       if (parsed.platform === 'chatgpt') {
         // Try to get conversation title from page
         const titleElement = document.querySelector('title');
-        title = titleElement?.textContent?.replace(' | ChatGPT', '') || this.generateTitle(currentUrl, 'chatgpt');
-        
+        title =
+          titleElement?.textContent?.replace(' | ChatGPT', '') ||
+          this.generateTitle(currentUrl, 'chatgpt');
+
         // Count messages
         const messages = document.querySelectorAll('[data-message-author-role]');
         scrapedContent = {
           messageCount: messages.length,
           lastMessage: messages[messages.length - 1]?.textContent?.slice(0, 100) || '',
           summary: title,
-          scrapedAt: new Date().toISOString()
+          scrapedAt: new Date().toISOString(),
         };
       } else if (parsed.platform === 'gemini') {
         // Try to get conversation title from Gemini page
         const titleElement = document.querySelector('title');
-        title = titleElement?.textContent?.replace(' - Gemini', '') || this.generateTitle(currentUrl, 'gemini');
-        
+        title =
+          titleElement?.textContent?.replace(' - Gemini', '') ||
+          this.generateTitle(currentUrl, 'gemini');
+
         // Count messages in Gemini
         const messages = document.querySelectorAll('[data-message-id]');
         scrapedContent = {
           messageCount: messages.length,
           lastMessage: messages[messages.length - 1]?.textContent?.slice(0, 100) || '',
           summary: title,
-          scrapedAt: new Date().toISOString()
+          scrapedAt: new Date().toISOString(),
         };
       }
 
       return {
         title,
         url: currentUrl,
-        scrapedContent
+        scrapedContent,
       };
     } catch (error) {
       logger.error('Failed to capture current chat:', error);
@@ -315,19 +329,19 @@ export class ChatStorage {
         return {
           used,
           available,
-          percentage: available > 0 ? (used / available) * 100 : 0
+          percentage: available > 0 ? (used / available) * 100 : 0,
         };
       }
-      
+
       // Fallback for older browsers
       const chats = await new ChatStorage().getFromStorage();
       const dataSize = JSON.stringify(chats).length;
       const maxSize = 5 * 1024 * 1024; // 5MB estimate for localStorage
-      
+
       return {
         used: dataSize,
         available: maxSize,
-        percentage: (dataSize / maxSize) * 100
+        percentage: (dataSize / maxSize) * 100,
       };
     } catch (error) {
       logger.error('Failed to get storage info:', error);
@@ -335,17 +349,27 @@ export class ChatStorage {
     }
   }
 
-  async getPage({ limit, cursor }: { limit: number; cursor: string | null }): Promise<{ items: ChatBookmark[]; nextCursor: string | null }> {
+  async getPage({
+    limit,
+    cursor,
+  }: {
+    limit: number;
+    cursor: string | null;
+  }): Promise<{ items: ChatBookmark[]; nextCursor: string | null }> {
     const all = await this.getAll();
     // Sort by lastAccessed desc then created desc
     const sorted = [...all].sort((a, b) => {
-      const ad = a.lastAccessed ? new Date(a.lastAccessed).getTime() : new Date(a.created).getTime();
-      const bd = b.lastAccessed ? new Date(b.lastAccessed).getTime() : new Date(b.created).getTime();
+      const ad = a.lastAccessed
+        ? new Date(a.lastAccessed).getTime()
+        : new Date(a.created).getTime();
+      const bd = b.lastAccessed
+        ? new Date(b.lastAccessed).getTime()
+        : new Date(b.created).getTime();
       return bd - ad;
     });
     let startIndex = 0;
     if (cursor) {
-      const idx = sorted.findIndex(it => it.id === cursor);
+      const idx = sorted.findIndex((it) => it.id === cursor);
       startIndex = idx >= 0 ? idx + 1 : 0;
     }
     const items = sorted.slice(startIndex, startIndex + limit);

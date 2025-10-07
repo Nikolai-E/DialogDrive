@@ -1,7 +1,19 @@
 // An extension by Nikolai Eidheim, built with WXT + TypeScript.
 // Popup header that manages search, filtering, and quick-create menus.
 
-import { Check, ChevronDown, Hammer, LayoutGrid, List, MessageSquare, Pin, Plus, Search, Settings as SettingsIcon, SortAsc, X } from 'lucide-react';
+import {
+    Check,
+    Hammer,
+    LayoutGrid,
+    List,
+    MessageSquare,
+    Pin,
+    Plus,
+    Search,
+    Settings as SettingsIcon,
+    SortAsc,
+    X,
+} from 'lucide-react';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '../../../components/ui/button';
@@ -20,21 +32,30 @@ interface HeaderProps {
 
 type FilterMenuKey = 'sort' | 'workspace' | 'tag' | 'tools';
 
-const FILTER_MENU_CONFIG: Record<FilterMenuKey, { minWidth?: number; align?: 'start' | 'end'; maxHeight?: number }> = {
-  sort: { minWidth: 180 },
-  workspace: { minWidth: 220, maxHeight: 260 },
-  tag: { minWidth: 200, maxHeight: 260 },
-  tools: { minWidth: 164, align: 'end' },
+const FILTER_MENU_CONFIG: Record<
+  FilterMenuKey,
+  { minWidth?: number; align?: 'start' | 'end'; maxHeight?: number }
+> = {
+  sort: { minWidth: 156 },
+  workspace: { minWidth: 192, maxHeight: 260 },
+  tag: { minWidth: 184, maxHeight: 260 },
+  tools: { minWidth: 148, align: 'end' },
 };
 
-export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettings, onOpenCleaner, onOpenLibrary }) => {
+export const Header: React.FC<HeaderProps> = ({
+  onNewPrompt,
+  onNewChat,
+  onSettings,
+  onOpenCleaner,
+  onOpenLibrary,
+}) => {
   // Pull relevant search/filter state so the header stays in sync with the list.
-  const { 
-    searchTerm, 
-    setSearchTerm, 
-    contentFilter, 
-    setContentFilter, 
-    currentView, 
+  const {
+    searchTerm,
+    setSearchTerm,
+    contentFilter,
+    setContentFilter,
+    currentView,
     setCurrentView,
     sortBy,
     filterTag,
@@ -70,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
     }),
     [sortButtonRef, workspaceButtonRef, tagButtonRef, toolsButtonRef]
   );
-  
+
   // Sort options
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: 'recent', label: 'Recent' },
@@ -109,21 +130,21 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
       setMenuStyle((s) => ({ ...s, display: 'none' }));
       return;
     }
-    
+
     const updatePosition = () => {
       const btn = buttonRef.current;
       if (!btn) return;
-      
+
       const rect = btn.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
-      const menuWidth = 176; // w-44
+      const menuWidth = 152; // w-38
       const top = Math.round(rect.bottom + 4); // 4px gap
       let left = Math.round(rect.right - menuWidth);
-      
+
       // Ensure menu doesn't go off-screen
       if (left < 4) left = 4;
       if (left + menuWidth > viewportWidth - 4) left = viewportWidth - menuWidth - 4;
-      
+
       setMenuStyle({
         position: 'fixed',
         top,
@@ -133,12 +154,12 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
         display: 'block',
       });
     };
-    
+
     updatePosition();
-    
+
     // Add resize listener to reposition on window resize
-  window.addEventListener('resize', updatePosition, { passive: true });
-  return () => window.removeEventListener('resize', updatePosition);
+    window.addEventListener('resize', updatePosition, { passive: true });
+    return () => window.removeEventListener('resize', updatePosition);
   }, [showDropdown]);
 
   useLayoutEffect(() => {
@@ -192,16 +213,16 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
     const handlePointerDown = (event: MouseEvent) => {
       // If we're in the middle of a button toggle, don't interfere
       if (isTogglingRef.current) return;
-      
+
       const target = event.target as Node;
       const activeButton = filterButtonRefs[activeMenu]?.current;
 
       // Don't close if clicking inside the menu content
       if (menuContentRef.current?.contains(target)) return;
-      
+
       // Don't close if clicking the active button (let the onClick handle it)
       if (activeButton?.contains(target)) return;
-      
+
       // Close if clicking outside
       setActiveMenu(null);
     };
@@ -232,8 +253,8 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
       if (portal && portal.contains(target)) return;
 
       // Check if clicking any of the filter buttons - let their onClick handlers deal with it
-      const isFilterButton = Object.values(filterButtonRefs).some(
-        (ref) => ref.current?.contains(target)
+      const isFilterButton = Object.values(filterButtonRefs).some((ref) =>
+        ref.current?.contains(target)
       );
       if (isFilterButton) return;
 
@@ -257,13 +278,13 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
   const toggleMenu = (menu: FilterMenuKey, event?: React.MouseEvent) => {
     event?.preventDefault();
     event?.stopPropagation();
-    
+
     // Mark that we're toggling to prevent mousedown handler interference
     isTogglingRef.current = true;
     setTimeout(() => {
       isTogglingRef.current = false;
     }, 50);
-    
+
     setShowDropdown(false);
     setActiveMenu((prev) => {
       const isAlreadyOpen = prev === menu;
@@ -287,17 +308,27 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
     ariaControls?: string;
     buttonRef?: React.Ref<HTMLButtonElement>;
     className?: string;
-  }> = ({ active, onClick, icon, label, ariaHaspopup, ariaExpanded, ariaControls, buttonRef, className }) => (
+  }> = ({
+    active,
+    onClick,
+    icon,
+    label,
+    ariaHaspopup,
+    ariaExpanded,
+    ariaControls,
+    buttonRef,
+    className,
+  }) => (
     <button
       role="tab"
       type="button"
       onClick={onClick}
       ref={buttonRef}
       className={cn(
-        'inline-flex items-center gap-1.75 h-8 px-3 rounded-full border border-transparent text-[12.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'inline-flex items-center gap-1.75 h-8 px-3 rounded-full border text-[12.5px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         active
-          ? 'bg-primary/12 text-foreground border-primary/25 shadow-[0_2px_4px_rgba(15,23,42,0.12)]'
-          : 'text-foreground/75 hover:text-foreground hover:bg-secondary/55',
+          ? 'bg-primary/12 text-primary border-primary/25 shadow-[0_0_10px_rgba(0,102,204,0.1),0_0_14px_rgba(0,102,204,0.05)] hover:bg-primary/26 hover:shadow-[0_0_22px_rgba(0,102,204,0.2)]'
+          : 'text-foreground/75 hover:text-primary hover:bg-primary/22 hover:shadow-[0_0_16px_rgba(0,102,204,0.16)] border-transparent',
         className
       )}
       aria-selected={active}
@@ -313,43 +344,57 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
     </button>
   );
 
-  const filterButtonClass = 'inline-flex items-center gap-1.5 h-[31px] px-3.25 rounded-full border border-border/70 bg-background/70 text-[12px] font-medium text-foreground/75 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:bg-secondary/55 hover:text-foreground justify-center';
-  const filterButtonActiveClass = 'bg-accent text-accent-foreground border-accent shadow-[0_2px_6px_rgba(15,23,42,0.14)]';
+  const filterButtonClass =
+    'inline-flex items-center gap-1.5 h-[31px] px-3 rounded-full border border-transparent bg-transparent text-[12px] font-medium text-foreground/75 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:text-foreground hover:bg-secondary/40 justify-center';
+  const filterButtonActiveClass =
+    'bg-primary/12 text-primary border-primary/25 shadow-[0_0_10px_rgba(0,102,204,0.12),0_0_16px_rgba(0,102,204,0.06)]';
 
   const isCustomSort = sortBy !== 'recent';
   const isPinnedActive = showPinned;
   const isWorkspaceScoped = selectedWorkspace !== 'all';
   const isTagScoped = filterTag !== 'all';
 
-  const menu = showDropdown && portalElRef.current ? createPortal(
-    <div data-dd-menu style={menuStyle}>
-      <div
-        id="create-menu"
-        role="menu"
-        className="pointer-events-auto rounded-[var(--radius)] border border-border bg-card/95 shadow-lg backdrop-blur-sm p-1.5 min-w-[184px]"
-      >
-        <button
-          role="menuitem"
-          onClick={() => { setShowDropdown(false); onNewPrompt(); }}
-          className="w-full h-8 text-left text-[12px] px-2.5 rounded-[calc(var(--radius)-2px)] hover:bg-secondary/60 hover:text-foreground inline-flex items-center gap-2 text-foreground/90 transition-colors"
-        >
-          <List className="h-3.5 w-3.5" />
-          New prompt
-        </button>
-        <button
-          role="menuitem"
-          onClick={() => { setShowDropdown(false); onNewChat(); }}
-          className="w-full h-8 text-left text-[12px] px-2.5 rounded-[calc(var(--radius)-2px)] hover:bg-secondary/60 hover:text-foreground inline-flex items-center gap-2 text-foreground/90 transition-colors"
-        >
-          <MessageSquare className="h-3.5 w-3.5" />
-          Bookmark chat
-        </button>
-      </div>
-    </div>, portalElRef.current) : null;
+  const menu =
+    showDropdown && portalElRef.current
+      ? createPortal(
+          <div data-dd-menu style={menuStyle}>
+            <div
+              id="create-menu"
+              role="menu"
+              className="pointer-events-auto rounded-[var(--radius)] border border-border bg-card/95 shadow-lg backdrop-blur-sm p-1.5 min-w-[152px]"
+            >
+              <button
+                role="menuitem"
+                onClick={() => {
+                  setShowDropdown(false);
+                  onNewPrompt();
+                }}
+                className="w-full h-8 text-left text-[12px] px-2.5 rounded-[calc(var(--radius)-2px)] hover:bg-[hsl(var(--surface-subtle))] hover:text-foreground inline-flex items-center gap-2 text-foreground/90 transition-colors"
+              >
+                <List className="h-3.5 w-3.5" />
+                New prompt
+              </button>
+              <button
+                role="menuitem"
+                onClick={() => {
+                  setShowDropdown(false);
+                  onNewChat();
+                }}
+                className="w-full h-8 text-left text-[12px] px-2.5 rounded-[calc(var(--radius)-2px)] hover:bg-[hsl(var(--surface-subtle))] hover:text-foreground inline-flex items-center gap-2 text-foreground/90 transition-colors"
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                Bookmark chat
+              </button>
+            </div>
+          </div>,
+          portalElRef.current
+        )
+      : null;
 
-
-  const radioItemClass = 'w-full flex items-center justify-between gap-3 px-3 py-2.25 text-[13px] font-medium text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors rounded-[calc(var(--radius)-2px)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/60 focus-visible:ring-offset-1 focus-visible:ring-offset-background';
-  const simpleItemClass = 'w-full text-left px-3 py-2.25 text-[13px] font-medium text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors rounded-[calc(var(--radius)-2px)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/60 focus-visible:ring-offset-1 focus-visible:ring-offset-background';
+  const radioItemClass =
+    'w-full flex items-start gap-2 px-3 py-2 text-[12.5px] font-medium text-foreground/90 leading-snug hover:bg-[hsl(var(--surface-subtle))] hover:text-foreground transition-colors rounded-[calc(var(--radius)-2px)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background';
+  const simpleItemClass =
+    'w-full text-left px-3 py-2 text-[12.5px] font-medium text-foreground/90 leading-snug hover:bg-[hsl(var(--surface-subtle))] hover:text-foreground transition-colors rounded-[calc(var(--radius)-2px)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 focus-visible:ring-offset-background';
   const menuCheckClass = 'h-4 w-4 shrink-0 text-primary transition-opacity';
 
   let filterMenuContent: React.ReactNode = null;
@@ -369,7 +414,9 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
           }}
           className={cn(radioItemClass, selected && 'bg-muted/80 text-foreground')}
         >
-          <span className="truncate">{option.label}</span>
+          <span className="flex-1 text-left whitespace-normal break-words pr-1.5">
+            {option.label}
+          </span>
           <Check className={cn(menuCheckClass, selected ? 'opacity-100' : 'opacity-0')} />
         </button>
       );
@@ -392,7 +439,9 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
           className={cn(radioItemClass, selected && 'bg-muted/80 text-foreground')}
           title={workspace}
         >
-          <span className="truncate">{workspace}</span>
+          <span className="flex-1 text-left whitespace-normal break-words pr-1.5">
+            {workspace}
+          </span>
           <Check className={cn(menuCheckClass, selected ? 'opacity-100' : 'opacity-0')} />
         </button>
       );
@@ -408,10 +457,20 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
             setSelectedWorkspace('all');
             closeMenus();
           }}
-          className={cn(radioItemClass, selectedWorkspace === 'all' && 'bg-muted/80 text-foreground')}
+          className={cn(
+            radioItemClass,
+            selectedWorkspace === 'all' && 'bg-muted/80 text-foreground'
+          )}
         >
-          <span className="truncate">All Workspaces</span>
-          <Check className={cn(menuCheckClass, selectedWorkspace === 'all' ? 'opacity-100' : 'opacity-0')} />
+          <span className="flex-1 text-left whitespace-normal break-words pr-1.5">
+            All Workspaces
+          </span>
+          <Check
+            className={cn(
+              menuCheckClass,
+              selectedWorkspace === 'all' ? 'opacity-100' : 'opacity-0'
+            )}
+          />
         </button>
         {workspaces.length > 0 && <div className="my-1 border-t border-border/50" />}
         {workspaceItems}
@@ -435,7 +494,9 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
           className={cn(radioItemClass, selected && 'bg-muted/80 text-foreground')}
           title={tag}
         >
-          <span className="truncate">{tag}</span>
+          <span className="flex-1 text-left whitespace-normal break-words pr-1.5">
+            {tag}
+          </span>
           <Check className={cn(menuCheckClass, selected ? 'opacity-100' : 'opacity-0')} />
         </button>
       );
@@ -453,8 +514,12 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
           }}
           className={cn(radioItemClass, filterTag === 'all' && 'bg-muted/80 text-foreground')}
         >
-          <span className="truncate">All Tags</span>
-          <Check className={cn(menuCheckClass, filterTag === 'all' ? 'opacity-100' : 'opacity-0')} />
+          <span className="flex-1 text-left whitespace-normal break-words pr-1.5">
+            All Tags
+          </span>
+          <Check
+            className={cn(menuCheckClass, filterTag === 'all' ? 'opacity-100' : 'opacity-0')}
+          />
         </button>
         {allTags.length > 0 && <div className="my-1 border-t border-border/50" />}
         {tagItems}
@@ -490,30 +555,30 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
     ? { maxHeight: currentMenuConfig.maxHeight, overflowY: 'auto' as const }
     : undefined;
 
-  const filterMenu = activeMenu && portalElRef.current && filterMenuStyle
-    ? createPortal(
-        <div style={filterMenuStyle} data-dd-menu>
-          <div
-            ref={(node) => {
-              menuContentRef.current = node;
-            }}
-            id={`${activeMenu}-menu`}
-            role="menu"
-            aria-label={menuLabels[activeMenu]}
-            className="rounded-[var(--radius)] border border-border bg-card/95 shadow-lg py-1 px-1.5 pointer-events-auto backdrop-blur-sm"
-            style={currentMenuStyle}
-          >
-            {filterMenuContent}
-          </div>
-        </div>,
-        portalElRef.current
-      )
-    : null;
-
+  const filterMenu =
+    activeMenu && portalElRef.current && filterMenuStyle
+      ? createPortal(
+          <div style={filterMenuStyle} data-dd-menu>
+            <div
+              ref={(node) => {
+                menuContentRef.current = node;
+              }}
+              id={`${activeMenu}-menu`}
+              role="menu"
+              aria-label={menuLabels[activeMenu]}
+              className="rounded-[var(--radius)] border border-border bg-card/95 shadow-lg py-1 px-1.5 pointer-events-auto backdrop-blur-sm"
+              style={currentMenuStyle}
+            >
+              {filterMenuContent}
+            </div>
+          </div>,
+          portalElRef.current
+        )
+      : null;
 
   return (
-    <header className="shrink-0 border-b border-border/55 bg-[hsl(var(--surface-contrast))]/88 backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--surface-contrast))]/75 shadow-[0_3px_10px_rgba(15,23,42,0.08)]">
-  <div className="px-2 pt-2 pb-1.5 flex items-center gap-2">
+    <header className="shrink-0 bg-[hsl(var(--surface-contrast))]/75 backdrop-blur-md supports-[backdrop-filter]:bg-[hsl(var(--surface-contrast))]/65 shadow-[0_3px_10px_rgba(15,23,42,0.08)] border-b border-border/35">
+      <div className="pl-1 pr-2 pt-2 pb-1.5 flex items-center gap-2">
         <button
           type="button"
           className="flex items-center gap-1.5 rounded-full px-2 py-1 text-foreground transition-colors hover:bg-secondary/40"
@@ -530,16 +595,18 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
             className="w-[20px] h-[20px] rounded-[7px] border border-border/60 object-contain bg-background/90"
             draggable={false}
           />
-          <h1 className="text-[13px] font-semibold tracking-tight text-foreground select-none">DialogDrive</h1>
+          <h1 className="text-[13px] font-semibold tracking-tight text-foreground select-none">
+            DialogDrive
+          </h1>
         </button>
-  <div className="relative flex-1 max-w-[236px] min-w-[160px]">
+        <div className="relative flex-1 max-w-[236px] min-w-[160px]">
           <Search className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/60" />
           <Input
             type="text"
             placeholder="Search"
             value={searchTerm}
             onChange={(e) => setSearchTermDebounced(e.target.value)}
-            className="h-8 rounded-full border-border/70 bg-[hsl(var(--card))] pl-7 pr-9 text-[12px] text-foreground placeholder:text-muted-foreground/65 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]"
+            className="h-8 rounded-full border-border bg-[hsl(var(--card))] pl-7 pr-9 text-[12px] text-foreground/95 placeholder:text-muted-foreground/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]"
             aria-label="Search prompts and chats"
             aria-live="polite"
           />
@@ -547,14 +614,14 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
             <button
               type="button"
               aria-label="Clear search"
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary/65 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-full text-foreground/70 hover:bg-[hsl(var(--surface-subtle))] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               onClick={() => setSearchTerm('')}
             >
               <X className="h-2.5 w-2.5" />
             </button>
           )}
         </div>
-  <div className="flex items-center gap-2" ref={dropdownRef}>
+        <div className="flex items-center gap-2" ref={dropdownRef}>
           <Button
             ref={buttonRef}
             variant="default"
@@ -564,7 +631,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
               setActiveMenu(null);
               setShowDropdown((v) => !v);
             }}
-            className="h-8 rounded-full bg-[#1f1f21] px-[14px] text-[12.5px] text-white shadow-[0_4px_10px_rgba(17,17,17,0.24)] hover:bg-[#1f1f21]/94 hover:shadow-[0_6px_16px_rgba(17,17,17,0.32)]"
+            className="h-8 rounded-full px-[14px] text-[12.5px] font-semibold text-primary-foreground shadow-[0_4px_10px_rgba(15,23,42,0.16),0_0_16px_rgba(0,102,204,0.12)] transition-all hover:bg-primary/90 hover:shadow-[0_6px_16px_rgba(15,23,42,0.22),0_0_24px_rgba(0,102,204,0.2)]"
             aria-haspopup="menu"
             aria-expanded={showDropdown}
             aria-controls="create-menu"
@@ -588,11 +655,16 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
       </div>
       {/* Hide tabs and filters when in form/chat-form views */}
       {currentView !== 'form' && currentView !== 'chat-form' && (
-        <div className="pl-1.75 pr-1.75 pb-2.5 space-y-1.6">
-          <div role="tablist" aria-label="Views" className="grid grid-cols-[0.9fr_1.05fr_1fr_1fr_1.05fr] gap-0">
+        <>
+          <div className="pl-1.75 pr-1.75 pb-2.5 space-y-1.6">
+          <div
+            role="tablist"
+            aria-label="Views"
+            className="grid grid-cols-[0.9fr_1.05fr_1fr_1fr_1.05fr] gap-0"
+          >
             <TabButton
               active={contentFilter === 'all' && currentView === 'list' && activeMenu !== 'tools'}
-              onClick={(e) => {
+              onClick={(_e) => {
                 setCurrentView('list');
                 setContentFilter('all');
                 setActiveMenu(null);
@@ -602,8 +674,10 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
               className="w-full justify-center"
             />
             <TabButton
-              active={contentFilter === 'prompts' && currentView === 'list' && activeMenu !== 'tools'}
-              onClick={(e) => {
+              active={
+                contentFilter === 'prompts' && currentView === 'list' && activeMenu !== 'tools'
+              }
+              onClick={(_e) => {
                 setCurrentView('list');
                 setContentFilter('prompts');
                 setActiveMenu(null);
@@ -614,7 +688,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
             />
             <TabButton
               active={contentFilter === 'chats' && currentView === 'list' && activeMenu !== 'tools'}
-              onClick={(e) => {
+              onClick={(_e) => {
                 setCurrentView('list');
                 setContentFilter('chats');
                 setActiveMenu(null);
@@ -625,7 +699,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
             />
             <TabButton
               active={currentView === 'library' && activeMenu !== 'tools'}
-              onClick={(e) => {
+              onClick={(_e) => {
                 setActiveMenu(null);
                 onOpenLibrary && onOpenLibrary();
               }}
@@ -645,33 +719,43 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
               className="w-full justify-center"
             />
           </div>
-          <div className="my-2 border-t border-border/40" />
+          <div className="mx-2.5 my-1.5 border-t border-border/25" />
           <div className="flex flex-wrap items-center gap-1.75 mx-2.5">
             <button
               type="button"
               ref={sortButtonRef}
               onClick={(e) => toggleMenu('sort', e)}
-              className={cn(filterButtonClass, 'flex-1 basis-0 min-w-[0]', (activeMenu === 'sort' || isCustomSort) && filterButtonActiveClass)}
+              className={cn(
+                filterButtonClass,
+                'flex-1 basis-0 min-w-[0]',
+                (activeMenu === 'sort' || isCustomSort) && filterButtonActiveClass
+              )}
               aria-haspopup="menu"
               aria-expanded={activeMenu === 'sort'}
               aria-controls={activeMenu === 'sort' ? 'sort-menu' : undefined}
             >
               <SortAsc className="h-3.5 w-3.5" />
-              <span className="truncate">{sortOptions.find(opt => opt.value === sortBy)?.label || 'Sort'}</span>
-              <ChevronDown className="h-3 w-3 opacity-70 transition-transform data-[state=open]:rotate-180" data-state={activeMenu === 'sort' ? 'open' : 'closed'} />
+              <span className="flex-1 whitespace-normal leading-tight text-center">
+                {sortOptions.find((opt) => opt.value === sortBy)?.label || 'Sort'}
+              </span>
             </button>
 
             <button
               type="button"
               ref={workspaceButtonRef}
               onClick={(e) => toggleMenu('workspace', e)}
-              className={cn(filterButtonClass, 'flex-1 basis-0 min-w-[0]', (activeMenu === 'workspace' || isWorkspaceScoped) && filterButtonActiveClass)}
+              className={cn(
+                filterButtonClass,
+                'flex-1 basis-0 min-w-[0]',
+                (activeMenu === 'workspace' || isWorkspaceScoped) && filterButtonActiveClass
+              )}
               aria-haspopup="menu"
               aria-expanded={activeMenu === 'workspace'}
               aria-controls={activeMenu === 'workspace' ? 'workspace-menu' : undefined}
             >
-              <span className="truncate max-w-[110px]">{selectedWorkspace === 'all' ? 'Workspace' : selectedWorkspace}</span>
-              <ChevronDown className="h-3 w-3 opacity-70 transition-transform data-[state=open]:rotate-180" data-state={activeMenu === 'workspace' ? 'open' : 'closed'} />
+              <span className="flex-1 whitespace-normal leading-tight text-center">
+                {selectedWorkspace === 'all' ? 'Workspace' : selectedWorkspace}
+              </span>
             </button>
 
             {allTags.length > 0 && (
@@ -679,13 +763,18 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
                 type="button"
                 ref={tagButtonRef}
                 onClick={(e) => toggleMenu('tag', e)}
-                className={cn(filterButtonClass, 'flex-1 basis-0 min-w-[0]', (activeMenu === 'tag' || isTagScoped) && filterButtonActiveClass)}
+                className={cn(
+                  filterButtonClass,
+                  'flex-1 basis-0 min-w-[0]',
+                  (activeMenu === 'tag' || isTagScoped) && filterButtonActiveClass
+                )}
                 aria-haspopup="menu"
                 aria-expanded={activeMenu === 'tag'}
                 aria-controls={activeMenu === 'tag' ? 'tag-menu' : undefined}
               >
-                <span className="truncate max-w-[90px]">{filterTag === 'all' ? 'Tag' : filterTag}</span>
-                <ChevronDown className="h-3 w-3 opacity-70 transition-transform data-[state=open]:rotate-180" data-state={activeMenu === 'tag' ? 'open' : 'closed'} />
+                <span className="flex-1 whitespace-normal leading-tight text-center">
+                  {filterTag === 'all' ? 'Tag' : filterTag}
+                </span>
               </button>
             )}
 
@@ -695,15 +784,25 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
                 setShowPinned(!showPinned);
                 setActiveMenu(null);
               }}
-              className={cn(filterButtonClass, 'flex-1 basis-0 min-w-[0]', isPinnedActive && filterButtonActiveClass)}
+              className={cn(
+                filterButtonClass,
+                'flex-1 basis-0 min-w-[0]',
+                isPinnedActive && filterButtonActiveClass
+              )}
               aria-pressed={isPinnedActive}
               title={isPinnedActive ? 'Showing only pinned items' : 'Showing all items'}
             >
-              <Pin className={cn('h-3.5 w-3.5 transition-colors', isPinnedActive ? 'text-accent-foreground' : 'text-muted-foreground')} />
+              <Pin
+                className={cn(
+                  'h-3.5 w-3.5 transition-colors',
+                  isPinnedActive ? 'text-accent-foreground' : 'text-muted-foreground'
+                )}
+              />
               <span className="truncate">Pinned</span>
             </button>
           </div>
-        </div>
+          </div>
+        </>
       )}
       {menu}
       {filterMenu}

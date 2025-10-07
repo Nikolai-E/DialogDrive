@@ -61,7 +61,12 @@ interface DraftState extends PersistedDraftSlice {
   _rehydrated: boolean;
   clientId: string;
   conflicts: Record<string, DraftConflict>;
-  upsertDraft: <K extends DraftKind>(input: { id: string; type: K; data: DraftData<K>; touchOnly?: boolean }) => DraftRecord<K>;
+  upsertDraft: <K extends DraftKind>(input: {
+    id: string;
+    type: K;
+    data: DraftData<K>;
+    touchOnly?: boolean;
+  }) => DraftRecord<K>;
   hydrateDraft: (id: string, draft: DraftRecord) => void;
   removeDraft: (id: string) => void;
   finalizeDraft: (id: string, finalize: () => Promise<void>) => Promise<void>;
@@ -99,7 +104,10 @@ function cloneDraftData<T>(data: T): T {
   return JSON.parse(JSON.stringify(data)) as T;
 }
 
-function pruneDraftMap(drafts: Record<string, DraftRecord>, now: number): { map: Record<string, DraftRecord>; removed: string[] } {
+function pruneDraftMap(
+  drafts: Record<string, DraftRecord>,
+  now: number
+): { map: Record<string, DraftRecord>; removed: string[] } {
   const entries = Object.values(drafts);
   const alive = entries.filter((draft) => draft.expiresAt > now);
   alive.sort((a, b) => b.updatedAt - a.updatedAt);
@@ -109,9 +117,7 @@ function pruneDraftMap(drafts: Record<string, DraftRecord>, now: number): { map:
   limited.forEach((draft) => {
     nextMap[draft.id] = draft;
   });
-  const removed = entries
-    .filter((draft) => !keepIds.has(draft.id))
-    .map((draft) => draft.id);
+  const removed = entries.filter((draft) => !keepIds.has(draft.id)).map((draft) => draft.id);
   return { map: nextMap, removed };
 }
 
@@ -134,7 +140,10 @@ function parsePersistedDrafts(input: unknown): PersistedDraftSlice {
       lastClientId: typeof draft.lastClientId === 'string' ? draft.lastClientId : '',
       revision: typeof draft.revision === 'number' ? draft.revision : 0,
       createdAt: typeof draft.createdAt === 'number' ? draft.createdAt : draft.updatedAt,
-      expiresAt: typeof draft.expiresAt === 'number' ? draft.expiresAt : draft.updatedAt + DRAFT_LIMITS.ttlMs,
+      expiresAt:
+        typeof draft.expiresAt === 'number'
+          ? draft.expiresAt
+          : draft.updatedAt + DRAFT_LIMITS.ttlMs,
     } as DraftRecord;
   }
   return {
@@ -262,8 +271,8 @@ const useDraftStoreInternal = create<DraftState>()(
           useDraftStoreInternal.setState({ _rehydrated: true });
         }
       },
-    },
-  ),
+    }
+  )
 );
 
 subscribeToStorageKey<PersistedDraftSlice>(STORAGE_KEYS.drafts, (envelope) => {

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
-    type DraftConflict,
-    type DraftData,
-    type DraftKind,
-    type DraftRecord,
-    useDraftStore,
-    waitForDraftsHydration,
+  type DraftConflict,
+  type DraftData,
+  type DraftKind,
+  type DraftRecord,
+  useDraftStore,
+  waitForDraftsHydration,
 } from './draftStore';
 
 interface UseAutosaveDraftOptions<K extends DraftKind> {
@@ -36,16 +36,10 @@ function cloneData<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
-export function useAutosaveDraft<K extends DraftKind>(options: UseAutosaveDraftOptions<K>): UseAutosaveDraftResult<K> {
-  const {
-    id,
-    type,
-    data,
-    fingerprint,
-    enabled = true,
-    debounceMs = 320,
-    onHydrated,
-  } = options;
+export function useAutosaveDraft<K extends DraftKind>(
+  options: UseAutosaveDraftOptions<K>
+): UseAutosaveDraftResult<K> {
+  const { id, type, data, fingerprint, enabled = true, debounceMs = 320, onHydrated } = options;
 
   const hydratedRef = useRef(false);
   const lastSavedJsonRef = useRef<string | null>(null);
@@ -58,7 +52,9 @@ export function useAutosaveDraft<K extends DraftKind>(options: UseAutosaveDraftO
   const clearConflictAction = useDraftStore((state) => state.clearConflict);
   const conflict = useDraftStore((state) => state.conflicts[id]);
   const storeHydrated = useDraftStore((state) => state._rehydrated);
-  const [hydratedState, setHydratedState] = useState<boolean>(() => storeHydrated && hydratedRef.current);
+  const [hydratedState, setHydratedState] = useState<boolean>(
+    () => storeHydrated && hydratedRef.current
+  );
 
   useEffect(() => {
     if (storeHydrated) return;
@@ -82,12 +78,15 @@ export function useAutosaveDraft<K extends DraftKind>(options: UseAutosaveDraftO
     setHydratedState(true);
   }, [id, onHydrated, storeHydrated]);
 
-  const saveNow = useCallback((payload: DraftData<K>, json: string) => {
-    if (!enabled) return;
-    const record = upsertDraft({ id, type, data: payload });
-    lastSavedJsonRef.current = json;
-    lastSavedAtRef.current = record.updatedAt;
-  }, [enabled, id, type, upsertDraft]);
+  const saveNow = useCallback(
+    (payload: DraftData<K>, json: string) => {
+      if (!enabled) return;
+      const record = upsertDraft({ id, type, data: payload });
+      lastSavedJsonRef.current = json;
+      lastSavedAtRef.current = record.updatedAt;
+    },
+    [enabled, id, type, upsertDraft]
+  );
 
   const flush = useCallback(async () => {
     if (timerRef.current) {
@@ -101,37 +100,46 @@ export function useAutosaveDraft<K extends DraftKind>(options: UseAutosaveDraftO
     }
   }, [saveNow]);
 
-  const schedule = useCallback((payload: DraftData<K>) => {
-    if (!enabled) return;
-    const json = fingerprint ?? JSON.stringify(payload);
-    if (json === lastSavedJsonRef.current) return;
-    pendingRef.current = { payload: cloneData(payload), json };
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    timerRef.current = setTimeout(() => {
-      const pending = pendingRef.current;
-      if (!pending) return;
-      pendingRef.current = null;
-      saveNow(pending.payload, pending.json);
-    }, debounceMs);
-  }, [enabled, fingerprint, debounceMs, saveNow]);
+  const schedule = useCallback(
+    (payload: DraftData<K>) => {
+      if (!enabled) return;
+      const json = fingerprint ?? JSON.stringify(payload);
+      if (json === lastSavedJsonRef.current) return;
+      pendingRef.current = { payload: cloneData(payload), json };
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      timerRef.current = setTimeout(() => {
+        const pending = pendingRef.current;
+        if (!pending) return;
+        pendingRef.current = null;
+        saveNow(pending.payload, pending.json);
+      }, debounceMs);
+    },
+    [enabled, fingerprint, debounceMs, saveNow]
+  );
 
   useEffect(() => {
     if (!enabled) return;
     schedule(data);
   }, [data, enabled, schedule]);
 
-  useEffect(() => () => {
-    void flush();
-  }, [flush]);
+  useEffect(
+    () => () => {
+      void flush();
+    },
+    [flush]
+  );
 
-  const saveImmediate = useCallback((payload?: DraftData<K>) => {
-    const targetPayload = payload ?? data;
-    const json = fingerprint ?? JSON.stringify(targetPayload);
-    pendingRef.current = null;
-    saveNow(cloneData(targetPayload), json);
-  }, [data, fingerprint, saveNow]);
+  const saveImmediate = useCallback(
+    (payload?: DraftData<K>) => {
+      const targetPayload = payload ?? data;
+      const json = fingerprint ?? JSON.stringify(targetPayload);
+      pendingRef.current = null;
+      saveNow(cloneData(targetPayload), json);
+    },
+    [data, fingerprint, saveNow]
+  );
 
   const discard = useCallback(() => {
     if (timerRef.current) {
@@ -148,13 +156,16 @@ export function useAutosaveDraft<K extends DraftKind>(options: UseAutosaveDraftO
     clearConflictAction(id);
   }, [clearConflictAction, id]);
 
-  return useMemo(() => ({
-    hydrated: hydratedState,
-    lastSavedAt: lastSavedAtRef.current,
-    conflict,
-    saveImmediate,
-    flush,
-    discard,
-    clearConflict,
-  }), [hydratedState, conflict, saveImmediate, flush, discard, clearConflict]);
+  return useMemo(
+    () => ({
+      hydrated: hydratedState,
+      lastSavedAt: lastSavedAtRef.current,
+      conflict,
+      saveImmediate,
+      flush,
+      discard,
+      clearConflict,
+    }),
+    [hydratedState, conflict, saveImmediate, flush, discard, clearConflict]
+  );
 }

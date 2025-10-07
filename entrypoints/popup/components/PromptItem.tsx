@@ -11,28 +11,20 @@ interface PromptItemProps {
 }
 
 export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => {
-  const { setEditingPrompt, setCurrentView, deletePrompt, togglePinPrompt, incrementUsage } = useUnifiedStore();
+  const { setEditingPrompt, setCurrentView, deletePrompt, togglePinPrompt, incrementUsage } =
+    useUnifiedStore();
   const { copyToClipboard } = useCopyToClipboard();
   const [isProcessing, setIsProcessing] = React.useState(false);
-
-  // Get color based on workspace/category - using professional theme-aligned colors
-  const getCategoryColor = (workspace: string): string => {
-    const colors = {
-      'General': 'hsl(215, 73%, 52%)',
-      'Work': 'hsl(158, 61%, 40%)',
-      'Personal': 'hsl(265, 73%, 52%)',
-      'Development': 'hsl(25, 95%, 53%)',
-      'Research': 'hsl(173, 73%, 40%)',
-      'Writing': 'hsl(330, 73%, 52%)',
-    };
-    return colors[workspace as keyof typeof colors] || 'hsl(var(--muted-foreground))';
-  };
 
   const isSupportedChatUrl = (url: string) => {
     try {
       const u = new URL(url);
       const host = u.hostname.replace(/^www\./, '');
-      return host.endsWith('chatgpt.com') || host.endsWith('claude.ai') || host.endsWith('gemini.google.com');
+      return (
+        host.endsWith('chatgpt.com') ||
+        host.endsWith('claude.ai') ||
+        host.endsWith('gemini.google.com')
+      );
     } catch {
       return false;
     }
@@ -50,25 +42,27 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
 
   const handleCardClick = async () => {
     if (isProcessing) return;
-    
+
     setIsProcessing(true);
     try {
       // Copy to clipboard first
       await copyToClipboard(buildPromptText(prompt));
       await incrementUsage(prompt.id);
-      
+
       // Try to paste to active tab if on supported site
       try {
         const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
         if (tab?.id && tab.url && isSupportedChatUrl(tab.url)) {
-          const response = await browser.tabs.sendMessage(tab.id, { 
-            type: 'PASTE_PROMPT', 
-            text: buildPromptText(prompt) 
-          }).catch((err) => {
-            // Content script may not be injected yet
-            console.warn('sendMessage failed, likely no content script', err);
-            return undefined;
-          });
+          const response = await browser.tabs
+            .sendMessage(tab.id, {
+              type: 'PASTE_PROMPT',
+              text: buildPromptText(prompt),
+            })
+            .catch((err) => {
+              // Content script may not be injected yet
+              console.warn('sendMessage failed, likely no content script', err);
+              return undefined;
+            });
           if (response?.success) {
             toast.success('Prompt pasted into chat');
             return;
@@ -79,7 +73,7 @@ export const PromptItem: React.FC<PromptItemProps> = React.memo(({ prompt }) => 
       } catch (tabError) {
         console.warn('Could not paste to tab, copied to clipboard', tabError);
       }
-      
+
       toast.success('Copied to clipboard');
     } catch (error) {
       toast.error('Failed to copy');

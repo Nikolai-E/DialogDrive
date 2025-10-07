@@ -13,7 +13,9 @@ export default defineConfig({
   },
   fullyParallel: false,
   workers: 1,
-  reporter: isCI ? [['github'], ['html', { open: 'never' }]] : [['list'], ['html', { open: 'never' }]],
+  reporter: isCI
+    ? [['github'], ['html', { open: 'never' }]]
+    : [['list'], ['html', { open: 'never' }]],
   globalSetup: path.resolve(__dirname, 'tests/e2e/global-setup.ts'),
   use: {
     headless: false,

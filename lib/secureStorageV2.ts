@@ -113,10 +113,7 @@ export class SecureStorageV2 {
 
   async clearAll(): Promise<void> {
     try {
-      await Promise.all([
-        this.local.clear(),
-        this.sync.clear(),
-      ]);
+      await Promise.all([this.local.clear(), this.sync.clear()]);
     } catch (error) {
       logger.error('Failed to clear secure storage', error);
       throw error;
@@ -127,18 +124,18 @@ export class SecureStorageV2 {
   async getStorageUsage() {
     const [localData, syncData] = await Promise.all([
       browser.storage.local.get(),
-      browser.storage.sync.get()
+      browser.storage.sync.get(),
     ]);
 
     return {
       local: {
         used: JSON.stringify(localData).length,
-        available: STORAGE_LIMITS.LOCAL_TOTAL
+        available: STORAGE_LIMITS.LOCAL_TOTAL,
       },
       sync: {
         used: JSON.stringify(syncData).length,
-        available: STORAGE_LIMITS.SYNC_TOTAL
-      }
+        available: STORAGE_LIMITS.SYNC_TOTAL,
+      },
     };
   }
 }

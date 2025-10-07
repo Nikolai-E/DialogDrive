@@ -4,7 +4,9 @@
 @tailwind utilities;
 
 /* Base styles for the extension popup */
-html, body, #root {
+html,
+body,
+#root {
   width: 400px;
   height: 100%;
   min-width: 400px;
@@ -15,7 +17,10 @@ html, body, #root {
   padding: 0;
   box-sizing: border-box;
   overflow: hidden;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 /* Scrollbar styles */

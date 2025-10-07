@@ -22,7 +22,7 @@ export interface CaptureResult {
 export abstract class BasePlatformAdapter implements PlatformAdapter {
   abstract name: string;
   abstract detect(): boolean;
-  
+
   async isReady(): Promise<boolean> {
     // Wait for the page to be usable before we poke at the DOM.
     return new Promise((resolve) => {
@@ -34,10 +34,10 @@ export abstract class BasePlatformAdapter implements PlatformAdapter {
       }
     });
   }
-  
+
   abstract paste(text: string): Promise<boolean>;
   abstract capture(): Promise<CaptureResult>;
-  
+
   protected async copyToClipboard(text: string): Promise<boolean> {
     // Try the modern clipboard API before falling back to execCommand.
     try {
@@ -47,7 +47,7 @@ export abstract class BasePlatformAdapter implements PlatformAdapter {
       return this.fallbackCopy(text);
     }
   }
-  
+
   private fallbackCopy(text: string): boolean {
     // Minimal textarea trick for older browsers or clipboard failures.
     const textarea = document.createElement('textarea');

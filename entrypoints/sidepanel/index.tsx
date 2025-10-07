@@ -19,7 +19,7 @@ function SidePanel() {
     loading: true,
     searchQuery: '',
     selectedWorkspace: 'all',
-    sortBy: 'recent'
+    sortBy: 'recent',
   });
 
   const { copyToClipboard } = useCopyToClipboard();
@@ -31,12 +31,12 @@ function SidePanel() {
 
   const loadPrompts = async () => {
     try {
-      setState(prev => ({ ...prev, loading: true }));
+      setState((prev) => ({ ...prev, loading: true }));
       const prompts = await promptStorage.getAll();
-      setState(prev => ({ ...prev, prompts, loading: false }));
+      setState((prev) => ({ ...prev, prompts, loading: false }));
     } catch (error) {
       console.error('Failed to load prompts:', error);
-      setState(prev => ({ ...prev, loading: false }));
+      setState((prev) => ({ ...prev, loading: false }));
     }
   };
 
@@ -47,23 +47,26 @@ function SidePanel() {
     // Filter by search query
     if (state.searchQuery) {
       const query = state.searchQuery.toLowerCase();
-      filtered = filtered.filter(prompt =>
-        prompt.title.toLowerCase().includes(query) ||
-        prompt.text.toLowerCase().includes(query) ||
-        prompt.tags.some(tag => tag.toLowerCase().includes(query))
+      filtered = filtered.filter(
+        (prompt) =>
+          prompt.title.toLowerCase().includes(query) ||
+          prompt.text.toLowerCase().includes(query) ||
+          prompt.tags.some((tag) => tag.toLowerCase().includes(query))
       );
     }
 
     // Filter by workspace
     if (state.selectedWorkspace !== 'all') {
-      filtered = filtered.filter(prompt => prompt.workspace === state.selectedWorkspace);
+      filtered = filtered.filter((prompt) => prompt.workspace === state.selectedWorkspace);
     }
 
     // Sort prompts
     switch (state.sortBy) {
       case 'recent':
-        return filtered.sort((a, b) => 
-          new Date(b.lastUsed || b.created).getTime() - new Date(a.lastUsed || a.created).getTime()
+        return filtered.sort(
+          (a, b) =>
+            new Date(b.lastUsed || b.created).getTime() -
+            new Date(a.lastUsed || a.created).getTime()
         );
       case 'usage':
         return filtered.sort((a, b) => b.usageCount - a.usageCount);
@@ -76,7 +79,7 @@ function SidePanel() {
 
   // Get unique workspaces
   const workspaces = React.useMemo(() => {
-    const unique = [...new Set(state.prompts.map(p => p.workspace))];
+    const unique = [...new Set(state.prompts.map((p) => p.workspace))];
     return ['all', ...unique];
   }, [state.prompts]);
 
@@ -84,19 +87,19 @@ function SidePanel() {
     try {
       // Copy to clipboard
       await copyToClipboard(prompt.text);
-      
+
       // Increment usage count
       await promptStorage.incrementUsage(prompt.id);
-      
+
       // Reload prompts to reflect usage update
       await loadPrompts();
-      
+
       // Try to paste into active tab
       const tabs = await browser.tabs.query({ active: true, currentWindow: true });
       if (tabs[0]?.id) {
         await browser.tabs.sendMessage(tabs[0].id, {
           type: 'PASTE_PROMPT',
-          text: prompt.text
+          text: prompt.text,
         });
       }
     } catch (error) {
@@ -112,7 +115,7 @@ function SidePanel() {
     // Could also send message to popup to open edit form
     browser.runtime.sendMessage({
       type: 'EDIT_PROMPT',
-      prompt
+      prompt,
     });
   };
 
@@ -155,13 +158,13 @@ function SidePanel() {
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-gray-50">
         <h1 className="text-lg font-semibold text-gray-900 mb-3">DialogDrive</h1>
-        
+
         {/* Search */}
         <input
           type="text"
           placeholder="Search prompts..."
           value={state.searchQuery}
-          onChange={(e) => setState(prev => ({ ...prev, searchQuery: e.target.value }))}
+          onChange={(e) => setState((prev) => ({ ...prev, searchQuery: e.target.value }))}
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
       </div>
@@ -169,15 +172,13 @@ function SidePanel() {
       {/* Filters */}
       <div className="p-4 border-b border-gray-200 space-y-3">
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
-            Workspace
-          </label>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Workspace</label>
           <select
             value={state.selectedWorkspace}
-            onChange={(e) => setState(prev => ({ ...prev, selectedWorkspace: e.target.value }))}
+            onChange={(e) => setState((prev) => ({ ...prev, selectedWorkspace: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
           >
-            {workspaces.map(workspace => (
+            {workspaces.map((workspace) => (
               <option key={workspace} value={workspace}>
                 {workspace === 'all' ? 'All Workspaces' : workspace}
               </option>
@@ -186,12 +187,10 @@ function SidePanel() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
-            Sort by
-          </label>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Sort by</label>
           <select
             value={state.sortBy}
-            onChange={(e) => setState(prev => ({ ...prev, sortBy: e.target.value as any }))}
+            onChange={(e) => setState((prev) => ({ ...prev, sortBy: e.target.value as any }))}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
           >
             <option value="recent">Recently Used</option>

@@ -60,7 +60,7 @@ const createPersistedState = (): PersistedAppSlice => ({
 });
 
 const useAppStateInternal = create<AppState>()(
-  (persist(
+  persist(
     (set) => ({
       ...defaultPersistSlice,
       _rehydrated: false,
@@ -71,7 +71,8 @@ const useAppStateInternal = create<AppState>()(
       setSelectedTags: (tags) => set({ selectedTags: tags, _persistMeta: stampMeta() }),
       setShowPinned: (value) => set({ showPinned: value, _persistMeta: stampMeta() }),
       setContentFilter: (filter) => set({ contentFilter: filter, _persistMeta: stampMeta() }),
-      setSelectedWorkspace: (workspace) => set({ selectedWorkspace: workspace, _persistMeta: stampMeta() }),
+      setSelectedWorkspace: (workspace) =>
+        set({ selectedWorkspace: workspace, _persistMeta: stampMeta() }),
       setScrollPosition: (key, offset) =>
         set((state) => ({
           scrollPositions: { ...state.scrollPositions, [key]: offset },
@@ -92,7 +93,9 @@ const useAppStateInternal = create<AppState>()(
     {
       name: STORAGE_KEYS.ui,
       version: STORAGE_SCHEMA_VERSION.ui,
-      storage: createJSONStorage(() => withEnvelope(chromeLocalStateStorage, STORAGE_SCHEMA_VERSION.ui)),
+      storage: createJSONStorage(() =>
+        withEnvelope(chromeLocalStateStorage, STORAGE_SCHEMA_VERSION.ui)
+      ),
       partialize: (state): PersistedAppSlice => ({
         currentView: state.currentView,
         searchTerm: state.searchTerm,
@@ -118,8 +121,8 @@ const useAppStateInternal = create<AppState>()(
           useAppStateInternal.setState({ _rehydrated: true });
         }
       },
-    },
-  ) as any),
+    }
+  ) as any
 );
 
 const selectPersistSlice = (state: AppState): PersistedAppSlice => ({

@@ -6,7 +6,12 @@ import { createTagChip, sanitizeTagLabel } from './floating-save/tagHelpers';
 export default defineContentScript({
   matches: [
     '*://chatgpt.com/*',
-    '*://chat.openai.com/*'
+    '*://chat.openai.com/*',
+    '*://gemini.google.com/*',
+    '*://claude.ai/*',
+    '*://chat.mistral.ai/*',
+    '*://chat.deepseek.com/*',
+    '*://aistudio.google.com/*'
   ],
   main() {
     logger.info('DialogDrive floating save button initialized');
@@ -33,9 +38,13 @@ export default defineContentScript({
 
     // Cleans up the injected UI so we can rebuild it on navigation changes.
     const teardown = () => {
-      try { controller?.abort(); } catch {}
+      try {
+        controller?.abort();
+      } catch {}
       controller = null;
-      try { mo?.disconnect(); } catch {}
+      try {
+        mo?.disconnect();
+      } catch {}
       mo = null;
       if (host && host.parentNode) host.parentNode.removeChild(host);
       host = null;
@@ -227,7 +236,7 @@ export default defineContentScript({
               document,
               tag: safeTag,
               onRemove: () => {
-                tags = tags.filter(t => t !== safeTag);
+                tags = tags.filter((t) => t !== safeTag);
                 renderTags();
                 updateTagLabel();
               },
@@ -262,7 +271,10 @@ export default defineContentScript({
           check.setAttribute('fill', 'currentColor');
           check.setAttribute('class', 'dd-select-check');
           const checkPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-          checkPath.setAttribute('d', 'M13.485 1.929a1.5 1.5 0 0 1 0 2.121L6.75 10.786l-3.536-3.536a1.5 1.5 0 1 1 2.121-2.121l1.415 1.415 5.657-5.657a1.5 1.5 0 0 1 2.121 0z');
+          checkPath.setAttribute(
+            'd',
+            'M13.485 1.929a1.5 1.5 0 0 1 0 2.121L6.75 10.786l-3.536-3.536a1.5 1.5 0 1 1 2.121-2.121l1.415 1.415 5.657-5.657a1.5 1.5 0 0 1 2.121 0z'
+          );
           check.appendChild(checkPath);
 
           const spacer = document.createElement('div');
@@ -272,45 +284,57 @@ export default defineContentScript({
           const labelBtn = document.createElement('button');
           labelBtn.type = 'button';
           labelBtn.textContent = safeTag;
-          labelBtn.style.cssText = 'flex:1; text-align:left; padding:2px 0; color:#292524; background:transparent; border:none;';
-          labelBtn.addEventListener('click', () => {
-            if (tags.includes(safeTag)) {
-              tags = tags.filter(x => x !== safeTag);
-            } else {
-              tags = [...tags, safeTag];
-            }
-            renderTags();
-            updateTagLabel();
-            const first = row.firstChild as HTMLElement | null;
-            if (first) {
-              row.removeChild(first);
-              row.insertBefore(tags.includes(safeTag) ? check : spacer, row.firstChild);
-            }
-          }, { signal });
+          labelBtn.style.cssText =
+            'flex:1; text-align:left; padding:2px 0; color:#292524; background:transparent; border:none;';
+          labelBtn.addEventListener(
+            'click',
+            () => {
+              if (tags.includes(safeTag)) {
+                tags = tags.filter((x) => x !== safeTag);
+              } else {
+                tags = [...tags, safeTag];
+              }
+              renderTags();
+              updateTagLabel();
+              const first = row.firstChild as HTMLElement | null;
+              if (first) {
+                row.removeChild(first);
+                row.insertBefore(tags.includes(safeTag) ? check : spacer, row.firstChild);
+              }
+            },
+            { signal }
+          );
           row.appendChild(labelBtn);
 
           const del = document.createElement('button');
           del.setAttribute('aria-label', `Delete tag ${safeTag}`);
           del.className = 'dd-select-del';
           del.textContent = String.fromCharCode(215);
-          del.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const ok = confirm(`Delete tag "${safeTag}" from all items?`);
-            if (!ok) return;
-            try {
-              const resp = await browser.runtime.sendMessage({ type: 'DELETE_TAG', tag: safeTag });
-              if (resp?.success) {
-                tags = tags.filter(x => x !== safeTag);
-                renderTags();
-                updateTagLabel();
-                await loadWorkspacesAndTags();
-              } else {
+          del.addEventListener(
+            'click',
+            async (e) => {
+              e.stopPropagation();
+              const ok = confirm(`Delete tag "${safeTag}" from all items?`);
+              if (!ok) return;
+              try {
+                const resp = await browser.runtime.sendMessage({
+                  type: 'DELETE_TAG',
+                  tag: safeTag,
+                });
+                if (resp?.success) {
+                  tags = tags.filter((x) => x !== safeTag);
+                  renderTags();
+                  updateTagLabel();
+                  await loadWorkspacesAndTags();
+                } else {
+                  alert('Failed to delete tag');
+                }
+              } catch {
                 alert('Failed to delete tag');
               }
-            } catch {
-              alert('Failed to delete tag');
-            }
-          }, { signal });
+            },
+            { signal }
+          );
           row.appendChild(del);
           tagContent.appendChild(row);
         });
@@ -331,26 +355,56 @@ export default defineContentScript({
           check.setAttribute('fill', 'currentColor');
           check.setAttribute('class', 'dd-select-check');
           const checkPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-          checkPath.setAttribute('d', 'M13.485 1.929a1.5 1.5 0 0 1 0 2.121L6.75 10.786l-3.536-3.536a1.5 1.5 0 1 1 2.121-2.121l1.415 1.415 5.657-5.657a1.5 1.5 0 0 1 2.121 0z');
+          checkPath.setAttribute(
+            'd',
+            'M13.485 1.929a1.5 1.5 0 0 1 0 2.121L6.75 10.786l-3.536-3.536a1.5 1.5 0 1 1 2.121-2.121l1.415 1.415 5.657-5.657a1.5 1.5 0 0 1 2.121 0z'
+          );
           check.appendChild(checkPath);
           const spacer = document.createElement('div');
           spacer.setAttribute('class', 'dd-select-spacer');
           row.appendChild(ws === currentWorkspace ? check : spacer);
           const labelBtn = document.createElement('button');
-          labelBtn.type = 'button'; labelBtn.textContent = ws; labelBtn.style.cssText = 'flex:1; text-align:left; padding:2px 0; color:#292524; background:transparent; border:none;';
-          labelBtn.addEventListener('click', () => { setWorkspace(ws); toggleWorkspaceDropdown(false); }, { signal });
+          labelBtn.type = 'button';
+          labelBtn.textContent = ws;
+          labelBtn.style.cssText =
+            'flex:1; text-align:left; padding:2px 0; color:#292524; background:transparent; border:none;';
+          labelBtn.addEventListener(
+            'click',
+            () => {
+              setWorkspace(ws);
+              toggleWorkspaceDropdown(false);
+            },
+            { signal }
+          );
           row.appendChild(labelBtn);
           if (ws !== 'General') {
-            const del = document.createElement('button'); del.setAttribute('aria-label', `Delete workspace ${ws}`); del.className = 'dd-select-del'; del.textContent = String.fromCharCode(215);
-            del.addEventListener('click', async (e) => {
-              e.stopPropagation();
-              const ok = confirm(`Delete workspace "${ws}" and move its items to General?`);
-              if (!ok) return;
-              try {
-                const resp = await browser.runtime.sendMessage({ type: 'DELETE_WORKSPACE', name: ws });
-                if (resp?.success) { if (currentWorkspace === ws) setWorkspace('General'); await loadWorkspacesAndTags(); } else { alert('Failed to delete workspace'); }
-              } catch { alert('Failed to delete workspace'); }
-            }, { signal });
+            const del = document.createElement('button');
+            del.setAttribute('aria-label', `Delete workspace ${ws}`);
+            del.className = 'dd-select-del';
+            del.textContent = String.fromCharCode(215);
+            del.addEventListener(
+              'click',
+              async (e) => {
+                e.stopPropagation();
+                const ok = confirm(`Delete workspace "${ws}" and move its items to General?`);
+                if (!ok) return;
+                try {
+                  const resp = await browser.runtime.sendMessage({
+                    type: 'DELETE_WORKSPACE',
+                    name: ws,
+                  });
+                  if (resp?.success) {
+                    if (currentWorkspace === ws) setWorkspace('General');
+                    await loadWorkspacesAndTags();
+                  } else {
+                    alert('Failed to delete workspace');
+                  }
+                } catch {
+                  alert('Failed to delete workspace');
+                }
+              },
+              { signal }
+            );
             row.appendChild(del);
           }
           workspaceContent.appendChild(row);
@@ -369,9 +423,26 @@ export default defineContentScript({
           const first = row.firstElementChild as HTMLElement | null;
           if (!first) return;
           // Build replacement node rather than assigning innerHTML
-          const replaceWith = (row.dataset.ws === ws)
-            ? (() => { const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 16 16'); svg.setAttribute('fill', 'currentColor'); svg.setAttribute('class', 'dd-select-check'); const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', 'M13.485 1.929a1.5 1.5 0 0 1 0 2.121L6.75 10.786l-3.536-3.536a1.5 1.5 0 1 1 2.121-2.121l1.415 1.415 5.657-5.657a1.5 1.5 0 0 1 2.121 0z'); svg.appendChild(p); return svg; })()
-            : (() => { const spacer = document.createElement('div'); spacer.setAttribute('class', 'dd-select-spacer'); return spacer; })();
+          const replaceWith =
+            row.dataset.ws === ws
+              ? (() => {
+                  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                  svg.setAttribute('viewBox', '0 0 16 16');
+                  svg.setAttribute('fill', 'currentColor');
+                  svg.setAttribute('class', 'dd-select-check');
+                  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                  p.setAttribute(
+                    'd',
+                    'M13.485 1.929a1.5 1.5 0 0 1 0 2.121L6.75 10.786l-3.536-3.536a1.5 1.5 0 1 1 2.121-2.121l1.415 1.415 5.657-5.657a1.5 1.5 0 0 1 2.121 0z'
+                  );
+                  svg.appendChild(p);
+                  return svg;
+                })()
+              : (() => {
+                  const spacer = document.createElement('div');
+                  spacer.setAttribute('class', 'dd-select-spacer');
+                  return spacer;
+                })();
           first.replaceWith(replaceWith);
         });
       };
@@ -388,7 +459,9 @@ export default defineContentScript({
           const response = await browser.runtime.sendMessage({ type: 'GET_WORKSPACES_AND_TAGS' });
           if (response.workspaces) buildWorkspaceList(response.workspaces);
           if (response.tags) buildTagList(response.tags);
-        } catch (error) { logger.error('Failed to load workspaces and tags:', error); }
+        } catch (error) {
+          logger.error('Failed to load workspaces and tags:', error);
+        }
       };
 
       // Adds a new tag chip after sanitizing the input.
@@ -404,12 +477,17 @@ export default defineContentScript({
       // Opens the modal and manages focus trapping for accessibility.
       const openModal = () => {
         if (!modal) return;
-        restoreFocusEl = (shadow!.activeElement as HTMLElement) || (document.activeElement as HTMLElement);
+        restoreFocusEl =
+          (shadow!.activeElement as HTMLElement) || (document.activeElement as HTMLElement);
         modal.classList.add('show');
         saveBtn?.setAttribute('aria-expanded', 'true');
         updateUrlTitle();
         loadWorkspacesAndTags();
-        const focusables = Array.from(modal.querySelectorAll<HTMLElement>('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(el => !el.hasAttribute('disabled'));
+        const focusables = Array.from(
+          modal.querySelectorAll<HTMLElement>(
+            'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'
+          )
+        ).filter((el) => !el.hasAttribute('disabled'));
         // Run through the focusable nodes so we can park focus at the top.
         (focusables[0] || modal).focus();
       };
@@ -418,12 +496,17 @@ export default defineContentScript({
       const closeModal = () => {
         if (!modal) return;
         modal.classList.remove('show');
-        const trigger = saveBtn || restoreFocusEl; trigger?.setAttribute?.('aria-expanded', 'false'); (trigger as any)?.focus?.();
+        const trigger = saveBtn || restoreFocusEl;
+        trigger?.setAttribute?.('aria-expanded', 'false');
+        (trigger as any)?.focus?.();
       };
 
       // Gathers the form data and asks the background page to persist it.
       const saveBookmark = async () => {
-        if (!titleInput?.value.trim() || !urlInput?.value.trim()) { alert('Please enter both title and URL'); return; }
+        if (!titleInput?.value.trim() || !urlInput?.value.trim()) {
+          alert('Please enter both title and URL');
+          return;
+        }
         try {
           const bookmarkData = {
             title: titleInput.value.trim(),
@@ -434,17 +517,31 @@ export default defineContentScript({
             tags: tags,
             isPinned: isPinned,
           };
-          const response = await browser.runtime.sendMessage({ type: 'SAVE_BOOKMARK', data: bookmarkData });
-          if (response?.success) { showSuccess('Bookmark saved successfully!'); closeModal(); tags = []; isPinned = false; renderTags(); if (pinSwitch) pinSwitch.classList.remove('active'); }
-          else throw new Error(response?.error || 'Failed to save bookmark');
-        } catch (error) { logger.error('Failed to save bookmark:', error); alert('Failed to save bookmark. Please try again.'); }
+          const response = await browser.runtime.sendMessage({
+            type: 'SAVE_BOOKMARK',
+            data: bookmarkData,
+          });
+          if (response?.success) {
+            showSuccess('Bookmark saved successfully!');
+            closeModal();
+            tags = [];
+            isPinned = false;
+            renderTags();
+            if (pinSwitch) pinSwitch.classList.remove('active');
+          } else throw new Error(response?.error || 'Failed to save bookmark');
+        } catch (error) {
+          logger.error('Failed to save bookmark:', error);
+          alert('Failed to save bookmark. Please try again.');
+        }
       };
 
       // Pops a short-lived success toast inside the host page.
       const showSuccess = (message: string) => {
         const notification = document.createElement('div');
-        notification.style.cssText = 'position:fixed; top:20px; right:20px; background:#10b981; color:white; padding:12px 16px; border-radius:8px; z-index:9999999; font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; font-size:14px;';
-        notification.textContent = message; document.body.appendChild(notification);
+        notification.style.cssText =
+          'position:fixed; top:20px; right:20px; background:#10b981; color:white; padding:12px 16px; border-radius:8px; z-index:9999999; font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; font-size:14px;';
+        notification.textContent = message;
+        document.body.appendChild(notification);
         setTimeout(() => notification.remove(), 3000);
       };
 
@@ -455,47 +552,127 @@ export default defineContentScript({
       cancelBtn?.addEventListener('click', closeModal, { signal });
       saveBookmarkBtn?.addEventListener('click', saveBookmark, { signal });
       addTagBtn?.addEventListener('click', addTag, { signal });
-      tagInput?.addEventListener('keypress', (e) => { if ((e as KeyboardEvent).key === 'Enter') { e.preventDefault(); addTag(); } }, { signal });
-      pinSwitch?.addEventListener('click', () => { isPinned = !isPinned; pinSwitch.classList.toggle('active', isPinned); pinSwitch.setAttribute('aria-checked', String(isPinned)); }, { signal });
-      modal?.addEventListener('click', (e) => { if (e.target === modal) closeModal(); }, { signal });
-      shadow!.addEventListener('keydown', (e: any) => {
-        if (e.key === 'Escape' && modal?.classList.contains('show')) { e.stopPropagation(); closeModal(); return; }
-        if (e.key === 'Tab' && modal?.classList.contains('show')) {
-          const focusables = Array.from(modal.querySelectorAll<HTMLElement>('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(el => !el.hasAttribute('disabled'));
-          if (!focusables.length) return;
-          // Keep tabbing trapped inside the modal by looping focus manually.
-          const first = focusables[0]; const last = focusables[focusables.length - 1];
-          const active = (shadow!.activeElement as HTMLElement) || (document.activeElement as HTMLElement);
-          const backwards = e.shiftKey;
-          if (!backwards && active === last) { e.preventDefault(); first.focus(); }
-          else if (backwards && active === first) { e.preventDefault(); last.focus(); }
-        }
-      }, { signal });
+      tagInput?.addEventListener(
+        'keypress',
+        (e) => {
+          if ((e as KeyboardEvent).key === 'Enter') {
+            e.preventDefault();
+            addTag();
+          }
+        },
+        { signal }
+      );
+      pinSwitch?.addEventListener(
+        'click',
+        () => {
+          isPinned = !isPinned;
+          pinSwitch.classList.toggle('active', isPinned);
+          pinSwitch.setAttribute('aria-checked', String(isPinned));
+        },
+        { signal }
+      );
+      modal?.addEventListener(
+        'click',
+        (e) => {
+          if (e.target === modal) closeModal();
+        },
+        { signal }
+      );
+      shadow!.addEventListener(
+        'keydown',
+        (e: any) => {
+          if (e.key === 'Escape' && modal?.classList.contains('show')) {
+            e.stopPropagation();
+            closeModal();
+            return;
+          }
+          if (e.key === 'Tab' && modal?.classList.contains('show')) {
+            const focusables = Array.from(
+              modal.querySelectorAll<HTMLElement>(
+                'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'
+              )
+            ).filter((el) => !el.hasAttribute('disabled'));
+            if (!focusables.length) return;
+            // Keep tabbing trapped inside the modal by looping focus manually.
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            const active =
+              (shadow!.activeElement as HTMLElement) || (document.activeElement as HTMLElement);
+            const backwards = e.shiftKey;
+            if (!backwards && active === last) {
+              e.preventDefault();
+              first.focus();
+            } else if (backwards && active === first) {
+              e.preventDefault();
+              last.focus();
+            }
+          }
+        },
+        { signal }
+      );
 
       // Dropdowns
       // Manage click toggles and add-new flows for tags/workspaces.
-      tagTrigger?.addEventListener('click', (e) => { e.stopPropagation(); toggleTagDropdown(); }, { signal });
-      workspaceTrigger?.addEventListener('click', (e) => { e.stopPropagation(); toggleWorkspaceDropdown(); }, { signal });
-      addWorkspaceBtn?.addEventListener('click', () => {
-        const value = (newWorkspaceInput?.value || '').trim(); if (!value) return;
-        const items = Array.from(workspaceContent?.querySelectorAll('[data-ws]') || []);
-        if (!items.some(el => (el as HTMLElement).dataset.ws?.toLowerCase() === value.toLowerCase())) {
-          buildWorkspaceList([...(items.map(el => (el as HTMLElement).dataset.ws!)), value].filter(Boolean) as string[]);
-        }
-        setWorkspace(value); if (newWorkspaceInput) newWorkspaceInput.value = '';
-      }, { signal });
+      tagTrigger?.addEventListener(
+        'click',
+        (e) => {
+          e.stopPropagation();
+          toggleTagDropdown();
+        },
+        { signal }
+      );
+      workspaceTrigger?.addEventListener(
+        'click',
+        (e) => {
+          e.stopPropagation();
+          toggleWorkspaceDropdown();
+        },
+        { signal }
+      );
+      addWorkspaceBtn?.addEventListener(
+        'click',
+        () => {
+          const value = (newWorkspaceInput?.value || '').trim();
+          if (!value) return;
+          const items = Array.from(workspaceContent?.querySelectorAll('[data-ws]') || []);
+          if (
+            !items.some(
+              (el) => (el as HTMLElement).dataset.ws?.toLowerCase() === value.toLowerCase()
+            )
+          ) {
+            buildWorkspaceList(
+              [...items.map((el) => (el as HTMLElement).dataset.ws!), value].filter(
+                Boolean
+              ) as string[]
+            );
+          }
+          setWorkspace(value);
+          if (newWorkspaceInput) newWorkspaceInput.value = '';
+        },
+        { signal }
+      );
 
       // Outside-click using composedPath relative to shadow host
       // Collapse menus and modals when the user clicks elsewhere.
-      window.addEventListener('pointerdown', (ev) => {
-        const path = ev.composedPath();
-        const insideHost = !!(host && path.includes(host));
-        if (!insideHost) {
-          if (modal?.classList.contains('show')) closeModal();
-          if (workspaceContent) { workspaceContent.style.display = 'none'; workspaceTrigger?.setAttribute('aria-expanded', 'false'); }
-          if (tagContent) { tagContent.style.display = 'none'; tagTrigger?.setAttribute('aria-expanded', 'false'); }
-        }
-      }, { signal, capture: true });
+      window.addEventListener(
+        'pointerdown',
+        (ev) => {
+          const path = ev.composedPath();
+          const insideHost = !!(host && path.includes(host));
+          if (!insideHost) {
+            if (modal?.classList.contains('show')) closeModal();
+            if (workspaceContent) {
+              workspaceContent.style.display = 'none';
+              workspaceTrigger?.setAttribute('aria-expanded', 'false');
+            }
+            if (tagContent) {
+              tagContent.style.display = 'none';
+              tagTrigger?.setAttribute('aria-expanded', 'false');
+            }
+          }
+        },
+        { signal, capture: true }
+      );
 
       // Initial data
       // Pre-populate defaults and ensure the chip display stays in sync.
@@ -524,4 +701,3 @@ export default defineContentScript({
     (globalThis as any).__DD_FLOAT_TEARDOWN__ = teardown;
   },
 });
-

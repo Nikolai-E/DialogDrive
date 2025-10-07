@@ -99,7 +99,9 @@ test('createTagChip renders text safely and wires removal handlers', () => {
   const chip = createTagChip({
     document: doc,
     tag: '<img src=x onerror=alert(1)>',
-    onRemove: () => { removedCount += 1; },
+    onRemove: () => {
+      removedCount += 1;
+    },
   });
 
   assert.equal(chip.className, 'dd-tag');
@@ -117,7 +119,9 @@ test('createTagChip renders text safely and wires removal handlers', () => {
   removeIcon.dispatchEvent({
     type: 'keydown',
     key: 'Enter',
-    preventDefault: () => { prevented = true; },
+    preventDefault: () => {
+      prevented = true;
+    },
   });
   assert.equal(prevented, true);
   assert.equal(removedCount, 2);

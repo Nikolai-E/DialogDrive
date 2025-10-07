@@ -37,11 +37,14 @@ export const ChatBookmarkSchema = z.object({
 });
 
 // AddChatBookmark is ChatBookmark without id/created/accessCount
-export const AddChatBookmarkSchema = ChatBookmarkSchema.omit({ id: true, created: true, accessCount: true })
-  .extend({
-    // isPinned may be omitted by callers; default to false
-    isPinned: z.boolean().optional().default(false),
-  });
+export const AddChatBookmarkSchema = ChatBookmarkSchema.omit({
+  id: true,
+  created: true,
+  accessCount: true,
+}).extend({
+  // isPinned may be omitted by callers; default to false
+  isPinned: z.boolean().optional().default(false),
+});
 
 // Background message schemas
 export const SaveBookmarkMsgSchema = z.object({

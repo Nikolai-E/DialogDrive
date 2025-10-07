@@ -7,14 +7,13 @@ DialogDrive helps you capture, organize, search, and reuse AI prompts and chat b
 
 ## Key Features
 
-* Unified prompt & chat bookmark library (workspaces, tags, pinning)
-* Instant search, filtering, sorting (recent, usage, alphabetical, pinned)
-* One-click or shortcut capture of current chat context
-* Global commands & configurable keyboard shortcuts
-* Smart paste of most recent prompt (with usage tracking)
-* Side panel & popup UI (space-efficient, virtualized lists)
-* 100% local storage - no cloud, no tracking, no analytics
-
+- Unified prompt & chat bookmark library (workspaces, tags, pinning)
+- Instant search, filtering, sorting (recent, usage, alphabetical, pinned)
+- One-click or shortcut capture of current chat context
+- Global commands & configurable keyboard shortcuts
+- Smart paste of most recent prompt (with usage tracking)
+- Side panel & popup UI (space-efficient, virtualized lists)
+- 100% local storage - no cloud, no tracking, no analytics
 
 <table>
   <tr>
@@ -33,15 +32,15 @@ All data (prompts, bookmarks, settings, usage counts) is stored locally using br
 
 ## Permissions Justification
 
-| Permission                         | Reason                                             |
-| ---------------------------------- | -------------------------------------------------- |
-| `storage`                          | Persist prompts, bookmarks, settings               |
-| `activeTab`                        | Temporarily access the active tab for paste/capture workflows |
-| `clipboardWrite`                   | Copy/paste prompt fallback                         |
-| `contextMenus`                     | Quick save selection, paste latest prompt          |
-| `notifications`                    | User feedback after save actions                   |
-| `sidePanel`                        | Provide persistent workspace panel                 |
-| host permissions (`chatgpt.com`)   | Inject minimal content scripts for capture & paste |
+| Permission                       | Reason                                                        |
+| -------------------------------- | ------------------------------------------------------------- |
+| `storage`                        | Persist prompts, bookmarks, settings                          |
+| `activeTab`                      | Temporarily access the active tab for paste/capture workflows |
+| `clipboardWrite`                 | Copy/paste prompt fallback                                    |
+| `contextMenus`                   | Quick save selection, paste latest prompt                     |
+| `notifications`                  | User feedback after save actions                              |
+| `sidePanel`                      | Provide persistent workspace panel                            |
+| host permissions (`chatgpt.com`) | Inject minimal content scripts for capture & paste            |
 
 No broad `<all_urls>` access. No network requests to third-party APIs.
 Note: Today DialogDrive works with ChatGPT. Future releases may add optional support for other providers (e.g., Gemini, Claude) once they are implemented and their host permissions are added.
@@ -131,9 +130,9 @@ PRs and issues welcome. Please open an issue for feature proposals before large 
 
 ## Roadmap (High-Level)
 
-* Bulk import/export
-* Optional advanced analytics (local only)
-* i18n support
+- Bulk import/export
+- Optional advanced analytics (local only)
+- i18n support
 
 ## License
 

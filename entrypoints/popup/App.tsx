@@ -37,13 +37,8 @@ const Library = React.lazy(async () => {
 
 const App: React.FC = () => {
   // Pull reactive state/actions from the unified store.
-  const { 
-    currentView, 
-    setCurrentView, 
-    loadAll, 
-    setEditingPrompt,
-    setEditingChat,
-  } = useUnifiedStore();
+  const { currentView, setCurrentView, loadAll, setEditingPrompt, setEditingChat } =
+    useUnifiedStore();
 
   const prefsRehydrated = usePrefsStore((state) => state._rehydrated);
   const onboardingDismissed = usePrefsStore((state) => state.onboardingDismissed);
@@ -81,16 +76,16 @@ const App: React.FC = () => {
     <ErrorBoundary>
       {/* Enforce hard popup constraints and compact defaults */}
       <main className="w-[400px] max-w-[400px] h-[580px] max-h-[580px] bg-background text-foreground flex flex-col text-[12px] leading-5">
-        <Header 
-          onNewPrompt={handleNewPrompt} 
+        <Header
+          onNewPrompt={handleNewPrompt}
           onNewChat={handleNewChat}
-          onSettings={handleShowSettings} 
+          onSettings={handleShowSettings}
           onOpenCleaner={handleOpenCleaner}
           onOpenLibrary={handleOpenLibrary}
         />
         {/* Onboarding inline arrow overlay removed per request */}
         {/* Single scroll container; prevent nested scrolling */}
-  <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent px-2.5 py-1.5">
+        <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent px-2.5 py-1.5 pr-1">
           {prefsRehydrated && !onboardingDismissed && currentView === 'list' && (
             <OnboardingBanner
               onDismiss={async () => {
@@ -99,16 +94,22 @@ const App: React.FC = () => {
             />
           )}
           {currentView === 'list' && <UnifiedList />}
-          <Suspense fallback={<div className="py-6 text-center text-muted-foreground">Loading...</div>}>
-            {currentView === 'form' && <PromptForm onboardingActive={prefsRehydrated && !onboardingDismissed} />}
-            {currentView === 'chat-form' && <ChatForm onboardingActive={prefsRehydrated && !onboardingDismissed} />}
+          <Suspense
+            fallback={<div className="py-6 text-center text-muted-foreground">Loading...</div>}
+          >
+            {currentView === 'form' && (
+              <PromptForm onboardingActive={prefsRehydrated && !onboardingDismissed} />
+            )}
+            {currentView === 'chat-form' && (
+              <ChatForm onboardingActive={prefsRehydrated && !onboardingDismissed} />
+            )}
             {currentView === 'settings' && <Settings />}
             {currentView === 'cleaner' && <TextCleanerPanel />}
             {currentView === 'library' && <Library />}
           </Suspense>
         </div>
         {/* Toasts */}
-        <Toaster 
+        <Toaster
           richColors
           theme="system"
           position="bottom-center"
@@ -116,8 +117,10 @@ const App: React.FC = () => {
             duration: 2200,
             closeButton: true,
             classNames: {
-              toast: 'bg-popover text-foreground shadow border border-border text-[11px] leading-[1.25rem] font-medium rounded-md px-2 py-1.5',
-              actionButton: 'bg-primary text-primary-foreground hover:bg-primary/90 rounded-md h-7 px-2',
+              toast:
+                'bg-popover text-foreground shadow border border-border text-[11px] leading-[1.25rem] font-medium rounded-md px-2 py-1.5',
+              actionButton:
+                'bg-primary text-primary-foreground hover:bg-primary/90 rounded-md h-7 px-2',
               cancelButton: 'bg-muted text-foreground hover:bg-muted/80 rounded-md h-7 px-2',
               title: 'text-foreground/90',
               description: 'text-muted-foreground',

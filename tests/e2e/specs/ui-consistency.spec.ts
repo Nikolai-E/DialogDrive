@@ -10,7 +10,10 @@ async function openPopup(context: any, extensionUrl: string) {
 }
 
 test.describe('UI Consistency - No redundant buttons', () => {
-  test('PromptForm has no Cancel button - only Back and Submit', async ({ context, extensionUrl }) => {
+  test('PromptForm has no Cancel button - only Back and Submit', async ({
+    context,
+    extensionUrl,
+  }) => {
     const page = await openPopup(context, extensionUrl);
 
     // Open New Prompt
@@ -142,7 +145,7 @@ test.describe('Panel navigation', () => {
 
     // Open Tools menu
     await page.getByRole('tab', { name: /tools/i }).click();
-    
+
     // Click Text Tools menu item
     await page.getByRole('menuitem', { name: /text tools/i }).click();
 
