@@ -146,5 +146,16 @@
     "plaintext": true,
     "markdown": true
   },
-  "chatgpt.openOnStartup": true
+  "chatgpt.openOnStartup": true,
+
+  // Live Server settings for website development
+  "liveServer.settings.root": "/website",
+  "liveServer.settings.port": 5500,
+  "liveServer.settings.CustomBrowser": "chrome",
+  "liveServer.settings.donotShowInfoMsg": true,
+  "liveServer.settings.ignoreFiles": [
+    "**/node_modules/**",
+    "**/.wxt/**",
+    "**/dist/**"
+  ]
 }

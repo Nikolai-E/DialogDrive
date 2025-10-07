@@ -72,6 +72,8 @@ coverage/
 !BACKUP.md
 !docs/TECH_OVERVIEW.md
 !docs/DesignResearch.md
+!website/README.md
+!website/QUICKSTART.md
 
 # Ignore internal planning/instructions by pattern (these will be ignored by the above rule as well)
 /*PLAN*.md
