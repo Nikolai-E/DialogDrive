@@ -58,6 +58,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
   const tagButtonRef = useRef<HTMLButtonElement>(null);
   const toolsButtonRef = useRef<HTMLButtonElement>(null);
   const menuContentRef = useRef<HTMLDivElement | null>(null);
+  const isTogglingRef = useRef<boolean>(false);
   const [filterMenuStyle, setFilterMenuStyle] = useState<React.CSSProperties | null>(null);
 
   const filterButtonRefs = useMemo(
@@ -189,12 +190,19 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
     if (!activeMenu) return;
 
     const handlePointerDown = (event: MouseEvent) => {
+      // If we're in the middle of a button toggle, don't interfere
+      if (isTogglingRef.current) return;
+      
       const target = event.target as Node;
       const activeButton = filterButtonRefs[activeMenu]?.current;
 
-      if (activeButton?.contains(target)) return;
+      // Don't close if clicking inside the menu content
       if (menuContentRef.current?.contains(target)) return;
-
+      
+      // Don't close if clicking the active button (let the onClick handle it)
+      if (activeButton?.contains(target)) return;
+      
+      // Close if clicking outside
       setActiveMenu(null);
     };
 
@@ -223,6 +231,12 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
       const portal = portalElRef.current;
       if (portal && portal.contains(target)) return;
 
+      // Check if clicking any of the filter buttons - let their onClick handlers deal with it
+      const isFilterButton = Object.values(filterButtonRefs).some(
+        (ref) => ref.current?.contains(target)
+      );
+      if (isFilterButton) return;
+
       setShowDropdown(false);
       setActiveMenu(null);
     };
@@ -240,9 +254,21 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
     debounceRef.current = window.setTimeout(() => setSearchTerm(val), 120);
   };
 
-  const toggleMenu = (menu: FilterMenuKey) => {
+  const toggleMenu = (menu: FilterMenuKey, event?: React.MouseEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    
+    // Mark that we're toggling to prevent mousedown handler interference
+    isTogglingRef.current = true;
+    setTimeout(() => {
+      isTogglingRef.current = false;
+    }, 50);
+    
     setShowDropdown(false);
-    setActiveMenu((prev) => (prev === menu ? null : menu));
+    setActiveMenu((prev) => {
+      const isAlreadyOpen = prev === menu;
+      return isAlreadyOpen ? null : menu;
+    });
   };
 
   const closeMenus = () => {
@@ -253,7 +279,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
   // Reusable tab chip component for toggling between prompt/chat views.
   const TabButton: React.FC<{
     active: boolean;
-    onClick: () => void;
+    onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
     icon: React.ReactNode;
     label: string;
     ariaHaspopup?: boolean;
@@ -565,45 +591,51 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
         <div className="pl-1.75 pr-1.75 pb-2.5 space-y-1.6">
           <div role="tablist" aria-label="Views" className="grid grid-cols-[0.9fr_1.05fr_1fr_1fr_1.05fr] gap-0">
             <TabButton
-              active={contentFilter === 'all'}
-              onClick={() => {
+              active={contentFilter === 'all' && currentView === 'list' && activeMenu !== 'tools'}
+              onClick={(e) => {
                 setCurrentView('list');
                 setContentFilter('all');
+                setActiveMenu(null);
               }}
               icon={<LayoutGrid className="h-3.5 w-3.5" />}
               label="All"
               className="w-full justify-center"
             />
             <TabButton
-              active={contentFilter === 'prompts'}
-              onClick={() => {
+              active={contentFilter === 'prompts' && currentView === 'list' && activeMenu !== 'tools'}
+              onClick={(e) => {
                 setCurrentView('list');
                 setContentFilter('prompts');
+                setActiveMenu(null);
               }}
               icon={<List className="h-3.5 w-3.5" />}
               label="Prompts"
               className="w-full justify-center"
             />
             <TabButton
-              active={contentFilter === 'chats'}
-              onClick={() => {
+              active={contentFilter === 'chats' && currentView === 'list' && activeMenu !== 'tools'}
+              onClick={(e) => {
                 setCurrentView('list');
                 setContentFilter('chats');
+                setActiveMenu(null);
               }}
               icon={<MessageSquare className="h-3.5 w-3.5" />}
               label="Chats"
               className="w-full justify-center"
             />
             <TabButton
-              active={currentView === 'library'}
-              onClick={() => onOpenLibrary && onOpenLibrary()}
+              active={currentView === 'library' && activeMenu !== 'tools'}
+              onClick={(e) => {
+                setActiveMenu(null);
+                onOpenLibrary && onOpenLibrary();
+              }}
               icon={<List className="h-3.5 w-3.5" />}
               label="Library"
               className="w-full justify-center"
             />
             <TabButton
               active={activeMenu === 'tools'}
-              onClick={() => toggleMenu('tools')}
+              onClick={(e) => toggleMenu('tools', e)}
               icon={<Hammer className="h-3.5 w-3.5" />}
               label="Tools"
               ariaHaspopup
@@ -618,7 +650,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
             <button
               type="button"
               ref={sortButtonRef}
-              onClick={() => toggleMenu('sort')}
+              onClick={(e) => toggleMenu('sort', e)}
               className={cn(filterButtonClass, 'flex-1 basis-0 min-w-[0]', (activeMenu === 'sort' || isCustomSort) && filterButtonActiveClass)}
               aria-haspopup="menu"
               aria-expanded={activeMenu === 'sort'}
@@ -632,7 +664,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
             <button
               type="button"
               ref={workspaceButtonRef}
-              onClick={() => toggleMenu('workspace')}
+              onClick={(e) => toggleMenu('workspace', e)}
               className={cn(filterButtonClass, 'flex-1 basis-0 min-w-[0]', (activeMenu === 'workspace' || isWorkspaceScoped) && filterButtonActiveClass)}
               aria-haspopup="menu"
               aria-expanded={activeMenu === 'workspace'}
@@ -646,7 +678,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewPrompt, onNewChat, onSettin
               <button
                 type="button"
                 ref={tagButtonRef}
-                onClick={() => toggleMenu('tag')}
+                onClick={(e) => toggleMenu('tag', e)}
                 className={cn(filterButtonClass, 'flex-1 basis-0 min-w-[0]', (activeMenu === 'tag' || isTagScoped) && filterButtonActiveClass)}
                 aria-haspopup="menu"
                 aria-expanded={activeMenu === 'tag'}
