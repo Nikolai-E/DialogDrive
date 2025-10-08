@@ -15,6 +15,8 @@
   --radius-lg: 2.25rem;
   --radius-xl: 3rem;
   --max-width: 1160px;
+  --header-height: clamp(72px, 7vw, 92px);
+  --hero-padding-y: clamp(5.75rem, 11vw, 8rem);
 }
 
 * {
@@ -209,7 +211,9 @@ a:focus {
   position: relative;
   display: grid;
   align-items: center;
-  padding-block: clamp(5.75rem, 11vw, 8rem);
+  padding-block: var(--hero-padding-y);
+  padding-top: calc(var(--hero-padding-y) + var(--header-height));
+  margin-top: calc(-1 * var(--header-height));
   min-height: min(840px, 100vh);
   background:
     radial-gradient(125% 140% at 6% -36%, rgb(120 140 255 / 0.55) 0%, rgb(120 140 255 / 0) 58%),
@@ -1229,6 +1233,10 @@ kbd {
 }
 
 @media (max-width: 720px) {
+  :root {
+    --header-height: 0px;
+  }
+
   .navbar,
   .site-header {
     position: static;
@@ -1254,7 +1262,9 @@ kbd {
   }
 
   .hero {
+    margin-top: 0;
     padding-block: 4.5rem;
+    padding-top: 4.5rem;
   }
 
   .hero-paragraph,
