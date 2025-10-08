@@ -5,17 +5,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const normalizePathname = (pathname) => pathname.replace(/index\.html$/i, '') || '/';
 
-  let headerScrollThreshold = 20;
+  let headerScrollThreshold = 28; // Trigger at ~24-32px scroll
 
   const computeHeaderThreshold = () => {
-    if (!header) {
-      headerScrollThreshold = 20;
-      return;
-    }
-
-    const headerHeight = header.offsetHeight || 0;
-    const barHeight = headerBar ? headerBar.offsetHeight : 0;
-    headerScrollThreshold = Math.max(20, (barHeight || headerHeight) * 0.5);
+    // Use a fixed threshold for consistent behavior
+    headerScrollThreshold = 28;
   };
 
   const updateHeaderState = () => {

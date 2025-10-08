@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DialogDrive — Prompt Management for ChatGPT</title>
+    <title>DialogDrive | Prompt Management for ChatGPT</title>
     <meta
       name="description"
       content="Capture, organize, and reuse your best ChatGPT prompts. DialogDrive is a local-first Chrome extension that keeps your conversations private and accessible."
@@ -39,14 +39,23 @@
 
     <main>
       <section class="hero" id="top">
+        <!-- Premium Pills -->
+        <span class="premium-pill premium-pill--top-left" aria-hidden="true">Meeting → action items</span>
+        <span class="premium-pill premium-pill--top-right" aria-hidden="true">Brainstorm ideas</span>
+        <span class="premium-pill premium-pill--mid-left" aria-hidden="true">Daily standup</span>
+        <span class="premium-pill premium-pill--mid-right" aria-hidden="true">Email follow-up</span>
+        <span class="premium-pill premium-pill--bottom-left" aria-hidden="true">Trip planner</span>
+        <span class="premium-pill premium-pill--bottom-right" aria-hidden="true">Product spec</span>
+        <span class="premium-pill premium-pill--upper-left" aria-hidden="true">Code review</span>
+        <span class="premium-pill premium-pill--lower-right" aria-hidden="true">Blog outline</span>
+        
         <div class="wrap hero-inner">
           <div class="hero-copy">
             <p class="hero-kicker">Local-first prompt management</p>
             <h1 class="hero-headline">Your best prompts, always within reach.</h1>
             <p class="hero-lede">
               DialogDrive captures your ChatGPT conversations, refines them, and stores them locally
-              so you can reuse winning prompts instantly—all from a private workspace that never
-              leaves your device.
+              so you can reuse saved prompts instantly while everything stays on your device.
             </p>
             <a
               href="https://chromewebstore.google.com/detail/dialogdrive/belhaomgpobfemnleoglnpnkfkkdechd"
@@ -76,21 +85,22 @@
           <div class="demo-header">
             <h2 class="demo-title">See DialogDrive in motion</h2>
             <p class="demo-copy">
-              Seven looping clips walk through the core flow—from setup to clean exports—so you can
-              watch the rhythm without reading a play-by-play.
+              Short clips cover the core flow from setup through export, so you can see the workflow in minutes.
             </p>
           </div>
           <div class="tour-steps">
             <article class="tour-step tour-step--left" aria-labelledby="tour-step-setup">
-              <div class="tour-media">
-                <span class="tour-label" aria-hidden="true">Set up DialogDrive</span>
-                <video class="tour-video" autoplay muted loop playsinline preload="metadata">
-                  <source
-                    src="assets/Setting%20up%20dialog%20drive,%20selecting%20from%20library.mp4"
-                    type="video/mp4"
-                  />
-                  Your browser cannot play the video.
-                </video>
+              <div class="tour-media-wrapper">
+                <span class="tour-label">Set up DialogDrive</span>
+                <div class="tour-media">
+                  <video class="tour-video" autoplay muted loop playsinline preload="metadata" poster="">
+                    <source
+                      src="assets/Setting%20up%20dialog%20drive,%20selecting%20from%20library.mp4"
+                      type="video/mp4"
+                    />
+                    Your browser cannot play the video.
+                  </video>
+                </div>
               </div>
               <div class="tour-caption" id="tour-step-setup">
                 <h3 class="tour-caption__title">Set up DialogDrive</h3>
@@ -102,12 +112,14 @@
             </article>
 
             <article class="tour-step tour-step--right" aria-labelledby="tour-step-create">
-              <div class="tour-media">
-                <span class="tour-label" aria-hidden="true">Create a reusable prompt</span>
-                <video class="tour-video" autoplay muted loop playsinline preload="metadata">
-                  <source src="assets/Make%20a%20prompt.mp4" type="video/mp4" />
-                  Your browser cannot play the video.
-                </video>
+              <div class="tour-media-wrapper">
+                <span class="tour-label">Create a reusable prompt</span>
+                <div class="tour-media">
+                  <video class="tour-video" autoplay muted loop playsinline preload="metadata" poster="">
+                    <source src="assets/Make%20a%20prompt.mp4" type="video/mp4" />
+                    Your browser cannot play the video.
+                  </video>
+                </div>
               </div>
               <div class="tour-caption" id="tour-step-create">
                 <h3 class="tour-caption__title">Create a reusable prompt</h3>
@@ -119,29 +131,32 @@
             </article>
 
             <article class="tour-step tour-step--left" aria-labelledby="tour-step-edit">
-              <div class="tour-media">
-                <span class="tour-label" aria-hidden="true">Edit prompts on the fly</span>
-                <video class="tour-video" autoplay muted loop playsinline preload="metadata">
-                  <source src="assets/Edit%20a%20prompt.mp4" type="video/mp4" />
-                  Your browser cannot play the video.
-                </video>
+              <div class="tour-media-wrapper">
+                <span class="tour-label">Edit prompts on the fly</span>
+                <div class="tour-media">
+                  <video class="tour-video" autoplay muted loop playsinline preload="metadata" poster="">
+                    <source src="assets/Edit%20a%20prompt.mp4" type="video/mp4" />
+                    Your browser cannot play the video.
+                  </video>
+                </div>
               </div>
               <div class="tour-caption" id="tour-step-edit">
                 <h3 class="tour-caption__title">Edit prompts on the fly</h3>
                 <p class="tour-caption__text">
-                  Keep polishing your best ideas with versioning that stays local or syncs via
-                  Chrome Sync—your call.
+                  Edit prompts anytime and keep versions local or sync them with Chrome Sync.
                 </p>
               </div>
             </article>
 
             <article class="tour-step tour-step--right" aria-labelledby="tour-step-insert">
-              <div class="tour-media">
-                <span class="tour-label" aria-hidden="true">Insert from any textbox</span>
-                <video class="tour-video" autoplay muted loop playsinline preload="metadata">
-                  <source src="assets/Use%20a%20prompt.mp4" type="video/mp4" />
-                  Your browser cannot play the video.
-                </video>
+              <div class="tour-media-wrapper">
+                <span class="tour-label">Insert from any textbox</span>
+                <div class="tour-media">
+                  <video class="tour-video" autoplay muted loop playsinline preload="metadata" poster="">
+                    <source src="assets/Use%20a%20prompt.mp4" type="video/mp4" />
+                    Your browser cannot play the video.
+                  </video>
+                </div>
               </div>
               <div class="tour-caption" id="tour-step-insert">
                 <h3 class="tour-caption__title">Insert from any textbox</h3>
@@ -153,12 +168,14 @@
             </article>
 
             <article class="tour-step tour-step--left" aria-labelledby="tour-step-organize">
-              <div class="tour-media">
-                <span class="tour-label" aria-hidden="true">Sort and filter fast</span>
-                <video class="tour-video" autoplay muted loop playsinline preload="metadata">
-                  <source src="assets/Sort%20and%20filter%20prompts.mp4" type="video/mp4" />
-                  Your browser cannot play the video.
-                </video>
+              <div class="tour-media-wrapper">
+                <span class="tour-label">Sort and filter fast</span>
+                <div class="tour-media">
+                  <video class="tour-video" autoplay muted loop playsinline preload="metadata" poster="">
+                    <source src="assets/Sort%20and%20filter%20prompts.mp4" type="video/mp4" />
+                    Your browser cannot play the video.
+                  </video>
+                </div>
               </div>
               <div class="tour-caption" id="tour-step-organize">
                 <h3 class="tour-caption__title">Organize without friction</h3>
@@ -170,12 +187,14 @@
             </article>
 
             <article class="tour-step tour-step--right" aria-labelledby="tour-step-bookmark">
-              <div class="tour-media">
-                <span class="tour-label" aria-hidden="true">Bookmark key chats</span>
-                <video class="tour-video" autoplay muted loop playsinline preload="metadata">
-                  <source src="assets/Save%20a%20bookmark.mp4" type="video/mp4" />
-                  Your browser cannot play the video.
-                </video>
+              <div class="tour-media-wrapper">
+                <span class="tour-label">Bookmark key chats</span>
+                <div class="tour-media">
+                  <video class="tour-video" autoplay muted loop playsinline preload="metadata" poster="">
+                    <source src="assets/Save%20a%20bookmark.mp4" type="video/mp4" />
+                    Your browser cannot play the video.
+                  </video>
+                </div>
               </div>
               <div class="tour-caption" id="tour-step-bookmark">
                 <h3 class="tour-caption__title">Bookmark key chats</h3>
@@ -187,12 +206,14 @@
             </article>
 
             <article class="tour-step tour-step--left" aria-labelledby="tour-step-clean">
-              <div class="tour-media">
-                <span class="tour-label" aria-hidden="true">Clean responses instantly</span>
-                <video class="tour-video" autoplay muted loop playsinline preload="metadata">
-                  <source src="assets/Cleaning%20Text.mp4" type="video/mp4" />
-                  Your browser cannot play the video.
-                </video>
+              <div class="tour-media-wrapper">
+                <span class="tour-label">Clean responses instantly</span>
+                <div class="tour-media">
+                  <video class="tour-video" autoplay muted loop playsinline preload="metadata" poster="">
+                    <source src="assets/Cleaning%20Text.mp4" type="video/mp4" />
+                    Your browser cannot play the video.
+                  </video>
+                </div>
               </div>
               <div class="tour-caption" id="tour-step-clean">
                 <h3 class="tour-caption__title">Clean responses instantly</h3>
