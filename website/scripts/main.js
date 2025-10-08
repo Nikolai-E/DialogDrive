@@ -2,29 +2,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const header = document.querySelector('.site-header');
   const headerBar = header ? header.querySelector('.header-bar') : null;
   const headerNavLinks = Array.from(document.querySelectorAll('.site-nav a'));
-  const hero = document.querySelector('.hero');
-  const floatingPrompts = hero ? hero.querySelectorAll('.hero-chip') : [];
 
   const normalizePathname = (pathname) => pathname.replace(/index\.html$/i, '') || '/';
 
-  let headerScrollThreshold = 24;
+  let headerScrollThreshold = 28; // Trigger at ~24-32px scroll
 
   const computeHeaderThreshold = () => {
-    if (!header) {
-      headerScrollThreshold = 24;
-      return;
-    }
-
-    const headerHeight = header.offsetHeight || 0;
-    const barHeight = headerBar ? headerBar.offsetHeight : 0;
-    headerScrollThreshold = Math.max(24, (barHeight || headerHeight) * 0.85);
+    // Use a fixed threshold for consistent behavior
+    headerScrollThreshold = 28;
   };
 
   const updateHeaderState = () => {
     if (!header) return;
-    const isFloating = window.scrollY > headerScrollThreshold;
-    header.classList.toggle('is-scrolled', isFloating);
-    header.classList.toggle('is-anchored', !isFloating);
+    const isScrolled = window.scrollY > headerScrollThreshold;
+    header.classList.toggle('is-scrolled', isScrolled);
   };
 
   computeHeaderThreshold();
@@ -86,52 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
-
-  const finePointer = window.matchMedia('(pointer: fine)');
-
-  if (hero && floatingPrompts.length && finePointer.matches) {
-    const handlePointerMove = (event) => {
-      if (event.pointerType && event.pointerType !== 'mouse' && event.pointerType !== 'pen') {
-        return;
-      }
-
-      const bounds = hero.getBoundingClientRect();
-      const offsetX = bounds.width ? (event.clientX - bounds.left) / bounds.width - 0.5 : 0;
-      const offsetY = bounds.height ? (event.clientY - bounds.top) / bounds.height - 0.5 : 0;
-
-      floatingPrompts.forEach((prompt, index) => {
-        const intensity = (index + 1) * 4;
-        const translateX = offsetX * intensity;
-        const translateY = offsetY * intensity * -1;
-        prompt.style.setProperty('--chip-parallax-x', `${translateX}px`);
-        prompt.style.setProperty('--chip-parallax-y', `${translateY}px`);
-      });
-    };
-
-    const resetTransforms = () => {
-      floatingPrompts.forEach((prompt) => {
-        prompt.style.removeProperty('--chip-parallax-x');
-        prompt.style.removeProperty('--chip-parallax-y');
-      });
-    };
-
-    hero.addEventListener('pointermove', handlePointerMove);
-    hero.addEventListener('pointerleave', resetTransforms);
-
-    const handlePointerPreferenceChange = (event) => {
-      if (!event.matches) {
-        hero.removeEventListener('pointermove', handlePointerMove);
-        hero.removeEventListener('pointerleave', resetTransforms);
-        resetTransforms();
-      }
-    };
-
-    if (typeof finePointer.addEventListener === 'function') {
-      finePointer.addEventListener('change', handlePointerPreferenceChange);
-    } else if (typeof finePointer.addListener === 'function') {
-      finePointer.addListener(handlePointerPreferenceChange);
-    }
-  }
 
   if (headerNavLinks.length) {
     const currentPath = normalizePathname(window.location.pathname);
