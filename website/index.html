@@ -1,93 +1,245 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DialogDrive — Prompt Management for ChatGPT</title>
-    <meta name="description" content="Capture, organize, and reuse your best ChatGPT prompts. DialogDrive is a local-first Chrome extension that keeps your conversations private and accessible.">
-    <link rel="stylesheet" href="styles/main.css?v=3">
-    <link rel="icon" type="image/png" href="assets/icon-128.png">
-</head>
-<body>
-    <header class="site-header is-anchored" data-page="home">
-        <div class="wrap header-bar">
-            <a href="index.html" class="brand-mark">
-                <img src="assets/icon-128.png" alt="DialogDrive" class="brand-logo">
-                <span class="brand-name">DialogDrive</span>
-            </a>
-            <nav class="site-nav">
-                <a href="index.html#top" class="is-active">Overview</a>
-                <a href="index.html#demo">Demo</a>
-                <a href="support.html">Support</a>
-                <a href="privacy.html">Privacy</a>
-            </nav>
-            <a href="https://chromewebstore.google.com/detail/dialogdrive/belhaomgpobfemnleoglnpnkfkkdechd"
-               class="cta-button header-cta"
-               target="_blank"
-               rel="noopener noreferrer">
-                Add to Chrome
-            </a>
+    <meta
+      name="description"
+      content="Capture, organize, and reuse your best ChatGPT prompts. DialogDrive is a local-first Chrome extension that keeps your conversations private and accessible."
+    />
+    <link rel="stylesheet" href="styles/main.css?v=3" />
+    <link rel="icon" type="image/png" href="assets/icon-128.png" />
+  </head>
+  <body>
+  <header class="site-header is-anchored" data-page="home">
+      <div class="header-bar">
+        <div class="wrap header-content">
+          <a href="index.html" class="brand-mark">
+            <img src="assets/icon-128.png" alt="DialogDrive" class="brand-logo" />
+            <span class="brand-name">DialogDrive</span>
+          </a>
+          <nav class="site-nav">
+            <a href="index.html#top" class="is-active">Overview</a>
+            <a href="index.html#demo">Demo</a>
+            <a href="support.html">Support</a>
+            <a href="privacy.html">Privacy</a>
+          </nav>
+          <a
+            href="https://chromewebstore.google.com/detail/dialogdrive/belhaomgpobfemnleoglnpnkfkkdechd"
+            class="cta-button header-cta"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Add to Chrome
+          </a>
         </div>
+      </div>
     </header>
 
     <main>
-        <section class="hero" id="top">
-            <div class="wrap hero-inner">
-                <div class="hero-copy">
-                    <p class="hero-kicker">Local-first prompt management</p>
-                    <h1 class="hero-headline">Your best prompts, always within reach.</h1>
-                    <p class="hero-lede">DialogDrive captures your ChatGPT conversations, refines them, and stores them locally so you can reuse winning prompts instantly—all from a private workspace that never leaves your device.</p>
-                    <a href="https://chromewebstore.google.com/detail/dialogdrive/belhaomgpobfemnleoglnpnkfkkdechd"
-                       class="cta-button"
-                       target="_blank"
-                       rel="noopener noreferrer">
-                        Add to Chrome
-                    </a>
-                </div>
-                <div class="hero-media">
-                    <div class="popup-card">
-                        <img src="assets/screenshot-popup.png" alt="DialogDrive popup interface" loading="lazy">
-                    </div>
-                </div>
+      <section class="hero" id="top">
+        <div class="hero-atmosphere" aria-hidden="true">
+          <div class="hero-nebula"></div>
+          <div class="hero-noise"></div>
+          <div class="hero-chips">
+            <span class="hero-chip" style="--chip-x: 18%; --chip-y: 22%; --chip-delay: 0s"
+              >Meeting → action items</span
+            >
+            <span class="hero-chip" style="--chip-x: 16%; --chip-y: 54%; --chip-delay: 0.45s"
+              >Refine tone & format</span
+            >
+            <span class="hero-chip" style="--chip-x: 78%; --chip-y: 24%; --chip-delay: 0.9s"
+              >Brainstorm ideas</span
+            >
+            <span class="hero-chip" style="--chip-x: 88%; --chip-y: 56%; --chip-delay: 1.35s"
+              >Debug my code</span
+            >
+            <span class="hero-chip" style="--chip-x: 72%; --chip-y: 80%; --chip-delay: 1.8s"
+              >Trip planner</span
+            >
+            <span class="hero-chip" style="--chip-x: 34%; --chip-y: 82%; --chip-delay: 2.25s"
+              >Email follow-up</span
+            >
+          </div>
+        </div>
+        <div class="wrap hero-inner">
+          <div class="hero-copy">
+            <p class="hero-kicker">Local-first prompt management</p>
+            <h1 class="hero-headline">Your best prompts, always within reach.</h1>
+            <p class="hero-lede">
+              DialogDrive captures your ChatGPT conversations, refines them, and stores them locally
+              so you can reuse winning prompts instantly—all from a private workspace that never
+              leaves your device.
+            </p>
+            <a
+              href="https://chromewebstore.google.com/detail/dialogdrive/belhaomgpobfemnleoglnpnkfkkdechd"
+              class="cta-button"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Add to Chrome
+            </a>
+          </div>
+          <div class="hero-media">
+            <div class="popup-card">
+              <img
+                src="assets/screenshot-popup.png"
+                alt="DialogDrive popup interface"
+                loading="lazy"
+              />
             </div>
-        </section>
+          </div>
+        </div>
+        <div class="hero-fade" aria-hidden="true"></div>
+      </section>
 
-        <section class="demo" id="demo">
-            <div class="wrap demo-inner">
-                <div class="demo-header">
-                    <h2 class="demo-title">See it in action</h2>
-                    <p class="demo-copy">Capture conversations, refine your prompts, and deploy them instantly—all without leaving ChatGPT.</p>
-                </div>
-                <div class="video-frame">
-                    <video class="demo-video" autoplay muted loop playsinline controls controlsList="nodownload noplaybackrate" poster="assets/screenshot-popup.png">
-                        <source src="assets/Dd-Demo-Clipchamp.mp4" type="video/mp4">
-                        Your browser cannot play the video. Download it instead.
-                    </video>
-                </div>
-            </div>
-        </section>
+  <section class="demo" id="demo">
+        <div class="wrap demo-inner">
+          <div class="demo-header">
+            <h2 class="demo-title">See DialogDrive in motion</h2>
+            <p class="demo-copy">
+              Seven looping clips walk through the core flow—from setup to clean exports—so you can
+              watch the rhythm without reading a play-by-play.
+            </p>
+          </div>
+          <div class="tour-steps">
+            <article class="tour-step tour-step--left" aria-labelledby="tour-step-setup">
+              <div class="tour-media">
+                <span class="tour-label" aria-hidden="true">Set up DialogDrive</span>
+                <video class="tour-video" autoplay muted loop playsinline preload="metadata">
+                  <source
+                    src="assets/Setting%20up%20dialog%20drive,%20selecting%20from%20library.mp4"
+                    type="video/mp4"
+                  />
+                  Your browser cannot play the video.
+                </video>
+              </div>
+              <div class="tour-caption" id="tour-step-setup">
+                <h3 class="tour-caption__title">Set up DialogDrive</h3>
+                <p class="tour-caption__text">
+                  Add the extension, open the popup, and pick your workspace so every prompt and
+                  bookmark lives locally from the start.
+                </p>
+              </div>
+            </article>
 
-        <section class="details" id="details">
-            <div class="wrap details-inner">
-                <div class="detail highlight">Capture any conversation without interrupting your workflow.</div>
-                <div class="detail">Polish tone, format, and structure before sending.</div>
-                <div class="detail">Organize with tags and favorites for instant retrieval.</div>
-                <div class="detail">Completely local—no cloud sync, no accounts required.</div>
-            </div>
-        </section>
+            <article class="tour-step tour-step--right" aria-labelledby="tour-step-create">
+              <div class="tour-media">
+                <span class="tour-label" aria-hidden="true">Create a reusable prompt</span>
+                <video class="tour-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="assets/Make%20a%20prompt.mp4" type="video/mp4" />
+                  Your browser cannot play the video.
+                </video>
+              </div>
+              <div class="tour-caption" id="tour-step-create">
+                <h3 class="tour-caption__title">Create a reusable prompt</h3>
+                <p class="tour-caption__text">
+                  Draft prompts with placeholders like [name] and [deadline] so you can personalize
+                  results without leaving the flow.
+                </p>
+              </div>
+            </article>
+
+            <article class="tour-step tour-step--left" aria-labelledby="tour-step-edit">
+              <div class="tour-media">
+                <span class="tour-label" aria-hidden="true">Edit prompts on the fly</span>
+                <video class="tour-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="assets/Edit%20a%20prompt.mp4" type="video/mp4" />
+                  Your browser cannot play the video.
+                </video>
+              </div>
+              <div class="tour-caption" id="tour-step-edit">
+                <h3 class="tour-caption__title">Edit prompts on the fly</h3>
+                <p class="tour-caption__text">
+                  Keep polishing your best ideas with versioning that stays local or syncs via
+                  Chrome Sync—your call.
+                </p>
+              </div>
+            </article>
+
+            <article class="tour-step tour-step--right" aria-labelledby="tour-step-insert">
+              <div class="tour-media">
+                <span class="tour-label" aria-hidden="true">Insert from any textbox</span>
+                <video class="tour-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="assets/Use%20a%20prompt.mp4" type="video/mp4" />
+                  Your browser cannot play the video.
+                </video>
+              </div>
+              <div class="tour-caption" id="tour-step-insert">
+                <h3 class="tour-caption__title">Insert from any textbox</h3>
+                <p class="tour-caption__text">
+                  Tap <kbd>&bsol;</kbd>, search the library, and drop your prompt straight into
+                  ChatGPT without copy-paste loops.
+                </p>
+              </div>
+            </article>
+
+            <article class="tour-step tour-step--left" aria-labelledby="tour-step-organize">
+              <div class="tour-media">
+                <span class="tour-label" aria-hidden="true">Sort and filter fast</span>
+                <video class="tour-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="assets/Sort%20and%20filter%20prompts.mp4" type="video/mp4" />
+                  Your browser cannot play the video.
+                </video>
+              </div>
+              <div class="tour-caption" id="tour-step-organize">
+                <h3 class="tour-caption__title">Organize without friction</h3>
+                <p class="tour-caption__text">
+                  Use Workspaces, tags, pins, and favorites to keep the library tight and
+                  discoverable in seconds.
+                </p>
+              </div>
+            </article>
+
+            <article class="tour-step tour-step--right" aria-labelledby="tour-step-bookmark">
+              <div class="tour-media">
+                <span class="tour-label" aria-hidden="true">Bookmark key chats</span>
+                <video class="tour-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="assets/Save%20a%20bookmark.mp4" type="video/mp4" />
+                  Your browser cannot play the video.
+                </video>
+              </div>
+              <div class="tour-caption" id="tour-step-bookmark">
+                <h3 class="tour-caption__title">Bookmark key chats</h3>
+                <p class="tour-caption__text">
+                  Capture entire conversations you’ll want later and relaunch them from the popup or
+                  side panel.
+                </p>
+              </div>
+            </article>
+
+            <article class="tour-step tour-step--left" aria-labelledby="tour-step-clean">
+              <div class="tour-media">
+                <span class="tour-label" aria-hidden="true">Clean responses instantly</span>
+                <video class="tour-video" autoplay muted loop playsinline preload="metadata">
+                  <source src="assets/Cleaning%20Text.mp4" type="video/mp4" />
+                  Your browser cannot play the video.
+                </video>
+              </div>
+              <div class="tour-caption" id="tour-step-clean">
+                <h3 class="tour-caption__title">Clean responses instantly</h3>
+                <p class="tour-caption__text">
+                  Strip noise, normalize formatting, and hand off polished text in seconds.
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
     </main>
 
     <footer class="site-footer">
-        <div class="wrap footer-inner">
-            <span>&copy; 2025 DialogDrive. All rights reserved.</span>
-            <div class="footer-links">
-                <a href="support.html">Support</a>
-                <a href="privacy.html">Privacy Policy</a>
-                <a href="mailto:dialogdrive@outlook.com">Email</a>
-            </div>
+      <div class="wrap footer-inner">
+        <span>&copy; 2025 DialogDrive. All rights reserved.</span>
+        <div class="footer-links">
+          <a href="support.html">Support</a>
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="mailto:dialogdrive@outlook.com">Email</a>
         </div>
+      </div>
     </footer>
 
     <script src="scripts/main.js"></script>
-</body>
+  </body>
 </html>
