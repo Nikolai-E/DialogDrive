@@ -1,4 +1,76 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // ===== THEME MANAGEMENT =====
+  const THEME_KEY = 'dialogdrive-theme';
+  const themeToggle = document.getElementById('theme-toggle');
+  
+  // Initialize theme from stored preference or system preference
+  const initializeTheme = () => {
+    const storedTheme = localStorage.getItem(THEME_KEY);
+    let theme;
+    
+    if (storedTheme) {
+      theme = storedTheme;
+    } else {
+      // Default to system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      theme = prefersDark ? 'dark' : 'light';
+    }
+    
+    applyTheme(theme);
+  };
+  
+  const applyTheme = (theme) => {
+    const root = document.documentElement;
+    const label = themeToggle?.querySelector('.theme-toggle__label');
+    
+    if (theme === 'dark') {
+      root.setAttribute('data-theme', 'dark');
+      if (themeToggle) {
+        themeToggle.setAttribute('aria-pressed', 'true');
+        themeToggle.setAttribute('aria-label', 'Switch to light mode');
+      }
+      if (label) {
+        label.textContent = 'Light';
+      }
+    } else {
+      root.removeAttribute('data-theme');
+      if (themeToggle) {
+        themeToggle.setAttribute('aria-pressed', 'false');
+        themeToggle.setAttribute('aria-label', 'Switch to dark mode');
+      }
+      if (label) {
+        label.textContent = 'Dark';
+      }
+    }
+    
+    localStorage.setItem(THEME_KEY, theme);
+  };
+  
+  const toggleTheme = () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(newTheme);
+  };
+  
+  // Set up theme toggle button
+  if (themeToggle) {
+    themeToggle.addEventListener('click', toggleTheme);
+  }
+  
+  // Listen for system theme changes (only if user hasn't set a preference)
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  mediaQuery.addEventListener('change', (e) => {
+    const storedTheme = localStorage.getItem(THEME_KEY);
+    // Only auto-switch if user hasn't explicitly set a preference
+    if (!storedTheme) {
+      applyTheme(e.matches ? 'dark' : 'light');
+    }
+  });
+  
+  // Initialize theme before page renders
+  initializeTheme();
+  
+  // ===== HEADER MANAGEMENT =====
   const root = document.documentElement;
   const header = document.querySelector('.site-header');
   const navbar = header ? null : document.querySelector('.navbar');
