@@ -90,8 +90,9 @@
   --color-divider: rgba(255, 255, 255, 0.08);
   
   /* Header specific */
-  --header-bg-scrolled: rgba(15, 16, 20, 0.96);
-  --header-bg-top: rgba(15, 16, 20, 0.7);
+    /* Header specific */
+  --header-bg-scrolled: rgba(15, 16, 20, 0.94);
+  --header-bg-top: transparent;
   --header-blur: blur(16px);
   
   /* Footer */
@@ -198,8 +199,6 @@
 
 :root {
   /* Header Transition */
-  --header-bg-scrolled: rgba(243, 242, 240, 0.94);
-  --header-blur: blur(12px);
   --header-transition-speed: 180ms;
 }
 
