@@ -92,6 +92,7 @@ body {
   color: var(--color-text);
   line-height: 1.6;
   font-size: var(--text-base);
+  padding-top: var(--header-height-current, var(--header-height));
 }
 
 img {
@@ -144,11 +145,18 @@ h3 {
   padding-inline: var(--space-6);
 }
 
+section {
+  scroll-margin-top: calc(var(--header-height-current, var(--header-height)) + var(--space-6));
+}
+
 /* ===== HEADER ===== */
 .navbar,
 .site-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
   z-index: 1000;
   background: transparent;
   border: none;
@@ -177,16 +185,22 @@ h3 {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  padding-block: 0;
-  padding-inline: var(--space-6);
+}
+
+.header-bar {
+  padding: var(--space-4) var(--space-6);
   max-width: var(--max-width);
   margin-inline: auto;
   transition: padding var(--header-transition-speed) ease;
 }
 
-.site-header.is-scrolled .header-bar,
-.site-header.is-scrolled .nav-content {
+.site-header.is-scrolled .header-bar {
+  padding-block: var(--space-3);
+}
+
+.nav-content {
   padding-block: var(--space-4);
+  transition: padding var(--header-transition-speed) ease;
 }
 
 .header-content {
@@ -195,12 +209,6 @@ h3 {
   justify-content: space-between;
   gap: var(--space-4);
   width: 100%;
-  padding-block: var(--space-5);
-  transition: padding var(--header-transition-speed) ease;
-}
-
-.site-header.is-scrolled .header-content {
-  padding-block: var(--space-4);
 }
 
 .nav-brand,
@@ -318,6 +326,7 @@ h3 {
 /* ===== HERO SECTION ===== */
 .hero {
   position: relative;
+  margin-top: calc(-1 * var(--header-height-current, var(--header-height)));
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -412,7 +421,11 @@ h3 {
   grid-template-columns: 1fr 1fr;
   gap: var(--space-16);
   align-items: center;
-  padding-block: var(--space-24);
+  padding-top: max(
+    var(--space-24),
+    calc(var(--header-height-current, var(--header-height)) + var(--space-4))
+  );
+  padding-bottom: var(--space-24);
 }
 
 .hero-copy {

@@ -1,11 +1,36 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const root = document.documentElement;
   const header = document.querySelector('.site-header');
-  const headerBar = header ? header.querySelector('.header-bar') : null;
-  const headerNavLinks = Array.from(document.querySelectorAll('.site-nav a'));
+  const navbar = header ? null : document.querySelector('.navbar');
+  const headerElement = header || navbar;
+  const headerNavLinks = Array.from(document.querySelectorAll('.site-nav a, .nav-links a'));
 
   const normalizePathname = (pathname) => pathname.replace(/index\.html$/i, '') || '/';
 
   let headerScrollThreshold = 28; // Trigger at ~24-32px scroll
+  let lastHeaderHeight = 0;
+
+  const updateHeaderMetrics = () => {
+    if (!headerElement) {
+      root.style.removeProperty('--header-height-current');
+      lastHeaderHeight = 0;
+      return;
+    }
+
+    if (header && header.classList.contains('is-scrolled')) {
+      return;
+    }
+
+    const { height } = headerElement.getBoundingClientRect();
+    const roundedHeight = Math.max(0, Math.ceil(height));
+
+    if (!roundedHeight || roundedHeight === lastHeaderHeight) {
+      return;
+    }
+
+    root.style.setProperty('--header-height-current', `${roundedHeight}px`);
+    lastHeaderHeight = roundedHeight;
+  };
 
   const computeHeaderThreshold = () => {
     // Use a fixed threshold for consistent behavior
@@ -13,18 +38,33 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const updateHeaderState = () => {
-    if (!header) return;
-    const isScrolled = window.scrollY > headerScrollThreshold;
-    header.classList.toggle('is-scrolled', isScrolled);
+    if (header) {
+      const isScrolled = window.scrollY > headerScrollThreshold;
+      const wasScrolled = header.classList.contains('is-scrolled');
+
+      if (isScrolled !== wasScrolled) {
+        header.classList.toggle('is-scrolled', isScrolled);
+      }
+
+      if (!isScrolled) {
+        updateHeaderMetrics();
+      }
+    } else {
+      updateHeaderMetrics();
+    }
   };
 
   computeHeaderThreshold();
+  updateHeaderMetrics();
+  updateHeaderState();
+
   window.addEventListener('scroll', updateHeaderState, { passive: true });
   window.addEventListener('resize', () => {
     computeHeaderThreshold();
+    updateHeaderMetrics();
     updateHeaderState();
   });
-  updateHeaderState();
+  window.addEventListener('load', () => setTimeout(updateHeaderMetrics, 0));
 
   if (header && headerNavLinks.length) {
     const pageKey = header.dataset.page;
