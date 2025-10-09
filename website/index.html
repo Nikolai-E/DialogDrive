@@ -14,91 +14,73 @@
       // Initialize theme before page renders to prevent flash
       (function() {
         const storedTheme = localStorage.getItem('dialogdrive-theme');
-        const theme = storedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        if (theme === 'dark') {
-          document.documentElement.setAttribute('data-theme', 'dark');
+        let theme = storedTheme;
+        if (theme !== 'light' && theme !== 'dark') {
+          const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+          theme = prefersLight ? 'light' : 'dark';
         }
+        document.documentElement.setAttribute('data-theme', theme);
       })();
     </script>
   </head>
   <body>
-  <header class="site-header" data-page="home">
-      <div class="header-bar">
-        <div class="wrap header-content">
-          <a href="index.html" class="brand-mark">
-            <img src="assets/icon-128.png" alt="DialogDrive" class="brand-logo" />
-            <span class="brand-name">DialogDrive</span>
+    <div class="hero-bg" aria-hidden="true"></div>
+    <header class="header" data-page="home">
+      <div class="header__inner wrap">
+        <a href="index.html" class="header__brand">DialogDrive</a>
+        <nav class="header__nav">
+          <a href="#top" class="is-active">Overview</a>
+          <a href="#demo">Demo</a>
+          <a href="privacy.html">Privacy</a>
+        </nav>
+        <div class="header__actions">
+          <button 
+            class="theme-toggle" 
+            id="theme-toggle" 
+            aria-label="Toggle dark mode" 
+            aria-pressed="false"
+            type="button"
+          >
+            <span class="theme-toggle__label">Dark</span>
+          </button>
+          <a
+            href="https://chromewebstore.google.com/detail/dialogdrive/belhaomgpobfemnleoglnpnkfkkdechd"
+            class="button button-primary button--header"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Add to Chrome
           </a>
-          <nav class="site-nav">
-            <a href="index.html#top" class="is-active">Overview</a>
-            <a href="index.html#demo">Demo</a>
-            <a href="support.html">Support</a>
-            <a href="privacy.html">Privacy</a>
-          </nav>
-          <div style="display: flex; align-items: center; gap: var(--space-4);">
-            <button 
-              class="theme-toggle" 
-              id="theme-toggle" 
-              aria-label="Toggle dark mode" 
-              aria-pressed="false"
-              type="button"
-            >
-              <span class="theme-toggle__label">Dark</span>
-              <span class="theme-toggle__switch">
-                <span class="theme-toggle__slider">
-                  <svg class="theme-toggle__icon theme-toggle__icon--sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                  <svg class="theme-toggle__icon theme-toggle__icon--moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                  </svg>
-                </span>
-              </span>
-            </button>
-            <a
-              href="https://chromewebstore.google.com/detail/dialogdrive/belhaomgpobfemnleoglnpnkfkkdechd"
-              class="cta-button header-cta"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Add to Chrome
-            </a>
-          </div>
         </div>
       </div>
     </header>
 
     <main>
       <section class="hero" id="top">
-        <!-- Premium Pills -->
-        <span class="premium-pill premium-pill--top-left" aria-hidden="true">Meeting → action items</span>
-        <span class="premium-pill premium-pill--top-right" aria-hidden="true">Brainstorm ideas</span>
-        <span class="premium-pill premium-pill--mid-left" aria-hidden="true">Daily standup</span>
-        <span class="premium-pill premium-pill--mid-right" aria-hidden="true">Email follow-up</span>
-        <span class="premium-pill premium-pill--bottom-left" aria-hidden="true">Trip planner</span>
-        <span class="premium-pill premium-pill--bottom-right" aria-hidden="true">Product spec</span>
-        <span class="premium-pill premium-pill--upper-left" aria-hidden="true">Code review</span>
-        <span class="premium-pill premium-pill--lower-right" aria-hidden="true">Blog outline</span>
-        
-        <div class="wrap hero-inner">
-          <div class="hero-copy">
-            <p class="hero-kicker">Local-first prompt management</p>
-            <h1 class="hero-headline">Your best prompts, always within reach.</h1>
-            <p class="hero-lede">
-              DialogDrive captures your ChatGPT conversations, refines them, and stores them locally
-              so you can reuse saved prompts instantly while everything stays on your device.
+        <div class="wrap hero__layout">
+          <div class="hero__copy">
+            <p class="hero__kicker">Local-first prompt management</p>
+            <h1 class="hero__headline">
+              Local-first prompt library: capture, reuse, and refine ChatGPT prompts.
+            </h1>
+            <p class="hero__lede">Private, instant, on-device.</p>
+            <p class="hero__body">
+              DialogDrive keeps your prompts, chats, and snippets beside the tools you use every day. Drop refined templates into ChatGPT without sync delays or vendor lock-in.
             </p>
-            <a
-              href="https://chromewebstore.google.com/detail/dialogdrive/belhaomgpobfemnleoglnpnkfkkdechd"
-              class="cta-button"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Add to Chrome
-            </a>
+            <div class="hero__actions">
+              <a
+                href="https://chromewebstore.google.com/detail/dialogdrive/belhaomgpobfemnleoglnpnkfkkdechd"
+                class="button button-primary button--lg"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Add to Chrome
+              </a>
+              <p class="hero__footnote">No tracking. Local-first.</p>
+            </div>
           </div>
-          <div class="hero-media">
-            <div class="popup-card">
+          <div class="hero__media">
+            <figure class="preview">
               <img
                 src="assets/screenshot-popup.png"
                 alt="DialogDrive popup interface showing prompt library"
@@ -106,12 +88,32 @@
                 height="720"
                 loading="eager"
               />
-            </div>
+            </figure>
           </div>
         </div>
       </section>
 
-  <section class="demo" id="demo">
+      <section class="strip" aria-label="Why local-first">
+        <div class="wrap strip__inner">
+          <h2 class="strip__title">Why local-first?</h2>
+          <div class="strip__grid">
+            <article class="strip__item">
+              <h3>Private</h3>
+              <p>Your prompt history stays on-device. No cloud mirrors, no telemetry, no surprise syncs.</p>
+            </article>
+            <article class="strip__item">
+              <h3>Fast</h3>
+              <p>Launch prompts instantly with a single key; insert tuned responses without leaving the tab.</p>
+            </article>
+            <article class="strip__item">
+              <h3>Portable</h3>
+              <p>Export whenever you like. Carry your libraries between machines without waiting on an API.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="demo" id="demo">
         <div class="wrap demo-inner">
           <div class="demo-header">
             <h2 class="demo-title">See DialogDrive in motion</h2>
@@ -258,14 +260,13 @@
       </section>
     </main>
 
-    <footer class="site-footer">
-      <div class="wrap footer-inner">
-        <span>&copy; 2025 DialogDrive. All rights reserved.</span>
-        <div class="footer-links">
-          <a href="support.html">Support</a>
-          <a href="privacy.html">Privacy Policy</a>
-          <a href="mailto:dialogdrive@outlook.com">Email</a>
-        </div>
+    <footer class="footer footer--simple">
+      <div class="wrap footer__simple">
+        <span>DialogDrive</span>
+        <span aria-hidden="true">·</span>
+        <a href="privacy.html">Privacy</a>
+        <span aria-hidden="true">·</span>
+        <a href="mailto:dialogdrive@outlook.com">Email</a>
       </div>
     </footer>
 
