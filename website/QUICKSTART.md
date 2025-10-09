@@ -40,7 +40,6 @@ npx serve website
 ### Update Content
 - **index.html** - Landing page content
 - **privacy.html** - Privacy policy
-- **support.html** - FAQ and support info
 
 ### Update Styles
 - **styles/main.css** - All styling

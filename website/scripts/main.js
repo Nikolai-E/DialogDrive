@@ -1,165 +1,104 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // ===== THEME MANAGEMENT =====
-  const THEME_KEY = 'dialogdrive-theme';
+  const root = document.documentElement;
+  const header = document.querySelector('.header');
   const themeToggle = document.getElementById('theme-toggle');
-  
-  // Initialize theme from stored preference or system preference
+  const navLinks = header ? Array.from(header.querySelectorAll('.header__nav a')) : [];
+  const THEME_KEY = 'dialogdrive-theme';
+  const SCROLL_THRESHOLD = 12;
+
+  // ===== Theme management =====
+  const setToggleLabel = (theme) => {
+    const label = themeToggle?.querySelector('.theme-toggle__label');
+    if (!themeToggle || !label) return;
+
+    const isDark = theme === 'dark';
+    const nextTheme = isDark ? 'light' : 'dark';
+    themeToggle.setAttribute('aria-pressed', String(isDark));
+    themeToggle.setAttribute('aria-label', `Switch to ${nextTheme} mode`);
+    label.textContent = isDark ? 'Dark' : 'Light';
+  };
+
+  const applyTheme = (theme) => {
+    const normalized = theme === 'light' ? 'light' : 'dark';
+    root.setAttribute('data-theme', normalized);
+    setToggleLabel(normalized);
+    localStorage.setItem(THEME_KEY, normalized);
+  };
+
   const initializeTheme = () => {
     const storedTheme = localStorage.getItem(THEME_KEY);
-    let theme;
-    
-    if (storedTheme) {
-      theme = storedTheme;
-    } else {
-      // Default to system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      theme = prefersDark ? 'dark' : 'light';
+    if (storedTheme === 'dark' || storedTheme === 'light') {
+      applyTheme(storedTheme);
+      return;
     }
-    
-    applyTheme(theme);
+
+    const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    applyTheme(prefersLight ? 'light' : 'dark');
   };
-  
-  const applyTheme = (theme) => {
-    const root = document.documentElement;
-    const label = themeToggle?.querySelector('.theme-toggle__label');
-    
-    if (theme === 'dark') {
-      root.setAttribute('data-theme', 'dark');
-      if (themeToggle) {
-        themeToggle.setAttribute('aria-pressed', 'true');
-        themeToggle.setAttribute('aria-label', 'Switch to light mode');
-      }
-      if (label) {
-        label.textContent = 'Light';
-      }
-    } else {
-      root.removeAttribute('data-theme');
-      if (themeToggle) {
-        themeToggle.setAttribute('aria-pressed', 'false');
-        themeToggle.setAttribute('aria-label', 'Switch to dark mode');
-      }
-      if (label) {
-        label.textContent = 'Dark';
-      }
-    }
-    
-    localStorage.setItem(THEME_KEY, theme);
-  };
-  
+
   const toggleTheme = () => {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    applyTheme(newTheme);
+    const currentTheme = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    applyTheme(currentTheme === 'light' ? 'dark' : 'light');
   };
-  
-  // Set up theme toggle button
+
   if (themeToggle) {
     themeToggle.addEventListener('click', toggleTheme);
   }
-  
-  // Listen for system theme changes (only if user hasn't set a preference)
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-  mediaQuery.addEventListener('change', (e) => {
+
+  const themeQuery = window.matchMedia('(prefers-color-scheme: light)');
+  themeQuery.addEventListener('change', (event) => {
     const storedTheme = localStorage.getItem(THEME_KEY);
-    // Only auto-switch if user hasn't explicitly set a preference
     if (!storedTheme) {
-      applyTheme(e.matches ? 'dark' : 'light');
+      applyTheme(event.matches ? 'light' : 'dark');
     }
   });
-  
-  // Initialize theme before page renders
+
   initializeTheme();
-  
-  // ===== HEADER MANAGEMENT =====
-  const root = document.documentElement;
-  const header = document.querySelector('.site-header');
-  const navbar = header ? null : document.querySelector('.navbar');
-  const headerElement = header || navbar;
-  const headerNavLinks = Array.from(document.querySelectorAll('.site-nav a, .nav-links a'));
 
-  const normalizePathname = (pathname) => pathname.replace(/index\.html$/i, '') || '/';
-
-  let headerScrollThreshold = 28; // Trigger at ~24-32px scroll
-  let lastHeaderHeight = 0;
-
-  const updateHeaderMetrics = () => {
-    if (!headerElement) {
-      root.style.removeProperty('--header-height-current');
-      lastHeaderHeight = 0;
-      return;
-    }
-
-    if (header && header.classList.contains('is-scrolled')) {
-      return;
-    }
-
-    const { height } = headerElement.getBoundingClientRect();
-    const roundedHeight = Math.max(0, Math.ceil(height));
-
-    if (!roundedHeight || roundedHeight === lastHeaderHeight) {
-      return;
-    }
-
-    root.style.setProperty('--header-height-current', `${roundedHeight}px`);
-    lastHeaderHeight = roundedHeight;
-  };
-
-  const computeHeaderThreshold = () => {
-    // Use a fixed threshold for consistent behavior
-    headerScrollThreshold = 28;
-  };
-
+  // ===== Header behaviour =====
   const updateHeaderState = () => {
-    if (header) {
-      const isScrolled = window.scrollY > headerScrollThreshold;
-      const wasScrolled = header.classList.contains('is-scrolled');
-
-      if (isScrolled !== wasScrolled) {
-        header.classList.toggle('is-scrolled', isScrolled);
-      }
-
-      if (!isScrolled) {
-        updateHeaderMetrics();
-      }
-    } else {
-      updateHeaderMetrics();
-    }
+    if (!header) return;
+    header.classList.toggle('scrolled', window.scrollY > SCROLL_THRESHOLD);
   };
 
-  computeHeaderThreshold();
-  updateHeaderMetrics();
   updateHeaderState();
-
   window.addEventListener('scroll', updateHeaderState, { passive: true });
-  window.addEventListener('resize', () => {
-    computeHeaderThreshold();
-    updateHeaderMetrics();
-    updateHeaderState();
-  });
-  window.addEventListener('load', () => setTimeout(updateHeaderMetrics, 0));
 
-  if (header && headerNavLinks.length) {
-    const pageKey = header.dataset.page;
-    if (pageKey) {
-      headerNavLinks.forEach((link) => link.classList.remove('is-active'));
+  const setActiveNav = () => {
+    if (!header || !navLinks.length) return;
 
-      const activeLink = headerNavLinks.find((link) => {
+    const pageKey = header.dataset.page || '';
+    navLinks.forEach((link) => {
+      link.classList.remove('is-active');
+      if (link.hasAttribute('aria-current')) {
+        link.removeAttribute('aria-current');
+      }
+    });
+
+    let activeLink;
+    if (pageKey === 'home') {
+      activeLink = navLinks.find((link) => {
+        const href = link.getAttribute('href');
+        return href === '#top' || href === 'index.html#top';
+      });
+    } else if (pageKey) {
+      activeLink = navLinks.find((link) => {
         const href = link.getAttribute('href');
         if (!href) return false;
-        if (pageKey === 'home') {
-          return href === '#top' || href === 'index.html#top';
-        }
-
         const [pathPart] = href.split('#');
         return pathPart === `${pageKey}.html`;
       });
-
-      if (activeLink) {
-        activeLink.classList.add('is-active');
-      }
     }
-  }
 
+    if (activeLink) {
+      activeLink.classList.add('is-active');
+      activeLink.setAttribute('aria-current', 'page');
+    }
+  };
+
+  setActiveNav();
+
+  // ===== Smooth scrolling for in-page anchors =====
   const smoothScrollToHash = (hash) => {
     if (!hash || hash === '#' || hash.length <= 1) {
       return false;
@@ -171,45 +110,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    if (typeof history.replaceState === 'function') {
-      history.replaceState(null, '', hash);
-    } else {
-      window.location.hash = hash;
-    }
-
     return true;
   };
 
   document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
     anchor.addEventListener('click', (event) => {
-      const href = anchor.getAttribute('href');
-      if (smoothScrollToHash(href)) {
+      const hash = anchor.getAttribute('href');
+      if (smoothScrollToHash(hash)) {
         event.preventDefault();
       }
     });
   });
-
-  if (headerNavLinks.length) {
-    const currentPath = normalizePathname(window.location.pathname);
-
-    headerNavLinks.forEach((link) => {
-      const href = link.getAttribute('href');
-      if (!href) return;
-
-      try {
-        const url = new URL(href, window.location.href);
-        const samePath = normalizePathname(url.pathname) === currentPath;
-        if (samePath && url.hash) {
-          link.addEventListener('click', (event) => {
-            if (smoothScrollToHash(url.hash)) {
-              event.preventDefault();
-            }
-          });
-        }
-      } catch (error) {
-        // Ignore invalid URLs
-      }
-    });
-  }
 });

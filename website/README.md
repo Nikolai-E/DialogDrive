@@ -12,7 +12,6 @@ The site will be hosted at: `https://nikolai-e.github.io/DialogDrive/website/`
 website/
 ├── index.html          # Landing page
 ├── privacy.html        # Privacy policy
-├── support.html        # Support & FAQ
 ├── styles/
 │   └── main.css        # All styles
 ├── scripts/
@@ -75,7 +74,6 @@ Your site will be live at: `https://nikolai-e.github.io/DialogDrive/website/`
 ## 📝 Content Updates
 
 - **Privacy Policy**: Based on `PRIVACY_POLICY.md` in the root
-- **Support Info**: Based on `SUPPORT.md` in the root
 - **Narrative**: Update the flowing copy blocks in `index.html`
 
 ## ⚠️ Important
