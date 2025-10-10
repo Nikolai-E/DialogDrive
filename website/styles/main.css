@@ -249,6 +249,48 @@ section {
   font-variation-settings: "wght" 470, "wdth" 92;
 }
 
+.hero__headline-prefix {
+  white-space: nowrap;
+}
+
+.hero__headline-rotator {
+  --rotator-min-width: auto;
+  display: inline-flex;
+  align-items: baseline;
+  position: relative;
+  min-width: var(--rotator-min-width);
+  white-space: nowrap;
+}
+
+.hero__headline-text {
+  display: inline-block;
+}
+
+.hero__headline-caret {
+  display: inline-block;
+  width: 0.08em;
+  height: 0.94em;
+  margin-left: 0.16em;
+  background-color: currentColor;
+  opacity: 1;
+  transform: translateY(0.08em);
+}
+
+.hero__headline-rotator.is-idle .hero__headline-caret {
+  animation: heroCaretBlink 1.08s steps(1, end) infinite;
+}
+
+@keyframes heroCaretBlink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    opacity: 0;
+  }
+}
+
 .hero__lede {
   font-size: clamp(1.25rem, 1.7vw, 1.5rem);
   color: var(--ink);

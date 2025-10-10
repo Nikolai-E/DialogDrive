@@ -121,4 +121,127 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  const heroRotator = document.querySelector('[data-rotator]');
+  const heroRotatorText = heroRotator?.querySelector('[data-rotator-text]');
+
+  if (heroRotator && heroRotatorText) {
+    const phrases = ['capture prompts.', 'reuse prompts.', 'refine prompts.'];
+    const longestPhrase = phrases.reduce((longest, phrase) => (phrase.length > longest.length ? phrase : longest), '');
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let currentPhrase = 0;
+    let currentLength = 0;
+    let isErasing = false;
+    let activeTimeout;
+
+    const setIdleState = (isIdle) => {
+      heroRotator.classList.toggle('is-idle', isIdle);
+    };
+
+    const clearActiveTimeout = () => {
+      if (activeTimeout) {
+        clearTimeout(activeTimeout);
+        activeTimeout = undefined;
+      }
+    };
+
+    const reserveWidth = () => {
+      const measurement = document.createElement('span');
+      measurement.className = 'hero__headline-text';
+      measurement.textContent = longestPhrase;
+      measurement.setAttribute('aria-hidden', 'true');
+      measurement.style.position = 'absolute';
+      measurement.style.top = '0';
+      measurement.style.left = '0';
+      measurement.style.visibility = 'hidden';
+      measurement.style.whiteSpace = 'nowrap';
+      measurement.style.pointerEvents = 'none';
+      heroRotator.appendChild(measurement);
+
+      const { width } = measurement.getBoundingClientRect();
+      heroRotator.style.setProperty('--rotator-min-width', `${Math.ceil(width)}px`);
+      measurement.remove();
+    };
+
+    const randomBetween = (min, max) => Math.round(min + Math.random() * (max - min));
+
+    const schedule = (fn, min, max) => {
+      activeTimeout = window.setTimeout(fn, randomBetween(min, max));
+    };
+
+    const stepTypewriter = () => {
+      const targetPhrase = phrases[currentPhrase];
+
+      if (!isErasing) {
+        setIdleState(false);
+        currentLength += 1;
+        heroRotatorText.textContent = targetPhrase.slice(0, currentLength);
+
+        if (currentLength === targetPhrase.length) {
+          setIdleState(true);
+          schedule(() => {
+            isErasing = true;
+            stepTypewriter();
+          }, 1400, 2000);
+        } else {
+          schedule(stepTypewriter, 60, 80);
+        }
+      } else {
+        setIdleState(false);
+        currentLength -= 1;
+        heroRotatorText.textContent = targetPhrase.slice(0, currentLength);
+
+        if (currentLength === 0) {
+          isErasing = false;
+          currentPhrase = (currentPhrase + 1) % phrases.length;
+          schedule(stepTypewriter, 160, 260);
+        } else {
+          schedule(stepTypewriter, 35, 50);
+        }
+      }
+    };
+
+    const startTypewriter = () => {
+      clearActiveTimeout();
+      currentPhrase = 0;
+      currentLength = 0;
+      isErasing = false;
+      heroRotatorText.textContent = '';
+      setIdleState(false);
+      schedule(stepTypewriter, 220, 320);
+    };
+
+    const stopTypewriter = () => {
+      clearActiveTimeout();
+      heroRotatorText.textContent = phrases[0];
+      currentPhrase = 0;
+      currentLength = phrases[0].length;
+      isErasing = false;
+      setIdleState(true);
+    };
+
+    reserveWidth();
+    const handleMotionChange = (event) => {
+      reserveWidth();
+      if (event.matches) {
+        stopTypewriter();
+      } else {
+        startTypewriter();
+      }
+    };
+
+    if (typeof motionQuery.addEventListener === 'function') {
+      motionQuery.addEventListener('change', handleMotionChange);
+    } else if (typeof motionQuery.addListener === 'function') {
+      motionQuery.addListener(handleMotionChange);
+    }
+
+    window.addEventListener('resize', reserveWidth, { passive: true });
+
+    if (motionQuery.matches) {
+      stopTypewriter();
+    } else {
+      startTypewriter();
+    }
+  }
 });
