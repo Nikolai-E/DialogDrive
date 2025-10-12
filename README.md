@@ -64,11 +64,6 @@ npm run test:e2e         # Run the full Playwright suite (headless)
 npm run test:e2e:headed  # Watch tests in the browser (headed mode)
 ```
 
-<p align="center">
-  <!-- Drop in a GIF or MP4 of the Playwright run -->
-  <em>Playwright run demo goes here.</em>
-</p>
-
 ## Dev Setup
 
 - Requires Node 18+.
