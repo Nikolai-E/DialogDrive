@@ -37,6 +37,9 @@
   </tr>
 </table>
 
+![Setting up dialog drive, selecting from library](https://github.com/user-attachments/assets/bc4b8b5d-f881-47f5-af96-3e1cdeb50a95)
+
+
 ## How It Works
 
 - Unified prompt & chat bookmark library with workspaces, tags, pinning, usage counts.
