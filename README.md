@@ -21,10 +21,18 @@
 <table>
   <tr>
     <td align="center" width="50%">
-      <img width="683" height="957" alt="DialogDrive popup" src="https://github.com/user-attachments/assets/31906a60-a3bb-47a7-b68d-e7d00d53dba6" />
+      <video width="100%" controls poster="https://github.com/Nikolai-E/DialogDrive/raw/Website/website/assets/screenshot-popup.png">
+        <source src="https://github.com/Nikolai-E/DialogDrive/raw/Website/website/assets/Dd-Demo-Clipchamp.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+      <p><em>Quick tour of the DialogDrive workspace</em></p>
     </td>
     <td align="center" width="50%">
-      <img alt="DialogDrive side panel" src="https://github.com/user-attachments/assets/ada94d43-6239-4c78-9551-bd56fa721d05" width="100%" />
+      <video width="100%" controls poster="https://github.com/Nikolai-E/DialogDrive/raw/Website/website/assets/screenshot-popup2.png">
+        <source src="https://github.com/Nikolai-E/DialogDrive/raw/Website/website/assets/Make%20a%20prompt.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+      <p><em>Create and save a prompt in seconds</em></p>
     </td>
   </tr>
 </table>
