@@ -74,6 +74,14 @@ coverage/
 !docs/DesignResearch.md
 !website/README.md
 !website/QUICKSTART.md
+!THIRD_PARTY_NOTICES.md
+!reports/*.md
+
+# Reports (keep Markdown summaries only)
+reports/
+!reports/
+reports/*
+!reports/*.md
 
 # Ignore internal planning/instructions by pattern (these will be ignored by the above rule as well)
 /*PLAN*.md
