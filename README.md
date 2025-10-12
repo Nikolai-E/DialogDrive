@@ -7,7 +7,7 @@
   Built to save time and streamline workflows when using various AI chats like ChatGPT, Claude, and others. Allows for fast prompt interations and easy chat saving. Ensure easy access to your best prompts and past conversations, with keyboard shortcuts and a lightweight UI.
 </p>
 <p align="center">
-  <a href="https://dialogdrive.eidheim.com">dialogdrive.eidheim.com</a>
+  <a href="https://dialogdrive.eidheim.org/">dialogdrive Website</a>
 </p>
 
 ## Why DialogDrive
