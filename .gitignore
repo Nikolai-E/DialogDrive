@@ -61,36 +61,26 @@ coverage/
 *.backup
 *.backup[0-9]
 
-# Markdown handling - ignore all .md files by default but whitelist important ones
+# Documentation
+archive/
+
+# Markdown handling - ignore general markdown and whitelist public docs
 *.md
 !README.md
 !CHANGELOG.md
 !PRIVACY_POLICY.md
 !SUPPORT.md
 !ChromePolicy.md
-!AGENT_GUIDE.md
-!BACKUP.md
+!THIRD_PARTY_NOTICES.md
 !docs/TECH_OVERVIEW.md
 !docs/DesignResearch.md
+!reports/ASSETS-INVENTORY.md
+!reports/LICENSES-REPORT.md
 !website/README.md
 !website/QUICKSTART.md
-!THIRD_PARTY_NOTICES.md
-!reports/*.md
 
-# Reports (keep Markdown summaries only)
+# Reports (ignore generated data, keep summarized Markdown)
 reports/
 !reports/
 reports/*
 !reports/*.md
-
-# Ignore internal planning/instructions by pattern (these will be ignored by the above rule as well)
-/*PLAN*.md
-/*_PLAN*.md
-/*TODO*.md
-/*CHECKLIST*.md
-/*INSTRUCTIONS*.md
-/*APPROVAL*.md
-/*NOTES*.md
-/*SUMMARY*.md
-/*DRAFT*.md
-/*REVIEW*.md
