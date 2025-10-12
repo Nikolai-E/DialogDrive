@@ -21,23 +21,22 @@
 <table>
   <tr>
     <td align="center" width="50%">
-      <video width="100%" controls poster="https://raw.githubusercontent.com/Nikolai-E/DialogDrive/Website/website/assets/screenshot-popup.png">
-        <source src="https://raw.githubusercontent.com/Nikolai-E/DialogDrive/Website/website/assets/Dd-Demo-Clipchamp.mp4" type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
+      <img
+        src="https://github.com/user-attachments/assets/bc4b8b5d-f881-47f5-af96-3e1cdeb50a95"
+        alt="Quick tour of the DialogDrive workspace"
+        width="100%" />
       <p><em>Quick tour of the DialogDrive workspace</em></p>
     </td>
     <td align="center" width="50%">
-      <video width="100%" controls poster="https://raw.githubusercontent.com/Nikolai-E/DialogDrive/Website/website/assets/screenshot-popup2.png">
-        <source src="https://raw.githubusercontent.com/Nikolai-E/DialogDrive/Website/website/assets/Make%20a%20prompt.mp4" type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
+      <img
+        src="https://github.com/user-attachments/assets/2bab17c4-fc70-4004-91a9-f156d2faeb63"
+        alt="Create and save a prompt in seconds"
+        width="100%" />
       <p><em>Create and save a prompt in seconds</em></p>
     </td>
   </tr>
 </table>
 
-![Setting up dialog drive, selecting from library](https://github.com/user-attachments/assets/bc4b8b5d-f881-47f5-af96-3e1cdeb50a95)
 
 
 ## How It Works
