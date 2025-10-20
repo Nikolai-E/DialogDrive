@@ -2,6 +2,13 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 const r = (path: string) => fileURLToPath(new URL(path, import.meta.url));
+const poolEnv = process.env.VITEST_POOL;
+const pool: 'threads' | 'forks' | 'vmThreads' =
+  poolEnv === 'threads' || poolEnv === 'forks' || poolEnv === 'vmThreads'
+    ? poolEnv
+    : process.env.CI
+      ? 'threads'
+      : 'vmThreads';
 
 export default defineConfig({
   resolve: {
@@ -13,7 +20,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    pool: 'vmThreads',
+    pool,
     setupFiles: ['tests/setupTests.ts'],
     include: ['tests/unit/**/*.test.{ts,tsx}', 'tests/floating-save/**/*.test.ts'],
     exclude: ['tests/e2e/**/*', 'node_modules/**/*'],
