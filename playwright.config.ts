@@ -20,7 +20,7 @@ export default defineConfig({
   use: {
     headless: false,
     trace: 'retain-on-failure',
-    video: isCI ? 'retain-on-failure' : 'on-first-retry',
+    video: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
   projects: [
@@ -32,5 +32,5 @@ export default defineConfig({
       },
     },
   ],
-  retries: isCI ? 1 : 0,
+  retries: 1,
 });

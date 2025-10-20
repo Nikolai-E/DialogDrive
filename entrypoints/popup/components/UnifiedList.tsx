@@ -117,9 +117,9 @@ export const UnifiedList: React.FC = () => {
             <div className="rounded-full border border-border/70 bg-card px-3.5 py-3 shadow-sm mb-3">
               {getEmptyStateContent().icon}
             </div>
-            <h3 className="text-[13.5px] font-semibold text-foreground mb-1">
+            <h2 className="text-[13.5px] font-semibold text-foreground mb-1">
               {getEmptyStateContent().title}
-            </h3>
+            </h2>
             <p className="text-muted-foreground mb-4 max-w-sm text-[11.5px] leading-relaxed">
               {getEmptyStateContent().description}
             </p>
