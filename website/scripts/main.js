@@ -127,7 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (heroRotator && heroRotatorText) {
     const phrases = ['capture prompts.', 'reuse prompts.', 'refine prompts.'];
-    const longestPhrase = phrases.reduce((longest, phrase) => (phrase.length > longest.length ? phrase : longest), '');
+    const longestPhrase = phrases.reduce(
+      (longest, phrase) => (phrase.length > longest.length ? phrase : longest),
+      ''
+    );
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     let currentPhrase = 0;
     let currentLength = 0;
@@ -179,10 +182,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (currentLength === targetPhrase.length) {
           setIdleState(true);
-          schedule(() => {
-            isErasing = true;
-            stepTypewriter();
-          }, 1400, 2000);
+          schedule(
+            () => {
+              isErasing = true;
+              stepTypewriter();
+            },
+            1400,
+            2000
+          );
         } else {
           schedule(stepTypewriter, 60, 80);
         }
