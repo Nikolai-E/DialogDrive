@@ -6,6 +6,11 @@ import { extractPlaceholders, replacePlaceholders } from '../lib/placeholders';
 import { platformManager } from '../lib/platforms/manager';
 import { usePrefsStore, waitForPrefsHydration } from '../lib/prefsStore';
 import { secureStorage } from '../lib/secureStorageV2';
+import {
+  detectContentEditableTrigger,
+  detectTextareaInputTrigger,
+  detectTextareaKeyTrigger,
+} from '../lib/promptPickerTriggers';
 
 type PromptItem = {
   id: string;
@@ -223,75 +228,66 @@ function setupPromptPicker() {
 
     logger.debug('DialogDrive: Processing key in valid chat input', { key });
 
-    // Detect backslash trigger if enabled
-    if (pickerTrigger === 'backslash' && key === '\\') {
-      logger.debug('DialogDrive: Backslash detected, opening overlay');
-      e.preventDefault();
-      e.stopPropagation();
-      openOverlay();
-      return;
-    }
+    if (input instanceof HTMLTextAreaElement) {
+      const ta = input as HTMLTextAreaElement;
+      const selectionStart = ta.selectionStart ?? ta.value.length;
+      const decision = detectTextareaKeyTrigger({
+        trigger: pickerTrigger,
+        key,
+        value: ta.value,
+        selectionStart,
+      });
 
-    // Detect '//' when typing the second '/'
-    if (pickerTrigger !== 'none' && key === '/') {
-      logger.debug('DialogDrive: Forward slash detected, checking for double slash');
-      // Prefer textarea logic (ChatGPT uses #prompt-textarea)
-      if (input instanceof HTMLTextAreaElement) {
-        const ta = input as HTMLTextAreaElement;
-        const start = ta.selectionStart ?? ta.value.length;
-        const before = ta.value.slice(0, start);
-        const charBefore = before.slice(-1);
-        logger.debug('DialogDrive: Textarea check', { charBefore });
-        if (pickerTrigger === 'doubleSlash' && charBefore === '/') {
-          logger.info('DialogDrive: Double slash detected in textarea, opening overlay');
-          e.preventDefault();
-          e.stopPropagation();
-          // Remove the prior '/': delete char at start-1, keep caret
-          const after = ta.value.slice(start);
-          const newVal = before.slice(0, -1) + after;
-          const newCaret = start - 1;
-          ta.value = newVal;
-          ta.setSelectionRange(newCaret, newCaret);
+      if (decision.shouldOpen) {
+        logger.debug('DialogDrive: Textarea trigger detected via keydown');
+        e.preventDefault();
+        e.stopPropagation();
+        if (decision.nextValue !== undefined && decision.nextCaret !== undefined) {
+          ta.value = decision.nextValue;
+          ta.setSelectionRange(decision.nextCaret, decision.nextCaret);
           ta.dispatchEvent(new Event('input', { bubbles: true }));
-          openOverlay();
-          return;
         }
-      } else if (input && input.isContentEditable) {
-        logger.info('DialogDrive: Checking contenteditable for double slash');
-        try {
-          const sel = window.getSelection();
-          if (sel && sel.rangeCount > 0) {
-            const range = sel.getRangeAt(0);
-            const node = range.startContainer;
-            const offset = range.startOffset;
-            const text = node.textContent || '';
-            const charBefore = text.charAt(offset - 1);
-            logger.info('DialogDrive: Contenteditable check', {
-              charBefore,
-              textBefore: text.slice(0, offset).slice(-5),
-            });
-            if (pickerTrigger === 'doubleSlash' && charBefore === '/') {
-              logger.debug(
-                'DialogDrive: Double slash detected in contenteditable, opening overlay'
-              );
-              e.preventDefault();
-              e.stopPropagation();
-              // Remove the prior '/'
-              const newText = text.slice(0, offset - 1) + text.slice(offset);
+        openOverlay();
+        return;
+      }
+    } else if (input && input.isContentEditable) {
+      logger.debug('DialogDrive: Evaluating contenteditable trigger');
+      try {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          const range = sel.getRangeAt(0);
+          const node = range.startContainer;
+          const offset = range.startOffset;
+          const text = node.textContent || '';
+          const textBefore = text.slice(0, offset);
+          const decision = detectContentEditableTrigger({
+            trigger: pickerTrigger,
+            key,
+            textBeforeCaret: textBefore,
+          });
+
+          if (decision.shouldOpen) {
+            logger.debug('DialogDrive: Contenteditable trigger detected via keydown');
+            e.preventDefault();
+            e.stopPropagation();
+            if (decision.stripChars && decision.stripChars > 0) {
+              const newText =
+                textBefore.slice(0, -decision.stripChars) + text.slice(offset);
               node.textContent = newText;
               const newRange = document.createRange();
-              newRange.setStart(node, Math.max(0, offset - 1));
+              const newOffset = Math.max(0, offset - decision.stripChars);
+              newRange.setStart(node, newOffset);
               newRange.collapse(true);
               sel.removeAllRanges();
               sel.addRange(newRange);
               (input as HTMLElement).dispatchEvent(new Event('input', { bubbles: true }));
-              openOverlay();
-              return;
             }
+            openOverlay();
+            return;
           }
-        } catch (err) {
-          logger.warn('DialogDrive: Error checking contenteditable', err as Error);
         }
+      } catch (err) {
+        logger.warn('DialogDrive: Error checking contenteditable', err as Error);
       }
     }
   };
@@ -314,27 +310,18 @@ function setupPromptPicker() {
     const lastChar = (target as any).value?.slice?.(-1) ?? (target.textContent || '').slice(-1);
     if (lastChar !== '/' && lastChar !== '\\') return;
 
-    // Fallback detection via input content: open on trailing \\ or //
     if (input instanceof HTMLTextAreaElement) {
       const ta = input as HTMLTextAreaElement;
-      const start = ta.selectionStart ?? ta.value.length;
-      const before = ta.value.slice(0, start);
-      if (before.endsWith('\\')) {
-        // Remove the trailing backslash and open
-        const after = ta.value.slice(start);
-        ta.value = before.slice(0, -1) + after;
-        const newCaret = start - 1;
-        ta.setSelectionRange(newCaret, newCaret);
-        ta.dispatchEvent(new Event('input', { bubbles: true }));
-        openOverlay();
-        return;
-      }
-      if (before.endsWith('//')) {
-        // Remove the trailing // and open
-        const after = ta.value.slice(start);
-        ta.value = before.slice(0, -2) + after;
-        const newCaret = start - 2;
-        ta.setSelectionRange(newCaret, newCaret);
+      const selectionStart = ta.selectionStart ?? ta.value.length;
+      const decision = detectTextareaInputTrigger({
+        trigger: pickerTrigger,
+        value: ta.value,
+        selectionStart,
+      });
+
+      if (decision.shouldOpen && decision.nextValue !== undefined && decision.nextCaret !== undefined) {
+        ta.value = decision.nextValue;
+        ta.setSelectionRange(decision.nextCaret, decision.nextCaret);
         ta.dispatchEvent(new Event('input', { bubbles: true }));
         openOverlay();
         return;
@@ -347,27 +334,26 @@ function setupPromptPicker() {
           const node = range.startContainer;
           const offset = range.startOffset;
           const text = node.textContent || '';
-          const lastTwo = text.slice(0, offset).slice(-2);
-          const lastOne = text.slice(0, offset).slice(-1);
-          if (pickerTrigger === 'doubleSlash' && lastTwo === '//') {
-            node.textContent = text.slice(0, offset - 2) + text.slice(offset);
-            const newRange = document.createRange();
-            newRange.setStart(node, Math.max(0, offset - 2));
-            newRange.collapse(true);
-            sel.removeAllRanges();
-            sel.addRange(newRange);
-            (input as HTMLElement).dispatchEvent(new Event('input', { bubbles: true }));
-            openOverlay();
-            return;
-          }
-          if (pickerTrigger === 'backslash' && lastOne === '\\') {
-            node.textContent = text.slice(0, offset - 1) + text.slice(offset);
-            const newRange = document.createRange();
-            newRange.setStart(node, Math.max(0, offset - 1));
-            newRange.collapse(true);
-            sel.removeAllRanges();
-            sel.addRange(newRange);
-            (input as HTMLElement).dispatchEvent(new Event('input', { bubbles: true }));
+          const textBefore = text.slice(0, offset);
+          const decision = detectContentEditableTrigger({
+            trigger: pickerTrigger,
+            key: lastChar,
+            textBeforeCaret: textBefore,
+          });
+
+          if (decision.shouldOpen) {
+            const strip = decision.stripChars ?? 0;
+            if (strip > 0) {
+              const newText = textBefore.slice(0, -strip) + text.slice(offset);
+              node.textContent = newText;
+              const newRange = document.createRange();
+              const newOffset = Math.max(0, offset - strip);
+              newRange.setStart(node, newOffset);
+              newRange.collapse(true);
+              sel.removeAllRanges();
+              sel.addRange(newRange);
+              (input as HTMLElement).dispatchEvent(new Event('input', { bubbles: true }));
+            }
             openOverlay();
             return;
           }
@@ -1239,3 +1225,5 @@ function setupPromptPicker() {
   };
   window.addEventListener('pagehide', cleanup, { once: true });
 }
+
+export const __testSetupPromptPicker = setupPromptPicker;

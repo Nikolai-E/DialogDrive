@@ -9,6 +9,8 @@ type ExtensionFixtures = {
 };
 
 export const test = base.extend<ExtensionFixtures>({
+  // Playwright requires destructuring here even when we do not use the fixtures.
+  // eslint-disable-next-line no-empty-pattern
   extensionPath: async ({}, use) => {
     const extensionPath = process.env[REQUIRED_ENV];
     if (!extensionPath) {
