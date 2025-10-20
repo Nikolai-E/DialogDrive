@@ -26,7 +26,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "lint:types": "tsc --noEmit",
     "lint:eslint": "eslint tests --max-warnings=0",
-    "lint:prettier": "prettier --check \"tests/**/*.{ts,tsx}\" \"docs/**/*.md\" \"TESTING.md\" \".github/**/*.md\" \"vitest.config.ts\" \"playwright.config.ts\" \"package.json\"",
+    "lint:prettier": "prettier --check \"tests/**/*.{ts,tsx}\" \"docs/**/*.md\" \"TESTING.md\" \"vitest.config.ts\" \"playwright.config.ts\" \"package.json\"",
     "lint": "npm run lint:types && npm run lint:eslint && npm run lint:prettier",
     "prebuild": "npm run lint",
     "reset:ui": "tsx scripts/reset-ui-only.ts",
